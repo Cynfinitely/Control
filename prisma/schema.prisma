@@ -1,0 +1,473 @@
+// Control - personal life management platform
+// Local dev uses SQLite. For production, change provider to "postgresql".
+// Schema is kept portable: string fields instead of enums, no native arrays.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Auth & accounts
+// ----------------------------------------------------------------------------
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  passwordHash    String
+  role            String    @default("user") // "user" | "admin"
+  timezone        String    @default("Europe/Istanbul")
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  verificationTokens VerificationToken[]
+  invitesCreated     InviteCode[]        @relation("InviteCreatedBy")
+  inviteUsed         InviteCode?         @relation("InviteUsedBy")
+
+  todos              Todo[]
+  goals              Goal[]
+  foodEntries        FoodLogEntry[]
+  nutritionTargets   NutritionTarget[]
+  mealPlanItems      MealPlanItem[]
+  workouts           Workout[]
+  bodyWeightLogs     BodyWeightLog[]
+  bodyMeasurements   BodyMeasurement[]
+  prayerLogs         PrayerLog[]
+  dhikrLogs          DhikrLog[]
+  quranProgress      QuranProgress[]
+  fastingLogs        FastingLog[]
+  careerGoals        CareerGoal[]
+  skills             Skill[]
+  certifications     Certification[]
+  workExperiences    WorkExperience[]
+  learningEntries    LearningEntry[]
+  contacts           Contact[]
+  interactions       Interaction[]
+  followUps          FollowUp[]
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model InviteCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  email       String? // optional: lock invite to an email
+  maxUses     Int       @default(1)
+  uses        Int       @default(0)
+  expiresAt   DateTime?
+  createdById String
+  createdBy   User      @relation("InviteCreatedBy", fields: [createdById], references: [id])
+  usedById    String?   @unique
+  usedBy      User?     @relation("InviteUsedBy", fields: [usedById], references: [id])
+  createdAt   DateTime  @default(now())
+}
+
+// ----------------------------------------------------------------------------
+// 1. Todos
+// ----------------------------------------------------------------------------
+
+model Todo {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  notes       String?
+  category    String?
+  priority    String    @default("medium") // low | medium | high
+  status      String    @default("open") // open | done
+  dueDate     DateTime?
+  completedAt DateTime?
+  deletedAt   DateTime? // soft delete
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, dueDate])
+}
+
+// ----------------------------------------------------------------------------
+// 2. Goals
+// ----------------------------------------------------------------------------
+
+model Goal {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  type         String          @default("numeric") // numeric | boolean | habit
+  targetValue  Float?
+  currentValue Float           @default(0)
+  unit         String?
+  status       String          @default("active") // active | completed | abandoned
+  targetDate   DateTime?
+  deletedAt    DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  milestones GoalMilestone[]
+  checkIns   GoalCheckIn[]
+
+  @@index([userId, status])
+}
+
+model GoalMilestone {
+  id          String    @id @default(cuid())
+  goalId      String
+  goal        Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  title       String
+  done        Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([goalId])
+}
+
+model GoalCheckIn {
+  id        String   @id @default(cuid())
+  goalId    String
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  value     Float
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([goalId])
+}
+
+// ----------------------------------------------------------------------------
+// 3. Food: diary, planner, shopping list
+// ----------------------------------------------------------------------------
+
+model FoodLogEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  meal      String   @default("breakfast") // breakfast | lunch | dinner | snack
+  quantity  String? // free text e.g. "1 bowl"
+  calories  Float    @default(0)
+  protein   Float    @default(0)
+  carbs     Float    @default(0)
+  fat       Float    @default(0)
+  date      DateTime
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model NutritionTarget {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  calories  Float    @default(2000)
+  protein   Float    @default(120)
+  carbs     Float    @default(220)
+  fat       Float    @default(70)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId])
+}
+
+model MealPlanItem {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime // the planned day
+  meal      String    @default("breakfast")
+  name      String
+  notes     String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  ingredients ShoppingItem[]
+
+  @@index([userId, date])
+}
+
+model ShoppingItem {
+  id            String        @id @default(cuid())
+  mealPlanItem  MealPlanItem  @relation(fields: [mealPlanItemId], references: [id], onDelete: Cascade)
+  mealPlanItemId String
+  name          String
+  quantity      String?
+  checked       Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+
+  @@index([mealPlanItemId])
+}
+
+// ----------------------------------------------------------------------------
+// 4. Exercise & fitness
+// ----------------------------------------------------------------------------
+
+model Workout {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  notes     String?
+  date      DateTime
+  deletedAt DateTime?
+  createdAt DateTime          @default(now())
+
+  exercises WorkoutExercise[]
+
+  @@index([userId, date])
+}
+
+model WorkoutExercise {
+  id        String        @id @default(cuid())
+  workoutId String
+  workout   Workout       @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  name      String
+  order     Int           @default(0)
+
+  sets ExerciseSet[]
+
+  @@index([workoutId])
+}
+
+model ExerciseSet {
+  id                String          @id @default(cuid())
+  workoutExerciseId String
+  workoutExercise   WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
+  reps              Int?
+  weightKg          Float?
+  durationSec       Int?
+  notes             String?
+  order             Int             @default(0)
+
+  @@index([workoutExerciseId])
+}
+
+model BodyWeightLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weightKg  Float
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model BodyMeasurement {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String // e.g. waist, chest
+  valueCm   Float
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// ----------------------------------------------------------------------------
+// 5. Religious (Islamic)
+// ----------------------------------------------------------------------------
+
+model PrayerLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  prayer    String // fajr | dhuhr | asr | maghrib | isha
+  status    String   @default("ontime") // ontime | late | missed | na
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date, prayer])
+  @@index([userId, date])
+}
+
+model DhikrLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  count     Int      @default(0)
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model QuranProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pagesRead Int      @default(0)
+  note      String?
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model FastingLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  kind      String   @default("ramadan") // ramadan | voluntary | makeup
+  completed Boolean  @default(true)
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// ----------------------------------------------------------------------------
+// 7. Career
+// ----------------------------------------------------------------------------
+
+model CareerGoal {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  status      String    @default("active") // active | completed | abandoned
+  targetDate  DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, status])
+}
+
+model Skill {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  level     Int       @default(1) // 1-5 self rating
+  notes     String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Certification {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  issuer      String?
+  issuedAt    DateTime?
+  expiresAt   DateTime?
+  credentialId String?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model WorkExperience {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   String
+  role      String
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean   @default(false)
+  summary   String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model LearningEntry {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  kind      String    @default("course") // course | book | project | article
+  status    String    @default("in_progress") // in_progress | completed
+  hours     Float     @default(0)
+  skillName String?
+  notes     String?
+  date      DateTime
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, date])
+}
+
+// ----------------------------------------------------------------------------
+// 8. Networking
+// ----------------------------------------------------------------------------
+
+model Contact {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  org       String?
+  role      String?
+  email     String?
+  phone     String?
+  tags      String? // comma-separated
+  notes     String?
+  deletedAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  interactions Interaction[]
+  followUps    FollowUp[]
+
+  @@index([userId])
+}
+
+model Interaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  type      String   @default("message") // call | meeting | message | event
+  summary   String?
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+  @@index([contactId])
+}
+
+model FollowUp {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  note      String
+  dueDate   DateTime?
+  done      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@index([userId, done])
+  @@index([contactId])
+}
