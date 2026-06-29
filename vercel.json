@@ -1,0 +1,3 @@
+{
+  "buildCommand": "node scripts/sync-prisma-provider.mjs && prisma generate && node scripts/setup-db.mjs && next build"
+}

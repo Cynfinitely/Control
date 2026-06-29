@@ -17,8 +17,8 @@ export default async function DashboardLayout({
           email={user.email ?? ""}
           isAdmin={user.role === "admin"}
         />
-        <main className="flex-1 overflow-x-hidden">
-          <div className="mx-auto max-w-5xl px-6 py-8">{children}</div>
+        <main className="flex-1 overflow-x-hidden pt-14 md:pt-0">
+          <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">{children}</div>
         </main>
       </div>
     </Providers>

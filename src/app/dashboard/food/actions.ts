@@ -13,11 +13,7 @@ export async function logFood(formData: FormData) {
       userId,
       name,
       meal: str(formData.get("meal")) || "breakfast",
-      quantity: optStr(formData.get("quantity")),
       calories: num(formData.get("calories")),
-      protein: num(formData.get("protein")),
-      carbs: num(formData.get("carbs")),
-      fat: num(formData.get("fat")),
       date: parseDate(formData.get("date")),
     },
   });
@@ -36,16 +32,11 @@ export async function deleteFood(formData: FormData) {
 
 export async function saveTarget(formData: FormData) {
   const userId = await getUserId();
-  const data = {
-    calories: num(formData.get("calories"), 2000),
-    protein: num(formData.get("protein"), 120),
-    carbs: num(formData.get("carbs"), 220),
-    fat: num(formData.get("fat"), 70),
-  };
+  const calories = num(formData.get("calories"), 2000);
   await prisma.nutritionTarget.upsert({
     where: { userId },
-    update: data,
-    create: { userId, ...data },
+    update: { calories },
+    create: { userId, calories },
   });
   revalidatePath("/dashboard/food");
 }

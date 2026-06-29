@@ -1,158 +1,175 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { formatDate } from "@/lib/date";
+import { getPeriodKey, periodLabel, type GoalPeriod } from "@/lib/period";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
-import { createGoal, addCheckIn, setGoalStatus, deleteGoal } from "./actions";
+import { createGoal, toggleGoalComplete, incrementGoal, deleteGoal } from "./actions";
 
-export default async function GoalsPage() {
+const PERIODS: { value: GoalPeriod; label: string }[] = [
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "yearly", label: "Yearly" },
+];
+
+export default async function GoalsPage({
+  searchParams,
+}: {
+  searchParams: { period?: string };
+}) {
   const user = await requireUser();
+  const period = (PERIODS.find((p) => p.value === searchParams.period)?.value ?? "weekly") as GoalPeriod;
+  const now = new Date();
+  const periodKey = getPeriodKey(period, now);
+
   const goals = await prisma.goal.findMany({
-    where: { userId: user.id, deletedAt: null },
-    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-    include: { checkIns: { orderBy: { date: "desc" }, take: 1 } },
+    where: { userId: user.id, deletedAt: null, period, periodKey },
+    orderBy: [{ status: "asc" }, { createdAt: "asc" }],
   });
 
   const active = goals.filter((g) => g.status === "active");
-  const others = goals.filter((g) => g.status !== "active");
+  const completed = goals.filter((g) => g.status === "completed");
 
   return (
     <div>
-      <PageHeader title="Goals" description="Set objectives and track progress with check-ins." />
+      <PageHeader
+        title="Goals"
+        description={`${periodLabel(period, periodKey)} — simple checkboxes and counters.`}
+      />
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        {PERIODS.map((p) => (
+          <Link
+            key={p.value}
+            href={`/dashboard/goals?period=${p.value}`}
+            className={`touch-target rounded-full px-4 py-2 text-sm font-medium transition ${
+              period === p.value
+                ? "bg-brand-600 text-white"
+                : "bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            {p.label}
+          </Link>
+        ))}
+      </div>
 
       <details className="card mb-6">
         <summary className="cursor-pointer font-medium text-brand-700">+ Add goal</summary>
         <form action={createGoal} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <input type="hidden" name="period" value={period} />
           <div className="sm:col-span-2">
             <label className="label">Title</label>
-            <input name="title" className="input" required />
+            <input name="title" className="input" placeholder="e.g. Gym 12 times" required />
           </div>
           <div>
             <label className="label">Type</label>
-            <select name="type" className="input" defaultValue="numeric">
-              <option value="numeric">Numeric</option>
-              <option value="boolean">Yes / No</option>
-              <option value="habit">Habit</option>
+            <select name="type" className="input" defaultValue="boolean">
+              <option value="boolean">Checkbox (done / not done)</option>
+              <option value="numeric">Counter (+1 each time)</option>
             </select>
           </div>
           <div>
-            <label className="label">Target date</label>
-            <input name="targetDate" type="date" className="input" />
-          </div>
-          <div>
-            <label className="label">Target value</label>
-            <input name="targetValue" type="number" step="any" className="input" placeholder="e.g. 12" />
-          </div>
-          <div>
-            <label className="label">Unit</label>
-            <input name="unit" className="input" placeholder="e.g. books" />
+            <label className="label">Target (counter only)</label>
+            <input name="targetValue" type="number" min={1} className="input" placeholder="e.g. 12" />
           </div>
           <div className="sm:col-span-2">
-            <label className="label">Description</label>
-            <textarea name="description" className="input" rows={2} />
-          </div>
-          <div className="sm:col-span-2">
-            <button className="btn-primary">Add goal</button>
+            <button type="submit" className="btn-primary">Add goal</button>
           </div>
         </form>
       </details>
 
-      <h2 className="section-title mb-3">Active ({active.length})</h2>
-      <div className="space-y-4">
-        {active.length === 0 && <p className="text-sm text-slate-400">No active goals yet.</p>}
-        {active.map((g) => {
-          const pct =
-            g.targetValue && g.targetValue > 0
-              ? Math.min(100, Math.round((g.currentValue / g.targetValue) * 100))
-              : null;
-          return (
-            <div key={g.id} className="card">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-semibold text-slate-800">{g.title}</h3>
-                  {g.description && <p className="mt-1 text-sm text-slate-500">{g.description}</p>}
-                  {g.targetDate && (
-                    <p className="mt-1 text-xs text-slate-400">Target: {formatDate(g.targetDate)}</p>
-                  )}
-                </div>
-                <form action={deleteGoal}>
-                  <input type="hidden" name="id" value={g.id} />
-                  <button className="text-slate-300 hover:text-red-500" title="Delete">
-                    <Icon name="trash" className="h-4 w-4" />
-                  </button>
-                </form>
-              </div>
-
-              {pct !== null && (
-                <div className="mt-3">
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>
-                      {g.currentValue} / {g.targetValue} {g.unit ?? ""}
-                    </span>
-                    <span>{pct}%</span>
-                  </div>
-                  <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full bg-brand-500" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-4 flex flex-wrap items-end gap-2">
-                <form action={addCheckIn} className="flex items-end gap-2">
-                  <input type="hidden" name="goalId" value={g.id} />
-                  <div>
-                    <label className="label">Update progress</label>
-                    <input
-                      name="value"
-                      type="number"
-                      step="any"
-                      className="input w-32"
-                      placeholder="current"
-                      defaultValue={g.currentValue}
-                      required
-                    />
-                  </div>
-                  <button className="btn-ghost">Save</button>
-                </form>
-                <form action={setGoalStatus}>
-                  <input type="hidden" name="id" value={g.id} />
-                  <input type="hidden" name="status" value="completed" />
-                  <button className="btn-ghost">Mark complete</button>
-                </form>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {others.length > 0 && (
-        <>
-          <h2 className="section-title mb-3 mt-8">Completed / Archived</h2>
-          <div className="space-y-2">
-            {others.map((g) => (
-              <div key={g.id} className="card flex items-center justify-between py-3 opacity-75">
-                <div>
-                  <span className="font-medium text-slate-700">{g.title}</span>
-                  <span className="ml-2 badge bg-slate-100 text-slate-500">{g.status}</span>
-                </div>
-                <div className="flex gap-2">
-                  <form action={setGoalStatus}>
-                    <input type="hidden" name="id" value={g.id} />
-                    <input type="hidden" name="status" value="active" />
-                    <button className="text-xs text-brand-600 hover:underline">Reactivate</button>
-                  </form>
-                  <form action={deleteGoal}>
-                    <input type="hidden" name="id" value={g.id} />
-                    <button className="text-slate-300 hover:text-red-500" title="Delete">
-                      <Icon name="trash" className="h-4 w-4" />
-                    </button>
-                  </form>
-                </div>
-              </div>
+      <div className="space-y-2">
+        {goals.length === 0 && (
+          <p className="text-sm text-slate-400">No goals for this {period} period yet.</p>
+        )}
+        {active.map((g) => (
+          <GoalRow key={g.id} goal={g} />
+        ))}
+        {completed.length > 0 && (
+          <>
+            <p className="section-title mt-6 text-sm text-slate-500">Completed ({completed.length})</p>
+            {completed.map((g) => (
+              <GoalRow key={g.id} goal={g} />
             ))}
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
+  );
+}
+
+function GoalRow({
+  goal,
+}: {
+  goal: {
+    id: string;
+    title: string;
+    type: string;
+    targetValue: number | null;
+    currentValue: number;
+    status: string;
+  };
+}) {
+  const isDone = goal.status === "completed";
+
+  if (goal.type === "numeric") {
+    const target = goal.targetValue ?? 1;
+    return (
+      <div className={`card flex flex-wrap items-center gap-3 py-3 ${isDone ? "opacity-70" : ""}`}>
+        <div className="flex-1">
+          <p className={`font-medium ${isDone ? "text-slate-500 line-through" : "text-slate-800"}`}>
+            {goal.title}
+          </p>
+          <p className="text-sm text-slate-400">
+            {Math.round(goal.currentValue)} / {Math.round(target)}
+          </p>
+        </div>
+        {!isDone && (
+          <form action={incrementGoal}>
+            <input type="hidden" name="id" value={goal.id} />
+            <button type="submit" className="btn-primary touch-target min-w-[3rem]">
+              +1
+            </button>
+          </form>
+        )}
+        {isDone && (
+          <span className="badge bg-green-100 text-green-700">Done</span>
+        )}
+        <DeleteGoalButton id={goal.id} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`card flex items-center gap-3 py-3 ${isDone ? "opacity-70" : ""}`}>
+      <form action={toggleGoalComplete}>
+        <input type="hidden" name="id" value={goal.id} />
+        <button
+          type="submit"
+          className={`touch-target flex h-6 w-6 items-center justify-center rounded border ${
+            isDone
+              ? "border-brand-600 bg-brand-600 text-white"
+              : "border-slate-300 hover:border-brand-500"
+          }`}
+        >
+          {isDone && <Icon name="check" className="h-3.5 w-3.5" />}
+        </button>
+      </form>
+      <p className={`flex-1 ${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800"}`}>
+        {goal.title}
+      </p>
+      <DeleteGoalButton id={goal.id} />
+    </div>
+  );
+}
+
+function DeleteGoalButton({ id }: { id: string }) {
+  return (
+    <form action={deleteGoal}>
+      <input type="hidden" name="id" value={id} />
+      <button type="submit" className="touch-target text-slate-300 hover:text-red-500" title="Delete">
+        <Icon name="trash" className="h-4 w-4" />
+      </button>
+    </form>
   );
 }

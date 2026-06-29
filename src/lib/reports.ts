@@ -9,7 +9,7 @@ export async function buildReport(userId: string, period: Period) {
   const [
     todosCompleted,
     todosCreated,
-    todosOverdue,
+    backlogCount,
     activeGoals,
     completedGoals,
     foodEntries,
@@ -17,6 +17,8 @@ export async function buildReport(userId: string, period: Period) {
     workouts,
     weights,
     prayers,
+    qazaFulfilled,
+    qazaPending,
     dhikr,
     quran,
     fasts,
@@ -26,7 +28,7 @@ export async function buildReport(userId: string, period: Period) {
   ] = await Promise.all([
     prisma.todo.count({ where: { userId, completedAt: { gte: from, lte: to } } }),
     prisma.todo.count({ where: { userId, createdAt: { gte: from, lte: to }, deletedAt: null } }),
-    prisma.todo.count({ where: { userId, status: "open", deletedAt: null, dueDate: { lt: new Date() } } }),
+    prisma.todo.count({ where: { userId, inBacklog: true, status: "open", deletedAt: null } }),
     prisma.goal.count({ where: { userId, status: "active", deletedAt: null } }),
     prisma.goal.count({ where: { userId, status: "completed", updatedAt: { gte: from, lte: to } } }),
     prisma.foodLogEntry.findMany({ where: { userId, deletedAt: null, date: { gte: from, lte: to } } }),
@@ -37,6 +39,10 @@ export async function buildReport(userId: string, period: Period) {
     }),
     prisma.bodyWeightLog.findMany({ where: { userId, date: { gte: from, lte: to } }, orderBy: { date: "asc" } }),
     prisma.prayerLog.findMany({ where: { userId, date: { gte: from, lte: to } } }),
+    prisma.qazaPrayer.count({
+      where: { userId, fulfilledAt: { gte: from, lte: to } },
+    }),
+    prisma.qazaPrayer.count({ where: { userId, fulfilledAt: null } }),
     prisma.dhikrLog.findMany({ where: { userId, date: { gte: from, lte: to } } }),
     prisma.quranProgress.findMany({ where: { userId, date: { gte: from, lte: to } } }),
     prisma.fastingLog.count({ where: { userId, date: { gte: from, lte: to } } }),
@@ -50,21 +56,16 @@ export async function buildReport(userId: string, period: Period) {
   const avgCalories = foodEntries.length ? totalCalories / days : 0;
   const calorieTarget = target?.calories ?? 2000;
 
-  const totalSets = workouts.reduce(
+  const gymWorkouts = workouts.filter((w) => w.activityType === "gym");
+  const cardioWorkouts = workouts.filter((w) => w.activityType !== "gym");
+  const totalSets = gymWorkouts.reduce(
     (s, w) => s + w.exercises.reduce((a, e) => a + e.sets.length, 0),
     0
   );
-  const totalVolume = workouts.reduce(
-    (s, w) =>
-      s +
-      w.exercises.reduce(
-        (a, e) => a + e.sets.reduce((x, st) => x + (st.reps ?? 0) * (st.weightKg ?? 0), 0),
-        0
-      ),
-    0
-  );
+  const totalCardioMin = cardioWorkouts.reduce((s, w) => s + (w.durationMin ?? 0), 0);
 
   const prayersOnTime = prayers.filter((p) => p.status === "ontime").length;
+  const prayersMissed = prayers.filter((p) => p.status === "missed").length;
   const prayersLogged = prayers.length;
   const prayerOnTimeRate = prayersLogged ? Math.round((prayersOnTime / prayersLogged) * 100) : 0;
   const dhikrTotal = dhikr.reduce((s, d) => s + d.count, 0);
@@ -84,7 +85,7 @@ export async function buildReport(userId: string, period: Period) {
         stats: [
           { label: "Todos completed", value: todosCompleted },
           { label: "Todos created", value: todosCreated },
-          { label: "Overdue (now)", value: todosOverdue },
+          { label: "In backlog", value: backlogCount },
         ],
       },
       {
@@ -106,16 +107,20 @@ export async function buildReport(userId: string, period: Period) {
         title: "Fitness",
         stats: [
           { label: "Workouts", value: workouts.length },
-          { label: "Total sets", value: totalSets },
-          { label: "Volume (kg)", value: Math.round(totalVolume) },
+          { label: "Gym sessions", value: gymWorkouts.length },
+          { label: "Cardio (min)", value: totalCardioMin },
+          { label: "Gym sets", value: totalSets },
           { label: "Weight change", value: weightDelta === null ? "-" : `${weightDelta > 0 ? "+" : ""}${weightDelta.toFixed(1)} kg` },
         ],
       },
       {
         title: "Religious",
         stats: [
-          { label: "Prayers logged", value: prayersLogged },
+          { label: "Prayers on time", value: prayersOnTime },
+          { label: "Prayers missed", value: prayersMissed },
           { label: "On-time rate", value: `${prayerOnTimeRate}%` },
+          { label: "Qaza fulfilled", value: qazaFulfilled },
+          { label: "Qaza pending", value: qazaPending },
           { label: "Dhikr total", value: dhikrTotal },
           { label: "Quran pages", value: quranPages },
           { label: "Fasting days", value: fasts },

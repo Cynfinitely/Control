@@ -58,3 +58,18 @@ export function formatDate(d: Date | string | null | undefined): string {
     year: "numeric",
   });
 }
+
+export function formatDayLabel(d: Date): string {
+  const today = startOfDay(new Date());
+  const day = startOfDay(d);
+  if (day.getTime() === today.getTime()) return "Today";
+  const yesterday = addDays(today, -1);
+  if (day.getTime() === yesterday.getTime()) return "Yesterday";
+  return formatDate(day);
+}
+
+export function parseDayParam(value: string | undefined): Date {
+  if (!value) return startOfDay(new Date());
+  const d = new Date(value + "T00:00:00");
+  return isNaN(d.getTime()) ? startOfDay(new Date()) : startOfDay(d);
+}

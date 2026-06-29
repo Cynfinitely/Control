@@ -5,20 +5,55 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
 
-export async function createWorkout(formData: FormData) {
+export async function createGymWorkout(formData: FormData) {
   const userId = await getUserId();
-  const name = str(formData.get("name"));
-  if (!name) return;
+  const name = str(formData.get("name")) || "Gym session";
   const workout = await prisma.workout.create({
     data: {
       userId,
       name,
+      activityType: "gym",
       notes: optStr(formData.get("notes")),
       date: parseDate(formData.get("date")),
     },
   });
   revalidatePath("/dashboard/exercise");
   redirect(`/dashboard/exercise/${workout.id}`);
+}
+
+export async function createCardioWorkout(formData: FormData) {
+  const userId = await getUserId();
+  const activityType = str(formData.get("activityType")) || "run";
+  const date = parseDate(formData.get("date"));
+  const durationMin = formData.get("durationMin") ? num(formData.get("durationMin")) : null;
+  const notes = optStr(formData.get("notes"));
+
+  let name = str(formData.get("name"));
+  let distanceM: number | null = null;
+
+  if (activityType === "run") {
+    const km = num(formData.get("distanceKm"));
+    distanceM = km > 0 ? km * 1000 : null;
+    if (!name) name = km > 0 ? `Run ${km} km` : "Run";
+  } else if (activityType === "swim") {
+    distanceM = num(formData.get("distanceM")) || null;
+    if (!name) name = distanceM ? `Swim ${distanceM} m` : "Swim";
+  } else {
+    if (!name) name = str(formData.get("description")) || "Other activity";
+  }
+
+  await prisma.workout.create({
+    data: {
+      userId,
+      name,
+      activityType,
+      date,
+      durationMin,
+      distanceM,
+      notes: notes ?? (activityType === "other" ? optStr(formData.get("description")) : null),
+    },
+  });
+  revalidatePath("/dashboard/exercise");
 }
 
 export async function deleteWorkout(formData: FormData) {

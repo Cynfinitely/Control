@@ -43,6 +43,7 @@ const paths: Record<string, React.ReactNode> = {
   logout: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />,
   plus: <path d="M12 5v14M5 12h14" />,
   trash: <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14" />,
+  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
 };
 
 export default function Icon({ name, className }: Props) {

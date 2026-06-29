@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { startOfDay, endOfDay } from "@/lib/date";
+import { getPeriodKey } from "@/lib/period";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 
@@ -13,22 +14,28 @@ export default async function DashboardHome() {
   const from = startOfDay(now);
   const to = endOfDay(now);
   const userId = user.id;
+  const weekKey = getPeriodKey("weekly", now);
 
   const [
-    openTodos,
-    overdueTodos,
-    activeGoals,
+    todayOpenTodos,
+    todayDoneTodos,
+    weeklyGoals,
     foodToday,
     target,
     workoutsToday,
     prayersToday,
+    pendingQaza,
     pendingFollowUps,
   ] = await Promise.all([
-    prisma.todo.count({ where: { userId, status: "open", deletedAt: null } }),
     prisma.todo.count({
-      where: { userId, status: "open", deletedAt: null, dueDate: { lt: from } },
+      where: { userId, status: "open", deletedAt: null, inBacklog: false, dayDate: { gte: from, lte: to } },
     }),
-    prisma.goal.count({ where: { userId, status: "active", deletedAt: null } }),
+    prisma.todo.count({
+      where: { userId, status: "done", deletedAt: null, dayDate: { gte: from, lte: to } },
+    }),
+    prisma.goal.count({
+      where: { userId, status: "active", deletedAt: null, period: "weekly", periodKey: weekKey },
+    }),
     prisma.foodLogEntry.findMany({
       where: { userId, deletedAt: null, date: { gte: from, lte: to } },
     }),
@@ -39,25 +46,26 @@ export default async function DashboardHome() {
     prisma.prayerLog.findMany({
       where: { userId, date: { gte: from, lte: to } },
     }),
+    prisma.qazaPrayer.count({ where: { userId, fulfilledAt: null } }),
     prisma.followUp.count({ where: { userId, done: false } }),
   ]);
 
   const caloriesToday = foodToday.reduce((s, f) => s + f.calories, 0);
   const calorieTarget = target?.calories ?? 2000;
-  const prayersLogged = prayersToday.filter((p) => p.status !== "missed").length;
+  const prayersOnTime = prayersToday.filter((p) => p.status === "ontime").length;
 
   const stats = [
     {
-      label: "Open todos",
-      value: openTodos,
-      sub: overdueTodos > 0 ? `${overdueTodos} overdue` : "on track",
+      label: "Todos today",
+      value: `${todayDoneTodos}/${todayOpenTodos + todayDoneTodos}`,
+      sub: todayOpenTodos > 0 ? `${todayOpenTodos} left` : "all done",
       href: "/dashboard/todos",
       icon: "check",
     },
     {
-      label: "Active goals",
-      value: activeGoals,
-      sub: "in progress",
+      label: "Weekly goals",
+      value: weeklyGoals,
+      sub: "active this week",
       href: "/dashboard/goals",
       icon: "target",
     },
@@ -77,8 +85,8 @@ export default async function DashboardHome() {
     },
     {
       label: "Prayers today",
-      value: `${prayersLogged}/${PRAYERS}`,
-      sub: "logged",
+      value: `${prayersOnTime}/${PRAYERS}`,
+      sub: pendingQaza > 0 ? `${pendingQaza} qaza pending` : "on time",
       href: "/dashboard/religious",
       icon: "moon",
     },
@@ -112,7 +120,7 @@ export default async function DashboardHome() {
 
       <div className="mb-8 flex flex-wrap gap-2">
         {quickLinks.map((q) => (
-          <Link key={q.href} href={q.href} className="btn-ghost">
+          <Link key={q.href} href={q.href} className="btn-ghost touch-target">
             <Icon name={q.icon} className="h-4 w-4" />
             {q.label}
           </Link>

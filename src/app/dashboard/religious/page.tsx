@@ -2,25 +2,23 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { startOfDay, endOfDay, toDateInputValue, formatDate, addDays } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
-import { setPrayer, logDhikr, logQuran, logFasting } from "./actions";
+import { setPrayer, fulfillQaza, logDhikr, logQuran, logFasting } from "./actions";
 
 const PRAYERS = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
-const STATUSES = [
-  { value: "ontime", label: "On time", style: "bg-green-100 text-green-700" },
-  { value: "late", label: "Late", style: "bg-amber-100 text-amber-700" },
-  { value: "missed", label: "Missed", style: "bg-red-100 text-red-700" },
-  { value: "na", label: "N/A", style: "bg-slate-100 text-slate-500" },
-];
 
 export default async function ReligiousPage() {
   const user = await requireUser();
   const now = new Date();
   const today = startOfDay(now);
 
-  const [todayPrayers, recentPrayers, dhikr, quran, fasts] = await Promise.all([
+  const [todayPrayers, recentPrayers, pendingQaza, dhikr, quran, fasts] = await Promise.all([
     prisma.prayerLog.findMany({ where: { userId: user.id, date: { gte: today, lte: endOfDay(now) } } }),
     prisma.prayerLog.findMany({
       where: { userId: user.id, date: { gte: addDays(today, -60) } },
+    }),
+    prisma.qazaPrayer.findMany({
+      where: { userId: user.id, fulfilledAt: null },
+      orderBy: [{ prayer: "asc" }, { createdAt: "asc" }],
     }),
     prisma.dhikrLog.findMany({
       where: { userId: user.id, date: { gte: today, lte: endOfDay(now) } },
@@ -40,18 +38,26 @@ export default async function ReligiousPage() {
 
   const prayerStatus = (p: string) => todayPrayers.find((t) => t.prayer === p)?.status;
 
-  // streak: consecutive days (ending today/yesterday) with all 5 prayers logged (non-missed)
-  const byDay = new Map<string, number>();
+  const qazaCounts = PRAYERS.map((prayer) => ({
+    prayer,
+    count: pendingQaza.filter((q) => q.prayer === prayer).length,
+    items: pendingQaza.filter((q) => q.prayer === prayer),
+  })).filter((q) => q.count > 0);
+
+  const totalQaza = pendingQaza.length;
+
+  // streak: consecutive days with all 5 prayers on time
+  const byDayOnTime = new Map<string, number>();
   for (const p of recentPrayers) {
-    if (p.status === "missed") continue;
+    if (p.status !== "ontime") continue;
     const key = toDateInputValue(p.date);
-    byDay.set(key, (byDay.get(key) ?? 0) + 1);
+    byDayOnTime.set(key, (byDayOnTime.get(key) ?? 0) + 1);
   }
   let streak = 0;
   for (let i = 0; i < 60; i++) {
     const key = toDateInputValue(addDays(today, -i));
-    if ((byDay.get(key) ?? 0) >= 5) streak++;
-    else if (i === 0) continue; // allow today to be incomplete
+    if ((byDayOnTime.get(key) ?? 0) >= 5) streak++;
+    else if (i === 0) continue;
     else break;
   }
 
@@ -61,22 +67,26 @@ export default async function ReligiousPage() {
     <div>
       <PageHeader
         title="Religious"
-        description="Track daily prayers, dhikr, Quran reading, and fasting."
+        description="Track daily prayers, qaza makeup, dhikr, Quran, and fasting."
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="card">
-          <p className="text-sm text-slate-500">Prayer streak</p>
+          <p className="text-sm text-slate-500">On-time streak</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{streak}</p>
-          <p className="text-xs text-slate-400">days all prayers kept</p>
+          <p className="text-xs text-slate-400">days all 5 on time</p>
+        </div>
+        <div className="card">
+          <p className="text-sm text-slate-500">Qaza pending</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900">{totalQaza}</p>
+          <p className="text-xs text-slate-400">makeup prayers</p>
         </div>
         <div className="card">
           <p className="text-sm text-slate-500">Dhikr today</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{dhikrTotal}</p>
-          <p className="text-xs text-slate-400">total count</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Quran (last log)</p>
+          <p className="text-sm text-slate-500">Quran (last)</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{quran[0]?.pagesRead ?? 0}</p>
           <p className="text-xs text-slate-400">pages</p>
         </div>
@@ -84,26 +94,29 @@ export default async function ReligiousPage() {
 
       <div className="card mb-6">
         <h2 className="section-title mb-4">Today&apos;s prayers</h2>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {PRAYERS.map((p) => {
             const current = prayerStatus(p);
             return (
-              <div key={p} className="flex items-center gap-3">
+              <div key={p} className="flex flex-wrap items-center gap-3">
                 <span className="w-20 font-medium capitalize text-slate-700">{p}</span>
-                <div className="flex flex-wrap gap-2">
-                  {STATUSES.map((s) => (
-                    <form key={s.value} action={setPrayer}>
+                <div className="flex gap-2">
+                  {(["ontime", "missed"] as const).map((status) => (
+                    <form key={status} action={setPrayer}>
                       <input type="hidden" name="prayer" value={p} />
-                      <input type="hidden" name="status" value={s.value} />
+                      <input type="hidden" name="status" value={status} />
                       <input type="hidden" name="date" value={toDateInputValue(now)} />
                       <button
-                        className={`badge ${
-                          current === s.value
-                            ? s.style + " ring-2 ring-offset-1 ring-slate-300"
-                            : "bg-white text-slate-400 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
+                        type="submit"
+                        className={`touch-target badge px-4 py-2 text-sm ${
+                          current === status
+                            ? status === "ontime"
+                              ? "bg-green-100 text-green-700 ring-2 ring-offset-1 ring-green-300"
+                              : "bg-red-100 text-red-700 ring-2 ring-offset-1 ring-red-300"
+                            : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
                         }`}
                       >
-                        {s.label}
+                        {status === "ontime" ? "On time" : "Missed"}
                       </button>
                     </form>
                   ))}
@@ -114,6 +127,39 @@ export default async function ReligiousPage() {
         </div>
       </div>
 
+      {qazaCounts.length > 0 && (
+        <div className="card mb-6">
+          <h2 className="section-title mb-4">Qaza prayers</h2>
+          <p className="mb-4 text-sm text-slate-500">
+            Missed prayers are added here automatically. Tap Fulfill when you make them up.
+          </p>
+          <div className="space-y-4">
+            {qazaCounts.map(({ prayer, count, items }) => (
+              <div key={prayer}>
+                <p className="mb-2 font-medium capitalize text-slate-700">
+                  {prayer} <span className="text-slate-400">× {count}</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {items.map((q) => (
+                    <form key={q.id} action={fulfillQaza}>
+                      <input type="hidden" name="id" value={q.id} />
+                      <button type="submit" className="btn-ghost touch-target text-sm">
+                        Fulfill
+                        {q.sourceDate && (
+                          <span className="ml-1 text-xs text-slate-400">
+                            ({formatDate(q.sourceDate)})
+                          </span>
+                        )}
+                      </button>
+                    </form>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="card">
           <h2 className="section-title">Dhikr</h2>
@@ -121,7 +167,9 @@ export default async function ReligiousPage() {
             <input name="name" className="input" placeholder="e.g. Subhanallah" required />
             <input name="count" type="number" className="input" placeholder="count" defaultValue={33} />
             <input type="hidden" name="date" value={toDateInputValue(now)} />
-            <button className="btn-primary w-full">Log dhikr</button>
+            <button type="submit" className="btn-primary touch-target w-full">
+              Log dhikr
+            </button>
           </form>
           <div className="mt-4 space-y-1">
             {dhikr.map((d) => (
@@ -139,7 +187,9 @@ export default async function ReligiousPage() {
             <input name="pagesRead" type="number" className="input" placeholder="pages read" defaultValue={1} />
             <input name="note" className="input" placeholder="note (optional)" />
             <input type="hidden" name="date" value={toDateInputValue(now)} />
-            <button className="btn-primary w-full">Log reading</button>
+            <button type="submit" className="btn-primary touch-target w-full">
+              Log reading
+            </button>
           </form>
           <div className="mt-4 space-y-1">
             {quran.map((q) => (
@@ -161,7 +211,9 @@ export default async function ReligiousPage() {
               <option value="makeup">Make-up (qada)</option>
             </select>
             <input name="note" className="input" placeholder="note (optional)" />
-            <button className="btn-primary w-full">Log fast</button>
+            <button type="submit" className="btn-primary touch-target w-full">
+              Log fast
+            </button>
           </form>
           <div className="mt-4 space-y-1">
             {fasts.map((f) => (

@@ -1,129 +1,196 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { formatDate } from "@/lib/date";
+import {
+  startOfDay,
+  endOfDay,
+  addDays,
+  toDateInputValue,
+  formatDayLabel,
+  parseDayParam,
+} from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
-import { createTodo, toggleTodo, deleteTodo } from "./actions";
+import {
+  createTodo,
+  toggleTodo,
+  deleteTodo,
+  moveToBacklog,
+  pullFromBacklog,
+  moveUnfinishedToBacklog,
+} from "./actions";
 
-const priorityStyles: Record<string, string> = {
-  low: "bg-slate-100 text-slate-600",
-  medium: "bg-amber-100 text-amber-700",
-  high: "bg-red-100 text-red-700",
-};
-
-export default async function TodosPage() {
+export default async function TodosPage({
+  searchParams,
+}: {
+  searchParams: { day?: string };
+}) {
   const user = await requireUser();
-  const todos = await prisma.todo.findMany({
-    where: { userId: user.id, deletedAt: null },
-    orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],
-  });
+  const day = parseDayParam(searchParams.day);
+  const prevDay = addDays(day, -1);
+  const nextDay = addDays(day, 1);
+  const dayLabel = formatDayLabel(day);
 
-  const open = todos.filter((t) => t.status === "open");
-  const done = todos.filter((t) => t.status === "done");
-  const now = new Date();
+  const [dayTodos, backlog] = await Promise.all([
+    prisma.todo.findMany({
+      where: {
+        userId: user.id,
+        deletedAt: null,
+        inBacklog: false,
+        dayDate: { gte: startOfDay(day), lte: endOfDay(day) },
+      },
+      orderBy: [{ status: "asc" }, { createdAt: "asc" }],
+    }),
+    prisma.todo.findMany({
+      where: { userId: user.id, deletedAt: null, inBacklog: true, status: "open" },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
+
+  const open = dayTodos.filter((t) => t.status === "open");
+  const done = dayTodos.filter((t) => t.status === "done");
 
   return (
     <div>
-      <PageHeader title="Todos" description="Capture tasks, set priorities, and track completion." />
+      <PageHeader title="Todos" description="Simple daily checklist — add tasks, check them off." />
 
-      <details className="card mb-6">
-        <summary className="cursor-pointer font-medium text-brand-700">+ Add todo</summary>
-        <form action={createTodo} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="label">Title</label>
-            <input name="title" className="input" required />
-          </div>
+      <div className="card mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/dashboard/todos?day=${toDateInputValue(prevDay)}`}
+            className="btn-ghost touch-target px-3"
+            aria-label="Previous day"
+          >
+            ←
+          </Link>
           <div>
-            <label className="label">Category</label>
-            <input name="category" className="input" placeholder="e.g. Work" />
+            <p className="font-semibold text-slate-900">{dayLabel}</p>
+            <p className="text-xs text-slate-400">{toDateInputValue(day)}</p>
           </div>
-          <div>
-            <label className="label">Priority</label>
-            <select name="priority" className="input" defaultValue="medium">
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Due date</label>
-            <input name="dueDate" type="date" className="input" />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="label">Notes</label>
-            <textarea name="notes" className="input" rows={2} />
-          </div>
-          <div className="sm:col-span-2">
-            <button className="btn-primary">Add todo</button>
-          </div>
-        </form>
-      </details>
-
-      <h2 className="section-title mb-3">Open ({open.length})</h2>
-      <div className="space-y-2">
-        {open.length === 0 && <p className="text-sm text-slate-400">Nothing open. Nice work.</p>}
-        {open.map((t) => {
-          const overdue = t.dueDate && t.dueDate < now;
-          return (
-            <div key={t.id} className="card flex items-center gap-3 py-3">
-              <form action={toggleTodo}>
-                <input type="hidden" name="id" value={t.id} />
-                <button
-                  className="flex h-5 w-5 items-center justify-center rounded border border-slate-300 hover:border-brand-500"
-                  title="Mark done"
-                />
-              </form>
-              <div className="flex-1">
-                <p className="font-medium text-slate-800">{t.title}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                  <span className={`badge ${priorityStyles[t.priority]}`}>{t.priority}</span>
-                  {t.category && <span>{t.category}</span>}
-                  {t.dueDate && (
-                    <span className={overdue ? "font-medium text-red-600" : ""}>
-                      due {formatDate(t.dueDate)}
-                    </span>
-                  )}
-                </div>
-                {t.notes && <p className="mt-1 text-sm text-slate-500">{t.notes}</p>}
-              </div>
-              <form action={deleteTodo}>
-                <input type="hidden" name="id" value={t.id} />
-                <button className="text-slate-300 hover:text-red-500" title="Delete">
-                  <Icon name="trash" className="h-4 w-4" />
-                </button>
-              </form>
-            </div>
-          );
-        })}
+          <Link
+            href={`/dashboard/todos?day=${toDateInputValue(nextDay)}`}
+            className="btn-ghost touch-target px-3"
+            aria-label="Next day"
+          >
+            →
+          </Link>
+        </div>
+        {!searchParams.day && open.length > 0 && (
+          <form action={moveUnfinishedToBacklog}>
+            <input type="hidden" name="dayDate" value={toDateInputValue(addDays(day, -1))} />
+            <button type="submit" className="btn-ghost text-xs">
+              Move yesterday&apos;s open to backlog
+            </button>
+          </form>
+        )}
       </div>
 
-      {done.length > 0 && (
-        <>
-          <h2 className="section-title mb-3 mt-8">Completed ({done.length})</h2>
-          <div className="space-y-2">
+      <form action={createTodo} className="card mb-6 flex gap-2">
+        <input type="hidden" name="dayDate" value={toDateInputValue(day)} />
+        <input
+          name="title"
+          className="input flex-1"
+          placeholder="Add a todo for this day…"
+          required
+          autoComplete="off"
+        />
+        <button type="submit" className="btn-primary touch-target shrink-0">
+          Add
+        </button>
+      </form>
+
+      <div className="space-y-2">
+        {dayTodos.length === 0 && (
+          <p className="text-sm text-slate-400">No todos for this day. Add one above.</p>
+        )}
+        {open.map((t) => (
+          <TodoRow key={t.id} todo={t} showBacklog />
+        ))}
+        {done.length > 0 && (
+          <>
+            <p className="section-title mt-6 text-sm text-slate-500">Done ({done.length})</p>
             {done.map((t) => (
-              <div key={t.id} className="card flex items-center gap-3 py-3 opacity-70">
-                <form action={toggleTodo}>
+              <TodoRow key={t.id} todo={t} />
+            ))}
+          </>
+        )}
+      </div>
+
+      {backlog.length > 0 && (
+        <details className="card mt-8">
+          <summary className="cursor-pointer font-medium text-slate-700">
+            Backlog ({backlog.length})
+          </summary>
+          <p className="mt-2 text-xs text-slate-400">
+            Unfinished items saved for later. Pull into today&apos;s list when ready.
+          </p>
+          <div className="mt-4 space-y-2">
+            {backlog.map((t) => (
+              <div key={t.id} className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2">
+                <span className="flex-1 text-slate-700">{t.title}</span>
+                <form action={pullFromBacklog}>
                   <input type="hidden" name="id" value={t.id} />
-                  <button
-                    className="flex h-5 w-5 items-center justify-center rounded bg-brand-600 text-white"
-                    title="Mark open"
-                  >
-                    <Icon name="check" className="h-3 w-3" />
+                  <input type="hidden" name="dayDate" value={toDateInputValue(day)} />
+                  <button type="submit" className="btn-ghost touch-target text-xs">
+                    Add to today
                   </button>
                 </form>
-                <p className="flex-1 text-slate-500 line-through">{t.title}</p>
                 <form action={deleteTodo}>
                   <input type="hidden" name="id" value={t.id} />
-                  <button className="text-slate-300 hover:text-red-500" title="Delete">
+                  <button type="submit" className="touch-target text-slate-300 hover:text-red-500" title="Delete">
                     <Icon name="trash" className="h-4 w-4" />
                   </button>
                 </form>
               </div>
             ))}
           </div>
-        </>
+        </details>
       )}
+    </div>
+  );
+}
+
+function TodoRow({
+  todo,
+  showBacklog,
+}: {
+  todo: { id: string; title: string; status: string };
+  showBacklog?: boolean;
+}) {
+  const isDone = todo.status === "done";
+  return (
+    <div className={`card flex items-center gap-3 py-3 ${isDone ? "opacity-70" : ""}`}>
+      <form action={toggleTodo}>
+        <input type="hidden" name="id" value={todo.id} />
+        <button
+          type="submit"
+          className={`touch-target flex h-6 w-6 items-center justify-center rounded border ${
+            isDone
+              ? "border-brand-600 bg-brand-600 text-white"
+              : "border-slate-300 hover:border-brand-500"
+          }`}
+          title={isDone ? "Mark open" : "Mark done"}
+        >
+          {isDone && <Icon name="check" className="h-3.5 w-3.5" />}
+        </button>
+      </form>
+      <p className={`flex-1 ${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800"}`}>
+        {todo.title}
+      </p>
+      {showBacklog && !isDone && (
+        <form action={moveToBacklog}>
+          <input type="hidden" name="id" value={todo.id} />
+          <button type="submit" className="btn-ghost touch-target text-xs">
+            Backlog
+          </button>
+        </form>
+      )}
+      <form action={deleteTodo}>
+        <input type="hidden" name="id" value={todo.id} />
+        <button type="submit" className="touch-target text-slate-300 hover:text-red-500" title="Delete">
+          <Icon name="trash" className="h-4 w-4" />
+        </button>
+      </form>
     </div>
   );
 }

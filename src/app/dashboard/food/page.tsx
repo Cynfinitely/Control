@@ -19,113 +19,75 @@ export default async function FoodPage() {
     prisma.nutritionTarget.findUnique({ where: { userId: user.id } }),
   ]);
 
-  const totals = entries.reduce(
-    (acc, e) => ({
-      calories: acc.calories + e.calories,
-      protein: acc.protein + e.protein,
-      carbs: acc.carbs + e.carbs,
-      fat: acc.fat + e.fat,
-    }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
-  );
-
-  const t = target ?? { calories: 2000, protein: 120, carbs: 220, fat: 70 };
-  const calPct = Math.min(100, Math.round((totals.calories / (t.calories || 1)) * 100));
+  const totalCalories = entries.reduce((s, e) => s + e.calories, 0);
+  const calorieTarget = target?.calories ?? 2000;
+  const calPct = Math.min(100, Math.round((totalCalories / (calorieTarget || 1)) * 100));
 
   return (
     <div>
       <PageHeader
         title="Food diary"
-        description="Log meals manually and track calories against your daily target."
+        description="Log what you eat and track calories."
         action={
-          <Link href="/dashboard/food/planner" className="btn-ghost">
+          <Link href="/dashboard/food/planner" className="btn-ghost touch-target">
             Meal planner →
           </Link>
         }
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <div className="card sm:col-span-1">
-          <p className="text-sm text-slate-500">Calories today</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{Math.round(totals.calories)}</p>
-          <p className="text-xs text-slate-400">of {Math.round(t.calories)} kcal</p>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className={`h-full ${totals.calories > t.calories ? "bg-red-500" : "bg-brand-500"}`}
-              style={{ width: `${calPct}%` }}
-            />
-          </div>
+      <div className="card mb-6">
+        <p className="text-sm text-slate-500">Calories today</p>
+        <p className="mt-2 text-3xl font-bold text-slate-900">{Math.round(totalCalories)}</p>
+        <p className="text-xs text-slate-400">of {Math.round(calorieTarget)} kcal</p>
+        <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={`h-full ${totalCalories > calorieTarget ? "bg-red-500" : "bg-brand-500"}`}
+            style={{ width: `${calPct}%` }}
+          />
         </div>
-        <Macro label="Protein" value={totals.protein} target={t.protein} unit="g" />
-        <Macro label="Carbs" value={totals.carbs} target={t.carbs} unit="g" />
-        <Macro label="Fat" value={totals.fat} target={t.fat} unit="g" />
       </div>
 
-      <details className="card mb-6">
-        <summary className="cursor-pointer font-medium text-brand-700">+ Log food</summary>
-        <form action={logFood} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="sm:col-span-2">
-            <label className="label">Food</label>
-            <input name="name" className="input" required />
-          </div>
-          <div>
-            <label className="label">Meal</label>
-            <select name="meal" className="input" defaultValue="breakfast">
-              {MEALS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label">Quantity</label>
-            <input name="quantity" className="input" placeholder="1 bowl" />
-          </div>
-          <div>
-            <label className="label">Calories</label>
-            <input name="calories" type="number" step="any" className="input" defaultValue={0} />
-          </div>
-          <div>
-            <label className="label">Date</label>
-            <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
-          </div>
-          <div>
-            <label className="label">Protein (g)</label>
-            <input name="protein" type="number" step="any" className="input" defaultValue={0} />
-          </div>
-          <div>
-            <label className="label">Carbs (g)</label>
-            <input name="carbs" type="number" step="any" className="input" defaultValue={0} />
-          </div>
-          <div>
-            <label className="label">Fat (g)</label>
-            <input name="fat" type="number" step="any" className="input" defaultValue={0} />
-          </div>
-          <div className="sm:col-span-3">
-            <button className="btn-primary">Log food</button>
-          </div>
-        </form>
-      </details>
+      <form action={logFood} className="card mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <div className="min-w-0 flex-1">
+          <label className="label">Food</label>
+          <input name="name" className="input" placeholder="e.g. Chicken salad" required />
+        </div>
+        <div className="w-full sm:w-28">
+          <label className="label">Calories</label>
+          <input name="calories" type="number" step="any" className="input" required />
+        </div>
+        <div className="w-full sm:w-36">
+          <label className="label">Meal</label>
+          <select name="meal" className="input" defaultValue="lunch">
+            {MEALS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="w-full sm:w-36">
+          <label className="label">Date</label>
+          <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
+        </div>
+        <button type="submit" className="btn-primary touch-target w-full sm:w-auto">
+          Log food
+        </button>
+      </form>
 
       <h2 className="section-title mb-3">Today&apos;s entries</h2>
       <div className="space-y-2">
         {entries.length === 0 && <p className="text-sm text-slate-400">No food logged today.</p>}
         {entries.map((e) => (
           <div key={e.id} className="card flex items-center gap-3 py-3">
-            <span className="badge bg-slate-100 text-slate-500 capitalize">{e.meal}</span>
+            <span className="badge bg-slate-100 capitalize text-slate-500">{e.meal}</span>
             <div className="flex-1">
-              <p className="font-medium text-slate-800">
-                {e.name} {e.quantity && <span className="text-slate-400">· {e.quantity}</span>}
-              </p>
-              <p className="text-xs text-slate-400">
-                {Math.round(e.calories)} kcal · P{Math.round(e.protein)} C{Math.round(e.carbs)} F
-                {Math.round(e.fat)}
-              </p>
+              <p className="font-medium text-slate-800">{e.name}</p>
+              <p className="text-xs text-slate-400">{Math.round(e.calories)} kcal</p>
             </div>
             <form action={deleteFood}>
               <input type="hidden" name="id" value={e.id} />
-              <button className="text-slate-300 hover:text-red-500" title="Delete">
+              <button type="submit" className="touch-target text-slate-300 hover:text-red-500" title="Delete">
                 <Icon name="trash" className="h-4 w-4" />
               </button>
             </form>
@@ -134,55 +96,15 @@ export default async function FoodPage() {
       </div>
 
       <details className="card mt-8">
-        <summary className="cursor-pointer font-medium text-slate-700">Daily nutrition targets</summary>
-        <form action={saveTarget} className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div>
+        <summary className="cursor-pointer font-medium text-slate-700">Daily calorie target</summary>
+        <form action={saveTarget} className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="w-full sm:w-40">
             <label className="label">Calories</label>
-            <input name="calories" type="number" step="any" className="input" defaultValue={t.calories} />
+            <input name="calories" type="number" step="any" className="input" defaultValue={calorieTarget} />
           </div>
-          <div>
-            <label className="label">Protein (g)</label>
-            <input name="protein" type="number" step="any" className="input" defaultValue={t.protein} />
-          </div>
-          <div>
-            <label className="label">Carbs (g)</label>
-            <input name="carbs" type="number" step="any" className="input" defaultValue={t.carbs} />
-          </div>
-          <div>
-            <label className="label">Fat (g)</label>
-            <input name="fat" type="number" step="any" className="input" defaultValue={t.fat} />
-          </div>
-          <div className="col-span-2 sm:col-span-4">
-            <button className="btn-primary">Save targets</button>
-          </div>
+          <button type="submit" className="btn-primary touch-target">Save</button>
         </form>
       </details>
-    </div>
-  );
-}
-
-function Macro({
-  label,
-  value,
-  target,
-  unit,
-}: {
-  label: string;
-  value: number;
-  target: number;
-  unit: string;
-}) {
-  const pct = Math.min(100, Math.round((value / (target || 1)) * 100));
-  return (
-    <div className="card">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-slate-900">
-        {Math.round(value)}
-        <span className="text-sm font-normal text-slate-400">/{Math.round(target)}{unit}</span>
-      </p>
-      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full bg-brand-500" style={{ width: `${pct}%` }} />
-      </div>
     </div>
   );
 }

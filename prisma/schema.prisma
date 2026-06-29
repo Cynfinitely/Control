@@ -1,5 +1,5 @@
 // Control - personal life management platform
-// Local dev uses SQLite. For production, change provider to "postgresql".
+// Production uses PostgreSQL (Neon/Supabase). See README for setup.
 // Schema is kept portable: string fields instead of enums, no native arrays.
 
 generator client {
@@ -39,6 +39,7 @@ model User {
   bodyWeightLogs     BodyWeightLog[]
   bodyMeasurements   BodyMeasurement[]
   prayerLogs         PrayerLog[]
+  qazaPrayers        QazaPrayer[]
   dhikrLogs          DhikrLog[]
   quranProgress      QuranProgress[]
   fastingLogs        FastingLog[]
@@ -66,7 +67,7 @@ model VerificationToken {
 model InviteCode {
   id          String    @id @default(cuid())
   code        String    @unique
-  email       String? // optional: lock invite to an email
+  email       String?
   maxUses     Int       @default(1)
   uses        Int       @default(0)
   expiresAt   DateTime?
@@ -78,7 +79,7 @@ model InviteCode {
 }
 
 // ----------------------------------------------------------------------------
-// 1. Todos
+// 1. Todos — day-based checkbox lists
 // ----------------------------------------------------------------------------
 
 model Todo {
@@ -86,22 +87,26 @@ model Todo {
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
-  notes       String?
-  category    String?
-  priority    String    @default("medium") // low | medium | high
+  dayDate     DateTime  @default(now())
+  inBacklog   Boolean   @default(false)
   status      String    @default("open") // open | done
-  dueDate     DateTime?
   completedAt DateTime?
-  deletedAt   DateTime? // soft delete
+  deletedAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  // deprecated — kept for migration safety
+  notes       String?
+  category    String?
+  priority    String    @default("medium")
+  dueDate     DateTime?
 
   @@index([userId, status])
-  @@index([userId, dueDate])
+  @@index([userId, dayDate])
+  @@index([userId, inBacklog])
 }
 
 // ----------------------------------------------------------------------------
-// 2. Goals
+// 2. Goals — weekly / monthly / yearly
 // ----------------------------------------------------------------------------
 
 model Goal {
@@ -109,21 +114,25 @@ model Goal {
   userId       String
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   title        String
-  description  String?
-  type         String          @default("numeric") // numeric | boolean | habit
+  period       String          @default("weekly") // weekly | monthly | yearly
+  periodKey    String          @default("")
+  type         String          @default("boolean") // boolean | numeric
   targetValue  Float?
   currentValue Float           @default(0)
-  unit         String?
-  status       String          @default("active") // active | completed | abandoned
-  targetDate   DateTime?
+  status       String          @default("active") // active | completed
   deletedAt    DateTime?
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+  // deprecated
+  description  String?
+  unit         String?
+  targetDate   DateTime?
 
   milestones GoalMilestone[]
   checkIns   GoalCheckIn[]
 
   @@index([userId, status])
+  @@index([userId, period, periodKey])
 }
 
 model GoalMilestone {
@@ -159,8 +168,8 @@ model FoodLogEntry {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
-  meal      String   @default("breakfast") // breakfast | lunch | dinner | snack
-  quantity  String? // free text e.g. "1 bowl"
+  meal      String   @default("breakfast")
+  quantity  String?
   calories  Float    @default(0)
   protein   Float    @default(0)
   carbs     Float    @default(0)
@@ -189,7 +198,7 @@ model MealPlanItem {
   id        String    @id @default(cuid())
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime // the planned day
+  date      DateTime
   meal      String    @default("breakfast")
   name      String
   notes     String?
@@ -202,13 +211,13 @@ model MealPlanItem {
 }
 
 model ShoppingItem {
-  id            String        @id @default(cuid())
-  mealPlanItem  MealPlanItem  @relation(fields: [mealPlanItemId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  mealPlanItem   MealPlanItem @relation(fields: [mealPlanItemId], references: [id], onDelete: Cascade)
   mealPlanItemId String
-  name          String
-  quantity      String?
-  checked       Boolean       @default(false)
-  createdAt     DateTime      @default(now())
+  name           String
+  quantity       String?
+  checked        Boolean      @default(false)
+  createdAt      DateTime     @default(now())
 
   @@index([mealPlanItemId])
 }
@@ -218,14 +227,17 @@ model ShoppingItem {
 // ----------------------------------------------------------------------------
 
 model Workout {
-  id        String            @id @default(cuid())
-  userId    String
-  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  notes     String?
-  date      DateTime
-  deletedAt DateTime?
-  createdAt DateTime          @default(now())
+  id           String            @id @default(cuid())
+  userId       String
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  activityType String            @default("gym") // run | swim | gym | other
+  notes        String?
+  date         DateTime
+  distanceM    Float?
+  durationMin  Int?
+  deletedAt    DateTime?
+  createdAt    DateTime          @default(now())
 
   exercises WorkoutExercise[]
 
@@ -272,7 +284,7 @@ model BodyMeasurement {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  label     String // e.g. waist, chest
+  label     String
   valueCm   Float
   date      DateTime
   createdAt DateTime @default(now())
@@ -290,12 +302,25 @@ model PrayerLog {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime
   prayer    String // fajr | dhuhr | asr | maghrib | isha
-  status    String   @default("ontime") // ontime | late | missed | na
+  status    String   @default("ontime") // ontime | missed
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, date, prayer])
   @@index([userId, date])
+}
+
+model QazaPrayer {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prayer      String
+  sourceDate  DateTime?
+  fulfilledAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, fulfilledAt])
+  @@index([userId, prayer])
 }
 
 model DhikrLog {
@@ -327,7 +352,7 @@ model FastingLog {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime
-  kind      String   @default("ramadan") // ramadan | voluntary | makeup
+  kind      String   @default("ramadan")
   completed Boolean  @default(true)
   note      String?
   createdAt DateTime @default(now())
@@ -346,7 +371,7 @@ model CareerGoal {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
   description String?
-  status      String    @default("active") // active | completed | abandoned
+  status      String    @default("active")
   targetDate  DateTime?
   deletedAt   DateTime?
   createdAt   DateTime  @default(now())
@@ -360,7 +385,7 @@ model Skill {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
-  level     Int       @default(1) // 1-5 self rating
+  level     Int       @default(1)
   notes     String?
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -370,16 +395,16 @@ model Skill {
 }
 
 model Certification {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name        String
-  issuer      String?
-  issuedAt    DateTime?
-  expiresAt   DateTime?
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  issuer       String?
+  issuedAt     DateTime?
+  expiresAt    DateTime?
   credentialId String?
-  deletedAt   DateTime?
-  createdAt   DateTime  @default(now())
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
 
   @@index([userId])
 }
@@ -405,8 +430,8 @@ model LearningEntry {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
-  kind      String    @default("course") // course | book | project | article
-  status    String    @default("in_progress") // in_progress | completed
+  kind      String    @default("course")
+  status    String    @default("in_progress")
   hours     Float     @default(0)
   skillName String?
   notes     String?
@@ -430,7 +455,7 @@ model Contact {
   role      String?
   email     String?
   phone     String?
-  tags      String? // comma-separated
+  tags      String?
   notes     String?
   deletedAt DateTime?
   createdAt DateTime      @default(now())
@@ -448,7 +473,7 @@ model Interaction {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   contactId String
   contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  type      String   @default("message") // call | meeting | message | event
+  type      String   @default("message")
   summary   String?
   date      DateTime
   createdAt DateTime @default(now())
