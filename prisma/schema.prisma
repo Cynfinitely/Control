@@ -51,6 +51,10 @@ model User {
   contacts           Contact[]
   interactions       Interaction[]
   followUps          FollowUp[]
+  dhikrTargets       DhikrTarget[]
+  waterLogs          WaterLog[]
+  journalEntries     JournalEntry[]
+  jobApplications    JobApplication[]
 }
 
 model VerificationToken {
@@ -94,13 +98,13 @@ model Todo {
   deletedAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  // deprecated — kept for migration safety
   notes       String?
   category    String?
-  priority    String    @default("medium")
+  priority    String    @default("medium") // low | medium | high
   dueDate     DateTime?
 
   @@index([userId, status])
+  @@index([userId, dueDate])
   @@index([userId, dayDate])
   @@index([userId, inBacklog])
 }
@@ -120,10 +124,10 @@ model Goal {
   targetValue  Float?
   currentValue Float           @default(0)
   status       String          @default("active") // active | completed
+  linkType     String?         // workout | learning | quran — auto-increment on linked actions
   deletedAt    DateTime?
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
-  // deprecated
   description  String?
   unit         String?
   targetDate   DateTime?
@@ -202,6 +206,10 @@ model MealPlanItem {
   meal      String    @default("breakfast")
   name      String
   notes     String?
+  calories  Float     @default(0)
+  protein   Float     @default(0)
+  carbs     Float     @default(0)
+  fat       Float     @default(0)
   deletedAt DateTime?
   createdAt DateTime  @default(now())
 
@@ -391,6 +399,8 @@ model Skill {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  learningEntries LearningEntry[]
+
   @@index([userId])
 }
 
@@ -433,6 +443,8 @@ model LearningEntry {
   kind      String    @default("course")
   status    String    @default("in_progress")
   hours     Float     @default(0)
+  skillId   String?
+  skill     Skill?    @relation(fields: [skillId], references: [id], onDelete: SetNull)
   skillName String?
   notes     String?
   date      DateTime
@@ -440,6 +452,7 @@ model LearningEntry {
   createdAt DateTime  @default(now())
 
   @@index([userId, date])
+  @@index([skillId])
 }
 
 // ----------------------------------------------------------------------------
@@ -447,24 +460,81 @@ model LearningEntry {
 // ----------------------------------------------------------------------------
 
 model Contact {
-  id        String        @id @default(cuid())
-  userId    String
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  org       String?
-  role      String?
-  email     String?
-  phone     String?
-  tags      String?
-  notes     String?
-  deletedAt DateTime?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  org              String?
+  role             String?
+  email            String?
+  phone            String?
+  tags             String?
+  notes            String?
+  birthday         DateTime?
+  touchCadenceDays Int?
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
-  interactions Interaction[]
-  followUps    FollowUp[]
+  interactions     Interaction[]
+  followUps        FollowUp[]
+  jobApplications  JobApplication[]
 
   @@index([userId])
+}
+
+model DhikrTarget {
+  id          String @id @default(cuid())
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  dailyTarget Int    @default(33)
+
+  @@unique([userId, name])
+}
+
+model WaterLog {
+  id      String   @id @default(cuid())
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date    DateTime
+  glasses Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  mood      Int?
+  wins      String?
+  blockers  String?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model JobApplication {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   String
+  role      String
+  stage     String    @default("applied") // applied | interview | offer | rejected | withdrawn
+  contactId String?
+  contact   Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  dueDate   DateTime?
+  notes     String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, stage])
 }
 
 model Interaction {

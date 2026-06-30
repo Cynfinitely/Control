@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { toDateInputValue, formatDate } from "@/lib/date";
+import { toDateInputValue, formatDate, addDays } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
@@ -18,6 +18,9 @@ import {
   deleteWorkExperience,
   createLearning,
   deleteLearning,
+  createJobApplication,
+  updateJobStage,
+  deleteJobApplication,
 } from "./actions";
 
 export default async function CareerPage() {
@@ -25,13 +28,30 @@ export default async function CareerPage() {
   const userId = user.id;
   const now = new Date();
 
-  const [goals, skills, certs, experiences, learning] = await Promise.all([
+  const [goals, skills, certs, experiences, learning, jobApps, contacts] = await Promise.all([
     prisma.careerGoal.findMany({ where: { userId, deletedAt: null }, orderBy: { createdAt: "desc" } }),
     prisma.skill.findMany({ where: { userId, deletedAt: null }, orderBy: { name: "asc" } }),
     prisma.certification.findMany({ where: { userId, deletedAt: null }, orderBy: { issuedAt: "desc" } }),
     prisma.workExperience.findMany({ where: { userId, deletedAt: null }, orderBy: { startDate: "desc" } }),
-    prisma.learningEntry.findMany({ where: { userId, deletedAt: null }, orderBy: { date: "desc" }, take: 20 }),
+    prisma.learningEntry.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { date: "desc" },
+      take: 20,
+      include: { skill: { select: { name: true } } },
+    }),
+    prisma.jobApplication.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { updatedAt: "desc" },
+      include: { contact: { select: { name: true } } },
+    }),
+    prisma.contact.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
   ]);
+
+  const certExpirySoon = addDays(now, 30);
 
   return (
     <div>
@@ -179,25 +199,36 @@ export default async function CareerPage() {
           </form>
         </details>
         <div className="space-y-2">
-          {certs.map((c) => (
-            <div key={c.id} className="card flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-slate-800">{c.name}</p>
-                <p className="text-xs text-slate-400">
-                  {c.issuer ?? "-"}
-                  {c.issuedAt && ` · issued ${formatDate(c.issuedAt)}`}
-                  {c.expiresAt && ` · expires ${formatDate(c.expiresAt)}`}
-                </p>
+          {certs.map((c) => {
+            const expiringSoon =
+              c.expiresAt && c.expiresAt <= certExpirySoon && c.expiresAt >= now;
+            const expired = c.expiresAt && c.expiresAt < now;
+            return (
+              <div key={c.id} className="card flex items-center justify-between py-3">
+                <div>
+                  <p className="font-medium text-slate-800">
+                    {c.name}
+                    {expired && <span className="ml-2 badge bg-red-100 text-red-700">Expired</span>}
+                    {expiringSoon && !expired && (
+                      <span className="ml-2 badge bg-amber-100 text-amber-700">Expiring soon</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {c.issuer ?? "-"}
+                    {c.issuedAt && ` · issued ${formatDate(c.issuedAt)}`}
+                    {c.expiresAt && ` · expires ${formatDate(c.expiresAt)}`}
+                  </p>
+                </div>
+                <form action={deleteCertification}>
+                  <input type="hidden" name="id" value={c.id} />
+                  <SubmitIconButton
+                    className="text-slate-300 hover:text-red-500"
+                    icon={<Icon name="trash" className="h-4 w-4" />}
+                  />
+                </form>
               </div>
-              <form action={deleteCertification}>
-                <input type="hidden" name="id" value={c.id} />
-                <SubmitIconButton
-                  className="text-slate-300 hover:text-red-500"
-                  icon={<Icon name="trash" className="h-4 w-4" />}
-                />
-              </form>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -296,7 +327,14 @@ export default async function CareerPage() {
             </div>
             <div>
               <label className="label">Related skill</label>
-              <input name="skillName" className="input" />
+              <select name="skillId" className="input" defaultValue="">
+                <option value="">— none —</option>
+                {skills.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="sm:col-span-3">
               <SubmitButton className="btn-primary">Add</SubmitButton>
@@ -313,7 +351,7 @@ export default async function CareerPage() {
                 </p>
                 <p className="text-xs text-slate-400">
                   {formatDate(l.date)} · {l.hours}h · {l.status === "completed" ? "completed" : "in progress"}
-                  {l.skillName && ` · ${l.skillName}`}
+                  {(l.skill?.name || l.skillName) && ` · ${l.skill?.name ?? l.skillName}`}
                 </p>
               </div>
               <form action={deleteLearning}>
@@ -323,6 +361,93 @@ export default async function CareerPage() {
                   icon={<Icon name="trash" className="h-4 w-4" />}
                 />
               </form>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Job applications */}
+      <section className="mt-8">
+        <h2 className="section-title mb-3">Job applications</h2>
+        <details className="card mb-3">
+          <summary className="cursor-pointer font-medium text-brand-700">+ Add application</summary>
+          <form action={createJobApplication} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label">Company</label>
+              <input name="company" className="input" required />
+            </div>
+            <div>
+              <label className="label">Role</label>
+              <input name="role" className="input" required />
+            </div>
+            <div>
+              <label className="label">Stage</label>
+              <select name="stage" className="input" defaultValue="applied">
+                <option value="applied">Applied</option>
+                <option value="interview">Interview</option>
+                <option value="offer">Offer</option>
+                <option value="rejected">Rejected</option>
+                <option value="withdrawn">Withdrawn</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Linked contact</label>
+              <select name="contactId" className="input" defaultValue="">
+                <option value="">— none —</option>
+                {contacts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Follow-up date</label>
+              <input name="dueDate" type="date" className="input" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label">Notes</label>
+              <textarea name="notes" className="input" rows={2} />
+            </div>
+            <div className="sm:col-span-2">
+              <SubmitButton className="btn-primary">Add</SubmitButton>
+            </div>
+          </form>
+        </details>
+        <div className="space-y-2">
+          {jobApps.length === 0 && <p className="text-sm text-slate-400">No job applications tracked.</p>}
+          {jobApps.map((j) => (
+            <div key={j.id} className="card flex flex-wrap items-center justify-between gap-3 py-3">
+              <div>
+                <p className="font-medium text-slate-800">
+                  {j.role} <span className="text-slate-400">@ {j.company}</span>
+                </p>
+                <p className="text-xs text-slate-400">
+                  <span className="badge bg-slate-100 capitalize text-slate-600">{j.stage}</span>
+                  {j.contact && ` · contact: ${j.contact.name}`}
+                  {j.dueDate && ` · follow up ${formatDate(j.dueDate)}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <form action={updateJobStage} className="flex items-center gap-1">
+                  <input type="hidden" name="id" value={j.id} />
+                  <select name="stage" className="input py-1 text-xs" defaultValue={j.stage}>
+                    <option value="applied">Applied</option>
+                    <option value="interview">Interview</option>
+                    <option value="offer">Offer</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="withdrawn">Withdrawn</option>
+                  </select>
+                  <SubmitButton className="text-xs text-brand-600">Update</SubmitButton>
+                </form>
+                <form action={deleteJobApplication}>
+                  <input type="hidden" name="id" value={j.id} />
+                  <SubmitIconButton
+                    className="text-slate-300 hover:text-red-500"
+                    icon={<Icon name="trash" className="h-4 w-4" />}
+                  />
+                </form>
+              </div>
             </div>
           ))}
         </div>

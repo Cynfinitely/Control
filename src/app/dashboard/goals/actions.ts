@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getUserId, str, num } from "@/lib/actions";
+import { getUserId, str, num, optStr } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { getPeriodKey, type GoalPeriod } from "@/lib/period";
 
@@ -15,7 +15,8 @@ export async function createGoal(formData: FormData) {
   if (!title) return;
   const period = (str(formData.get("period")) || "weekly") as GoalPeriod;
   const type = str(formData.get("type")) || "boolean";
-  const periodKey = getPeriodKey(period, new Date());
+  const periodKey = str(formData.get("periodKey")) || getPeriodKey(period, new Date());
+  const linkType = optStr(formData.get("linkType"));
   await prisma.goal.create({
     data: {
       userId,
@@ -23,6 +24,7 @@ export async function createGoal(formData: FormData) {
       period,
       periodKey,
       type,
+      linkType: type === "numeric" ? linkType : null,
       targetValue: type === "numeric" ? num(formData.get("targetValue"), 1) : null,
       currentValue: 0,
       status: "active",
@@ -50,6 +52,7 @@ export async function toggleGoalComplete(formData: FormData) {
 export async function incrementGoal(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));
+  const note = optStr(formData.get("note"));
   await prisma.goal.updateMany({
     where: { id, userId, type: "numeric" },
     data: { currentValue: { increment: 1 } },
@@ -58,11 +61,16 @@ export async function incrementGoal(formData: FormData) {
     where: { id, userId, type: "numeric" },
     select: { currentValue: true, targetValue: true },
   });
-  if (goal && goal.currentValue >= (goal.targetValue ?? 1)) {
-    await prisma.goal.updateMany({
-      where: { id, userId, status: "active" },
-      data: { status: "completed" },
+  if (goal) {
+    await prisma.goalCheckIn.create({
+      data: { goalId: id, value: 1, note },
     });
+    if (goal.currentValue >= (goal.targetValue ?? 1)) {
+      await prisma.goal.updateMany({
+        where: { id, userId, status: "active" },
+        data: { status: "completed" },
+      });
+    }
   }
   invalidate(userId);
 }
@@ -71,5 +79,78 @@ export async function deleteGoal(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   await prisma.goal.updateMany({ where: { id, userId }, data: { deletedAt: new Date() } });
+  invalidate(userId);
+}
+
+export async function addMilestone(formData: FormData) {
+  const userId = await getUserId();
+  const goalId = str(formData.get("goalId"));
+  const title = str(formData.get("title"));
+  if (!title) return;
+  const owns = await prisma.goal.findFirst({ where: { id: goalId, userId } });
+  if (!owns) return;
+  await prisma.goalMilestone.create({ data: { goalId, title } });
+  invalidate(userId);
+}
+
+export async function toggleMilestone(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  const goalId = str(formData.get("goalId"));
+  const ms = await prisma.goalMilestone.findFirst({
+    where: { id, goal: { userId, id: goalId } },
+  });
+  if (!ms) return;
+  await prisma.goalMilestone.update({
+    where: { id },
+    data: { done: !ms.done, completedAt: !ms.done ? new Date() : null },
+  });
+  invalidate(userId);
+}
+
+export async function deleteMilestone(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  const goalId = str(formData.get("goalId"));
+  const ms = await prisma.goalMilestone.findFirst({
+    where: { id, goal: { userId, id: goalId } },
+  });
+  if (!ms) return;
+  await prisma.goalMilestone.delete({ where: { id } });
+  invalidate(userId);
+}
+
+export async function rolloverGoals(formData: FormData) {
+  const userId = await getUserId();
+  const period = (str(formData.get("period")) || "weekly") as GoalPeriod;
+  const fromKey = str(formData.get("fromPeriodKey"));
+  const toKey = str(formData.get("toPeriodKey"));
+  if (!fromKey || !toKey || fromKey === toKey) return;
+
+  const incomplete = await prisma.goal.findMany({
+    where: {
+      userId,
+      deletedAt: null,
+      period,
+      periodKey: fromKey,
+      status: "active",
+    },
+  });
+
+  for (const g of incomplete) {
+    await prisma.goal.create({
+      data: {
+        userId,
+        title: g.title,
+        period: g.period,
+        periodKey: toKey,
+        type: g.type,
+        linkType: g.linkType,
+        targetValue: g.targetValue,
+        currentValue: g.type === "numeric" ? g.currentValue : 0,
+        status: "active",
+      },
+    });
+  }
   invalidate(userId);
 }

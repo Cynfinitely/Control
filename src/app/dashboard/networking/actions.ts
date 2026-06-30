@@ -26,15 +26,42 @@ export async function createContact(formData: FormData) {
       phone: optStr(formData.get("phone")),
       tags: optStr(formData.get("tags")),
       notes: optStr(formData.get("notes")),
+      birthday: parseOptionalDate(formData.get("birthday")),
+      touchCadenceDays: formData.get("touchCadenceDays")
+        ? parseInt(str(formData.get("touchCadenceDays")), 10) || null
+        : null,
     },
   });
   invalidateNetworking(userId);
 }
 
+export async function updateContact(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  await prisma.contact.updateMany({
+    where: { id, userId },
+    data: {
+      name: str(formData.get("name")),
+      org: optStr(formData.get("org")),
+      role: optStr(formData.get("role")),
+      email: optStr(formData.get("email")),
+      phone: optStr(formData.get("phone")),
+      tags: optStr(formData.get("tags")),
+      notes: optStr(formData.get("notes")),
+      birthday: parseOptionalDate(formData.get("birthday")),
+      touchCadenceDays: formData.get("touchCadenceDays")
+        ? parseInt(str(formData.get("touchCadenceDays")), 10) || null
+        : null,
+    },
+  });
+  invalidateNetworking(userId, id);
+}
+
 export async function deleteContact(formData: FormData) {
   const userId = await getUserId();
+  const id = str(formData.get("id"));
   await prisma.contact.updateMany({
-    where: { id: str(formData.get("id")), userId },
+    where: { id, userId },
     data: { deletedAt: new Date() },
   });
   invalidateNetworking(userId);
@@ -55,6 +82,19 @@ export async function logInteraction(formData: FormData) {
       date: parseDate(formData.get("date")),
     },
   });
+
+  if (str(formData.get("scheduleFollowUp")) === "on") {
+    const due = parseOptionalDate(formData.get("followUpDueDate"));
+    await prisma.followUp.create({
+      data: {
+        userId,
+        contactId,
+        note: optStr(formData.get("followUpNote")) || "Follow up after interaction",
+        dueDate: due,
+      },
+    });
+  }
+
   invalidateNetworking(userId, contactId);
 }
 
@@ -86,4 +126,12 @@ export async function toggleFollowUp(formData: FormData) {
     });
   }
   invalidateNetworking(userId, contactId || undefined);
+}
+
+export async function deleteInteraction(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  const contactId = str(formData.get("contactId"));
+  await prisma.interaction.deleteMany({ where: { id, userId, contactId } });
+  invalidateNetworking(userId, contactId);
 }

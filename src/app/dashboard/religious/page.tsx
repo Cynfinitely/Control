@@ -10,7 +10,7 @@ import PageHeader from "@/components/PageHeader";
 import DayNavigator from "@/components/DayNavigator";
 import SubmitButton from "@/components/SubmitButton";
 import PrayerStatusPanel from "./PrayerStatusPanel";
-import { fulfillQaza, logDhikr, logQuran, logFasting } from "./actions";
+import { fulfillQaza, logDhikr, logQuran, logFasting, saveDhikrTarget, deleteDhikrTarget } from "./actions";
 
 const PRAYERS = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
 
@@ -35,7 +35,7 @@ export default async function ReligiousPage({
     getReligiousSidebarData(user.id, todayKey),
   ]);
 
-  const { pendingQaza, dhikr, quran, fasts } = sidebar;
+  const { pendingQaza, dhikr, quran, fasts, dhikrTargets } = sidebar;
 
   const prayerStatuses = Object.fromEntries(
     PRAYERS.map((p) => [p, dayPrayers.find((t) => t.prayer === p)?.status])
@@ -135,6 +135,45 @@ export default async function ReligiousPage({
             <input type="hidden" name="date" value={toDateInputValue(now)} />
             <SubmitButton className="btn-primary touch-target w-full">Log dhikr</SubmitButton>
           </form>
+          {dhikrTargets.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-medium text-slate-500">Daily targets</p>
+              {dhikrTargets.map((t) => {
+                const logged = dhikr.filter((d) => d.name === t.name).reduce((s, d) => s + d.count, 0);
+                const pct = Math.min(100, Math.round((logged / t.dailyTarget) * 100));
+                return (
+                  <div key={t.id}>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-700">{t.name}</span>
+                      <span className="text-slate-500">
+                        {logged}/{t.dailyTarget}
+                      </span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full bg-brand-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-brand-600">Manage targets</summary>
+            <form action={saveDhikrTarget} className="mt-2 flex flex-wrap gap-2">
+              <input name="name" className="input flex-1 py-1 text-xs" placeholder="Dhikr name" required />
+              <input name="dailyTarget" type="number" className="input w-20 py-1 text-xs" defaultValue={33} />
+              <SubmitButton className="btn-ghost py-1 text-xs">Set</SubmitButton>
+            </form>
+            {dhikrTargets.map((t) => (
+              <form key={t.id} action={deleteDhikrTarget} className="mt-1 flex items-center justify-between text-xs">
+                <span className="text-slate-500">
+                  {t.name} · {t.dailyTarget}/day
+                </span>
+                <SubmitButton className="text-red-500">Remove</SubmitButton>
+                <input type="hidden" name="id" value={t.id} />
+              </form>
+            ))}
+          </details>
           <div className="mt-4 space-y-1">
             {dhikr.map((d) => (
               <div key={d.id} className="flex justify-between text-sm text-slate-500">

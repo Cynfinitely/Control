@@ -39,3 +39,18 @@ export function periodLabel(period: GoalPeriod, key: string): string {
   }
   return key;
 }
+
+/** Shift reference date by N periods (negative = past). */
+export function shiftPeriodDate(period: GoalPeriod, offset: number, ref = new Date()): Date {
+  const d = new Date(ref);
+  if (period === "weekly") {
+    d.setDate(d.getDate() + offset * 7);
+    return d;
+  }
+  if (period === "monthly") {
+    d.setMonth(d.getMonth() + offset);
+    return d;
+  }
+  d.setFullYear(d.getFullYear() + offset);
+  return d;
+}

@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
+import { incrementLinkedGoals } from "@/lib/goal-links";
 
 function invalidateCareer(userId: string) {
-  revalidateUserCache(userId, "career");
+  revalidateUserCache(userId, "career", "dashboard");
   revalidatePath("/dashboard/career");
 }
 
@@ -134,6 +135,15 @@ export async function createLearning(formData: FormData) {
   const userId = await getUserId();
   const title = str(formData.get("title"));
   if (!title) return;
+  const skillId = optStr(formData.get("skillId"));
+  let skillName = optStr(formData.get("skillName"));
+  const date = parseDate(formData.get("date"));
+
+  if (skillId) {
+    const skill = await prisma.skill.findFirst({ where: { id: skillId, userId } });
+    if (skill) skillName = skill.name;
+  }
+
   await prisma.learningEntry.create({
     data: {
       userId,
@@ -141,17 +151,57 @@ export async function createLearning(formData: FormData) {
       kind: str(formData.get("kind")) || "course",
       status: str(formData.get("status")) || "in_progress",
       hours: num(formData.get("hours")),
-      skillName: optStr(formData.get("skillName")),
+      skillId: skillId ?? null,
+      skillName,
       notes: optStr(formData.get("notes")),
-      date: parseDate(formData.get("date")),
+      date,
     },
   });
+
+  await incrementLinkedGoals(userId, "learning", date, num(formData.get("hours")) || 1);
   invalidateCareer(userId);
 }
 
 export async function deleteLearning(formData: FormData) {
   const userId = await getUserId();
   await prisma.learningEntry.updateMany({
+    where: { id: str(formData.get("id")), userId },
+    data: { deletedAt: new Date() },
+  });
+  invalidateCareer(userId);
+}
+
+export async function createJobApplication(formData: FormData) {
+  const userId = await getUserId();
+  const company = str(formData.get("company"));
+  const role = str(formData.get("role"));
+  if (!company || !role) return;
+  await prisma.jobApplication.create({
+    data: {
+      userId,
+      company,
+      role,
+      stage: str(formData.get("stage")) || "applied",
+      contactId: optStr(formData.get("contactId")),
+      dueDate: parseOptionalDate(formData.get("dueDate")),
+      notes: optStr(formData.get("notes")),
+    },
+  });
+  invalidateCareer(userId);
+}
+
+export async function updateJobStage(formData: FormData) {
+  const userId = await getUserId();
+  await prisma.jobApplication.updateMany({
+    where: { id: str(formData.get("id")), userId },
+    data: { stage: str(formData.get("stage")) },
+  });
+  invalidateCareer(userId);
+}
+
+export async function deleteJobApplication(formData: FormData) {
+  const userId = await getUserId();
+  await prisma.jobApplication.updateMany({
     where: { id: str(formData.get("id")), userId },
     data: { deletedAt: new Date() },
   });

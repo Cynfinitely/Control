@@ -11,6 +11,7 @@ import {
   deletePlanItem,
   addShoppingItem,
   toggleShoppingItem,
+  logFromPlan,
 } from "../actions";
 
 const MEALS = ["breakfast", "lunch", "dinner", "snack"];
@@ -66,9 +67,18 @@ export default async function PlannerPage() {
                       </form>
                     </div>
                     <p className="text-slate-800">{it.name}</p>
+                    {it.calories > 0 && (
+                      <p className="text-xs text-slate-400">{Math.round(it.calories)} kcal</p>
+                    )}
                     {it.ingredients.length > 0 && (
                       <p className="mt-1 text-slate-400">{it.ingredients.length} items</p>
                     )}
+                    <form action={logFromPlan} className="mt-1">
+                      <input type="hidden" name="planId" value={it.id} />
+                      <SubmitButton className="btn-ghost py-0.5 text-xs text-brand-600">
+                        Log to diary
+                      </SubmitButton>
+                    </form>
                     <details className="mt-1">
                       <summary className="cursor-pointer text-brand-600">+ item</summary>
                       <form action={addShoppingItem} className="mt-1 space-y-1">
@@ -95,6 +105,7 @@ export default async function PlannerPage() {
                     ))}
                   </select>
                   <input name="name" className="input py-1 text-xs" placeholder="meal name" required />
+                  <input name="calories" type="number" className="input py-1 text-xs" placeholder="kcal (optional)" />
                   <SubmitButton className="btn-primary w-full py-1 text-xs">Add meal</SubmitButton>
                 </form>
               </details>

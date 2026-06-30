@@ -43,16 +43,36 @@ export default async function TodosPage({
         )}
       </div>
 
-      <form action={createTodo} className="card mb-6 flex gap-2">
+      <form action={createTodo} className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <input type="hidden" name="dayDate" value={dayValue} />
-        <input
-          name="title"
-          className="input flex-1"
-          placeholder="Add a todo for this day…"
-          required
-          autoComplete="off"
-        />
-        <SubmitButton className="btn-primary touch-target shrink-0">Add</SubmitButton>
+        <div className="sm:col-span-2 lg:col-span-4">
+          <input
+            name="title"
+            className="input w-full"
+            placeholder="Add a todo for this day…"
+            required
+            autoComplete="off"
+          />
+        </div>
+        <div>
+          <label className="label">Priority</label>
+          <select name="priority" className="input" defaultValue="medium">
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div>
+          <label className="label">Category</label>
+          <input name="category" className="input" placeholder="e.g. work, health" />
+        </div>
+        <div>
+          <label className="label">Due date</label>
+          <input name="dueDate" type="date" className="input" />
+        </div>
+        <div className="flex items-end">
+          <SubmitButton className="btn-primary touch-target w-full">Add</SubmitButton>
+        </div>
       </form>
 
       <TodoList initialTodos={dayTodos} />

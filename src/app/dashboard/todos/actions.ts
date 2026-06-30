@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getUserId, str, parseDate } from "@/lib/actions";
+import { getUserId, str, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay, endOfDay } from "@/lib/date";
 
@@ -14,8 +14,11 @@ export async function createTodo(formData: FormData) {
   const title = str(formData.get("title"));
   if (!title) return;
   const dayDate = startOfDay(parseDate(formData.get("dayDate")));
+  const priority = str(formData.get("priority")) || "medium";
+  const category = str(formData.get("category")) || null;
+  const dueDate = parseOptionalDate(formData.get("dueDate"));
   await prisma.todo.create({
-    data: { userId, title, dayDate, inBacklog: false },
+    data: { userId, title, dayDate, inBacklog: false, priority, category, dueDate },
   });
   invalidate(userId);
 }

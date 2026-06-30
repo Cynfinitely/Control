@@ -12,6 +12,8 @@ import {
   deleteWorkout,
   logWeight,
   logMeasurement,
+  deleteWeight,
+  deleteMeasurement,
 } from "./actions";
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -226,9 +228,18 @@ export default async function ExercisePage() {
           </form>
           <div className="mt-4 space-y-1">
             {weights.map((w) => (
-              <div key={w.id} className="flex justify-between text-sm text-slate-500">
+              <div key={w.id} className="flex items-center justify-between text-sm text-slate-500">
                 <span>{formatDate(w.date)}</span>
-                <span className="font-medium text-slate-700">{w.weightKg} kg</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-slate-700">{w.weightKg} kg</span>
+                  <form action={deleteWeight}>
+                    <input type="hidden" name="id" value={w.id} />
+                    <SubmitIconButton
+                      className="text-slate-300 hover:text-red-500"
+                      icon={<Icon name="trash" className="h-3 w-3" />}
+                    />
+                  </form>
+                </div>
               </div>
             ))}
           </div>
@@ -253,11 +264,20 @@ export default async function ExercisePage() {
           </form>
           <div className="mt-4 space-y-1">
             {measurements.map((m) => (
-              <div key={m.id} className="flex justify-between text-sm text-slate-500">
+              <div key={m.id} className="flex items-center justify-between text-sm text-slate-500">
                 <span className="capitalize">
                   {m.label} <span className="text-slate-300">· {formatDate(m.date)}</span>
                 </span>
-                <span className="font-medium text-slate-700">{m.valueCm} cm</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-slate-700">{m.valueCm} cm</span>
+                  <form action={deleteMeasurement}>
+                    <input type="hidden" name="id" value={m.id} />
+                    <SubmitIconButton
+                      className="text-slate-300 hover:text-red-500"
+                      icon={<Icon name="trash" className="h-3 w-3" />}
+                    />
+                  </form>
+                </div>
               </div>
             ))}
           </div>

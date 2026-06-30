@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay } from "@/lib/date";
+import { incrementLinkedGoals } from "@/lib/goal-links";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "religious", "dashboard");
@@ -70,14 +71,19 @@ export async function logDhikr(formData: FormData) {
 
 export async function logQuran(formData: FormData) {
   const userId = await getUserId();
+  const date = startOfDay(parseDate(formData.get("date")));
+  const pagesRead = num(formData.get("pagesRead"));
   await prisma.quranProgress.create({
     data: {
       userId,
-      pagesRead: num(formData.get("pagesRead")),
+      pagesRead,
       note: optStr(formData.get("note")),
-      date: startOfDay(parseDate(formData.get("date"))),
+      date,
     },
   });
+  if (pagesRead > 0) {
+    await incrementLinkedGoals(userId, "quran", date, pagesRead);
+  }
   invalidate(userId);
 }
 
@@ -94,5 +100,25 @@ export async function logFasting(formData: FormData) {
       note: optStr(formData.get("note")),
     },
   });
+  invalidate(userId);
+}
+
+export async function saveDhikrTarget(formData: FormData) {
+  const userId = await getUserId();
+  const name = str(formData.get("name"));
+  const dailyTarget = num(formData.get("dailyTarget"), 33);
+  if (!name) return;
+  await prisma.dhikrTarget.upsert({
+    where: { userId_name: { userId, name } },
+    update: { dailyTarget },
+    create: { userId, name, dailyTarget },
+  });
+  invalidate(userId);
+}
+
+export async function deleteDhikrTarget(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  await prisma.dhikrTarget.deleteMany({ where: { id, userId } });
   invalidate(userId);
 }

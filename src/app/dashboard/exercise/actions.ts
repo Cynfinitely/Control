@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { incrementLinkedGoals } from "@/lib/goal-links";
 import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 
@@ -24,6 +25,7 @@ export async function createGymWorkout(formData: FormData) {
       date: parseDate(formData.get("date")),
     },
   });
+  await incrementLinkedGoals(userId, "workout", workout.date);
   invalidateExercise(userId);
   redirect(`/dashboard/exercise/${workout.id}`);
 }
@@ -60,6 +62,7 @@ export async function createCardioWorkout(formData: FormData) {
       notes: notes ?? (activityType === "other" ? optStr(formData.get("description")) : null),
     },
   });
+  await incrementLinkedGoals(userId, "workout", date);
   invalidateExercise(userId);
 }
 
@@ -145,5 +148,19 @@ export async function logMeasurement(formData: FormData) {
   await prisma.bodyMeasurement.create({
     data: { userId, label, valueCm, date: parseDate(formData.get("date")) },
   });
+  invalidateExercise(userId);
+}
+
+export async function deleteWeight(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  await prisma.bodyWeightLog.deleteMany({ where: { id, userId } });
+  invalidateExercise(userId);
+}
+
+export async function deleteMeasurement(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  await prisma.bodyMeasurement.deleteMany({ where: { id, userId } });
   invalidateExercise(userId);
 }

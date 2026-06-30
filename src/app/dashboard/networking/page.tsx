@@ -7,9 +7,14 @@ import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
 import { createContact, toggleFollowUp } from "./actions";
 
-export default async function NetworkingPage() {
+export default async function NetworkingPage({
+  searchParams,
+}: {
+  searchParams: { tag?: string };
+}) {
   const user = await requireUser();
   const userId = user.id;
+  const tagFilter = searchParams.tag?.trim();
 
   const [contacts, pendingFollowUps] = await Promise.all([
     prisma.contact.findMany({
@@ -25,6 +30,21 @@ export default async function NetworkingPage() {
       include: { contact: true },
     }),
   ]);
+
+  const allTags = [
+    ...new Set(
+      contacts.flatMap((c) => (c.tags ? c.tags.split(",").map((t) => t.trim()) : [])).filter(Boolean)
+    ),
+  ].sort();
+
+  const filtered = tagFilter
+    ? contacts.filter((c) =>
+        c.tags
+          ?.split(",")
+          .map((t) => t.trim().toLowerCase())
+          .includes(tagFilter.toLowerCase())
+      )
+    : contacts;
 
   const dormantThreshold = addDays(new Date(), -30);
 
@@ -58,6 +78,32 @@ export default async function NetworkingPage() {
         </div>
       )}
 
+      {allTags.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/networking"
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              !tagFilter ? "bg-brand-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200"
+            }`}
+          >
+            All
+          </Link>
+          {allTags.map((tag) => (
+            <Link
+              key={tag}
+              href={`/dashboard/networking?tag=${encodeURIComponent(tag)}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                tagFilter?.toLowerCase() === tag.toLowerCase()
+                  ? "bg-brand-600 text-white"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200"
+              }`}
+            >
+              {tag}
+            </Link>
+          ))}
+        </div>
+      )}
+
       <details className="card mb-6">
         <summary className="cursor-pointer font-medium text-brand-700">+ Add contact</summary>
         <form action={createContact} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -85,6 +131,10 @@ export default async function NetworkingPage() {
             <label className="label">Phone</label>
             <input name="phone" className="input" />
           </div>
+          <div>
+            <label className="label">Touch every (days)</label>
+            <input name="touchCadenceDays" type="number" className="input" placeholder="e.g. 14" />
+          </div>
           <div className="sm:col-span-2">
             <label className="label">Notes</label>
             <textarea name="notes" className="input" rows={2} />
@@ -95,12 +145,17 @@ export default async function NetworkingPage() {
         </form>
       </details>
 
-      <h2 className="section-title mb-3">Contacts ({contacts.length})</h2>
+      <h2 className="section-title mb-3">
+        Contacts ({filtered.length}
+        {tagFilter ? ` · ${tagFilter}` : ""})
+      </h2>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {contacts.length === 0 && <p className="text-sm text-slate-400">No contacts yet.</p>}
-        {contacts.map((c) => {
+        {filtered.length === 0 && <p className="text-sm text-slate-400">No contacts yet.</p>}
+        {filtered.map((c) => {
           const last = c.interactions[0];
-          const dormant = !last || last.date < dormantThreshold;
+          const cadenceDays = c.touchCadenceDays ?? 30;
+          const cadenceThreshold = addDays(new Date(), -cadenceDays);
+          const dormant = !last || last.date < cadenceThreshold;
           return (
             <Link key={c.id} href={`/dashboard/networking/${c.id}`} className="card transition hover:shadow-md">
               <div className="flex items-start justify-between">
@@ -116,7 +171,7 @@ export default async function NetworkingPage() {
                 </div>
                 {dormant && (
                   <span className="badge bg-amber-100 text-amber-700">
-                    {last ? "30d+ silent" : "no contact"}
+                    {last ? `${cadenceDays}d+ silent` : "no contact"}
                   </span>
                 )}
               </div>

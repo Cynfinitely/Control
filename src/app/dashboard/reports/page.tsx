@@ -48,12 +48,27 @@ export default async function ReportsPage({
           <div key={section.title} className="card">
             <h2 className="section-title mb-3">{section.title}</h2>
             <div className="grid grid-cols-2 gap-3">
-              {section.stats.map((s) => (
-                <div key={s.label} className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-xl font-bold text-slate-900">{s.value}</p>
-                  <p className="text-xs text-slate-500">{s.label}</p>
-                </div>
-              ))}
+              {section.stats.map((s) => {
+                const inner = (
+                  <>
+                    <p className="text-xl font-bold text-slate-900">{s.value}</p>
+                    <p className="text-xs text-slate-500">{s.label}</p>
+                  </>
+                );
+                return s.href ? (
+                  <Link
+                    key={s.label}
+                    href={s.href}
+                    className="rounded-lg bg-slate-50 p-3 transition hover:bg-brand-50 hover:ring-1 hover:ring-brand-200"
+                  >
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={s.label} className="rounded-lg bg-slate-50 p-3">
+                    {inner}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}

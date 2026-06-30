@@ -2,6 +2,19 @@ import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
 import type { GoalPeriod } from "@/lib/period";
 
+export type GoalMilestoneItem = {
+  id: string;
+  title: string;
+  done: boolean;
+};
+
+export type GoalCheckInItem = {
+  id: string;
+  value: number;
+  note: string | null;
+  date: Date;
+};
+
 export type GoalItem = {
   id: string;
   title: string;
@@ -9,6 +22,9 @@ export type GoalItem = {
   targetValue: number | null;
   currentValue: number;
   status: string;
+  linkType: string | null;
+  milestones: GoalMilestoneItem[];
+  checkIns: GoalCheckInItem[];
 };
 
 export async function getGoalsForPeriod(userId: string, period: GoalPeriod, periodKey: string) {
@@ -26,6 +42,16 @@ export async function getGoalsForPeriod(userId: string, period: GoalPeriod, peri
           targetValue: true,
           currentValue: true,
           status: true,
+          linkType: true,
+          milestones: {
+            orderBy: { createdAt: "asc" },
+            select: { id: true, title: true, done: true },
+          },
+          checkIns: {
+            orderBy: { date: "desc" },
+            take: 5,
+            select: { id: true, value: true, note: true, date: true },
+          },
         },
       })
   );

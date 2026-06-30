@@ -2,18 +2,27 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { toDateInputValue, formatDate } from "@/lib/date";
+import { toDateInputValue, formatDate, addDays } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
-import { logInteraction, addFollowUp, toggleFollowUp, deleteContact } from "../actions";
+import {
+  logInteraction,
+  addFollowUp,
+  toggleFollowUp,
+  deleteContact,
+  updateContact,
+  deleteInteraction,
+} from "../actions";
 
 const TYPES = ["call", "meeting", "message", "event"];
 
 export default async function ContactDetail({ params }: { params: { id: string } }) {
   const user = await requireUser();
   const now = new Date();
+  const followUpDefault = toDateInputValue(addDays(now, 14));
+
   const contact = await prisma.contact.findFirst({
     where: { id: params.id, userId: user.id, deletedAt: null },
     include: {
@@ -39,18 +48,39 @@ export default async function ContactDetail({ params }: { params: { id: string }
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="card lg:col-span-1">
           <h2 className="section-title mb-2">Details</h2>
-          <dl className="space-y-1 text-sm">
-            {contact.email && (
-              <div className="flex justify-between"><dt className="text-slate-400">Email</dt><dd>{contact.email}</dd></div>
-            )}
-            {contact.phone && (
-              <div className="flex justify-between"><dt className="text-slate-400">Phone</dt><dd>{contact.phone}</dd></div>
-            )}
-            {contact.tags && (
-              <div className="flex justify-between"><dt className="text-slate-400">Tags</dt><dd>{contact.tags}</dd></div>
-            )}
-          </dl>
-          {contact.notes && <p className="mt-3 text-sm text-slate-500">{contact.notes}</p>}
+          <form action={updateContact} className="space-y-2">
+            <input type="hidden" name="id" value={contact.id} />
+            <div>
+              <label className="label">Name</label>
+              <input name="name" className="input" defaultValue={contact.name} required />
+            </div>
+            <div>
+              <label className="label">Email</label>
+              <input name="email" type="email" className="input" defaultValue={contact.email ?? ""} />
+            </div>
+            <div>
+              <label className="label">Phone</label>
+              <input name="phone" className="input" defaultValue={contact.phone ?? ""} />
+            </div>
+            <div>
+              <label className="label">Tags</label>
+              <input name="tags" className="input" defaultValue={contact.tags ?? ""} />
+            </div>
+            <div>
+              <label className="label">Touch every (days)</label>
+              <input
+                name="touchCadenceDays"
+                type="number"
+                className="input"
+                defaultValue={contact.touchCadenceDays ?? ""}
+              />
+            </div>
+            <div>
+              <label className="label">Notes</label>
+              <textarea name="notes" className="input" rows={2} defaultValue={contact.notes ?? ""} />
+            </div>
+            <SubmitButton className="btn-primary w-full text-sm">Save changes</SubmitButton>
+          </form>
           <form action={deleteContact} className="mt-4">
             <input type="hidden" name="id" value={contact.id} />
             <SubmitButton className="btn-danger w-full">
@@ -97,27 +127,37 @@ export default async function ContactDetail({ params }: { params: { id: string }
 
       <div className="card">
         <h2 className="section-title mb-3">Interactions</h2>
-        <form action={logInteraction} className="mb-4 flex flex-wrap items-end gap-2">
+        <form action={logInteraction} className="mb-4 space-y-3">
           <input type="hidden" name="contactId" value={contact.id} />
-          <div>
-            <label className="label">Type</label>
-            <select name="type" className="input" defaultValue="message">
-              {TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <label className="label">Type</label>
+              <select name="type" className="input" defaultValue="message">
+                {TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Date</label>
+              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
+            </div>
+            <div className="flex-1">
+              <label className="label">Summary</label>
+              <input name="summary" className="input" placeholder="What was discussed?" />
+            </div>
           </div>
-          <div>
-            <label className="label">Date</label>
-            <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            <input name="scheduleFollowUp" type="checkbox" defaultChecked />
+            Schedule follow-up in 2 weeks
+          </label>
+          <div className="flex flex-wrap gap-2 pl-6">
+            <input name="followUpNote" className="input flex-1" placeholder="Follow-up note" />
+            <input name="followUpDueDate" type="date" className="input" defaultValue={followUpDefault} />
           </div>
-          <div className="flex-1">
-            <label className="label">Summary</label>
-            <input name="summary" className="input" placeholder="What was discussed?" />
-          </div>
-          <SubmitButton className="btn-primary">Log</SubmitButton>
+          <SubmitButton className="btn-primary">Log interaction</SubmitButton>
         </form>
         <div className="space-y-2">
           {contact.interactions.length === 0 && (
@@ -130,6 +170,14 @@ export default async function ContactDetail({ params }: { params: { id: string }
                 {it.summary && <p className="text-slate-700">{it.summary}</p>}
                 <p className="text-xs text-slate-400">{formatDate(it.date)}</p>
               </div>
+              <form action={deleteInteraction}>
+                <input type="hidden" name="id" value={it.id} />
+                <input type="hidden" name="contactId" value={contact.id} />
+                <SubmitIconButton
+                  className="text-slate-300 hover:text-red-500"
+                  icon={<Icon name="trash" className="h-3 w-3" />}
+                />
+              </form>
             </div>
           ))}
         </div>
