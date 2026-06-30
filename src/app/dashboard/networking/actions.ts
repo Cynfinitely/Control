@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, parseDate, parseOptionalDate } from "@/lib/actions";
+import { revalidateUserCache } from "@/lib/cache";
+
+function invalidateNetworking(userId: string, contactId?: string) {
+  revalidateUserCache(userId, "dashboard", "networking");
+  revalidatePath("/dashboard/networking");
+  if (contactId) revalidatePath(`/dashboard/networking/${contactId}`);
+}
 
 export async function createContact(formData: FormData) {
   const userId = await getUserId();
@@ -21,7 +28,7 @@ export async function createContact(formData: FormData) {
       notes: optStr(formData.get("notes")),
     },
   });
-  revalidatePath("/dashboard/networking");
+  invalidateNetworking(userId);
 }
 
 export async function deleteContact(formData: FormData) {
@@ -30,7 +37,7 @@ export async function deleteContact(formData: FormData) {
     where: { id: str(formData.get("id")), userId },
     data: { deletedAt: new Date() },
   });
-  revalidatePath("/dashboard/networking");
+  invalidateNetworking(userId);
   redirect("/dashboard/networking");
 }
 
@@ -48,7 +55,7 @@ export async function logInteraction(formData: FormData) {
       date: parseDate(formData.get("date")),
     },
   });
-  revalidatePath(`/dashboard/networking/${contactId}`);
+  invalidateNetworking(userId, contactId);
 }
 
 export async function addFollowUp(formData: FormData) {
@@ -61,16 +68,22 @@ export async function addFollowUp(formData: FormData) {
   await prisma.followUp.create({
     data: { userId, contactId, note, dueDate: parseOptionalDate(formData.get("dueDate")) },
   });
-  revalidatePath(`/dashboard/networking/${contactId}`);
-  revalidatePath("/dashboard/networking");
+  invalidateNetworking(userId, contactId);
 }
 
 export async function toggleFollowUp(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  const fu = await prisma.followUp.findFirst({ where: { id, userId } });
-  if (!fu) return;
-  await prisma.followUp.update({ where: { id }, data: { done: !fu.done } });
-  revalidatePath(`/dashboard/networking/${fu.contactId}`);
-  revalidatePath("/dashboard/networking");
+  const contactId = str(formData.get("contactId"));
+  const toDone = await prisma.followUp.updateMany({
+    where: { id, userId, done: false },
+    data: { done: true },
+  });
+  if (toDone.count === 0) {
+    await prisma.followUp.updateMany({
+      where: { id, userId, done: true },
+      data: { done: false },
+    });
+  }
+  invalidateNetworking(userId, contactId || undefined);
 }

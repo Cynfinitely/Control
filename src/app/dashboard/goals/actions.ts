@@ -1,9 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, num } from "@/lib/actions";
+import { revalidateUserCache } from "@/lib/cache";
 import { getPeriodKey, type GoalPeriod } from "@/lib/period";
+
+function invalidate(userId: string) {
+  revalidateUserCache(userId, "goals", "dashboard");
+}
 
 export async function createGoal(formData: FormData) {
   const userId = await getUserId();
@@ -24,42 +28,48 @@ export async function createGoal(formData: FormData) {
       status: "active",
     },
   });
-  revalidatePath("/dashboard/goals");
+  invalidate(userId);
 }
 
 export async function toggleGoalComplete(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  const goal = await prisma.goal.findFirst({ where: { id, userId } });
-  if (!goal || goal.type !== "boolean") return;
-  const completed = goal.status !== "completed";
-  await prisma.goal.update({
-    where: { id },
-    data: { status: completed ? "completed" : "active" },
+  const toCompleted = await prisma.goal.updateMany({
+    where: { id, userId, type: "boolean", status: "active" },
+    data: { status: "completed" },
   });
-  revalidatePath("/dashboard/goals");
+  if (toCompleted.count === 0) {
+    await prisma.goal.updateMany({
+      where: { id, userId, type: "boolean", status: "completed" },
+      data: { status: "active" },
+    });
+  }
+  invalidate(userId);
 }
 
 export async function incrementGoal(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  const goal = await prisma.goal.findFirst({ where: { id, userId, type: "numeric" } });
-  if (!goal) return;
-  const next = goal.currentValue + 1;
-  const target = goal.targetValue ?? 1;
-  await prisma.goal.update({
-    where: { id },
-    data: {
-      currentValue: next,
-      status: next >= target ? "completed" : "active",
-    },
+  await prisma.goal.updateMany({
+    where: { id, userId, type: "numeric" },
+    data: { currentValue: { increment: 1 } },
   });
-  revalidatePath("/dashboard/goals");
+  const goal = await prisma.goal.findFirst({
+    where: { id, userId, type: "numeric" },
+    select: { currentValue: true, targetValue: true },
+  });
+  if (goal && goal.currentValue >= (goal.targetValue ?? 1)) {
+    await prisma.goal.updateMany({
+      where: { id, userId, status: "active" },
+      data: { status: "completed" },
+    });
+  }
+  invalidate(userId);
 }
 
 export async function deleteGoal(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   await prisma.goal.updateMany({ where: { id, userId }, data: { deletedAt: new Date() } });
-  revalidatePath("/dashboard/goals");
+  invalidate(userId);
 }

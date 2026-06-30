@@ -39,6 +39,7 @@ export default async function NetworkingPage() {
             {pendingFollowUps.map((f) => (
               <form key={f.id} action={toggleFollowUp} className="flex items-center gap-3">
                 <input type="hidden" name="id" value={f.id} />
+                <input type="hidden" name="contactId" value={f.contactId} />
                 <SubmitIconButton
                   className="h-4 w-4 rounded border border-slate-300 hover:border-brand-500"
                   title="Mark done"

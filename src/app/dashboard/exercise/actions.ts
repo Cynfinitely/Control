@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
+import { revalidateUserCache } from "@/lib/cache";
+
+function invalidateExercise(userId: string, workoutId?: string) {
+  revalidateUserCache(userId, "dashboard", "exercise");
+  revalidatePath("/dashboard/exercise");
+  if (workoutId) revalidatePath(`/dashboard/exercise/${workoutId}`);
+}
 
 export async function createGymWorkout(formData: FormData) {
   const userId = await getUserId();
@@ -17,7 +24,7 @@ export async function createGymWorkout(formData: FormData) {
       date: parseDate(formData.get("date")),
     },
   });
-  revalidatePath("/dashboard/exercise");
+  invalidateExercise(userId);
   redirect(`/dashboard/exercise/${workout.id}`);
 }
 
@@ -53,14 +60,14 @@ export async function createCardioWorkout(formData: FormData) {
       notes: notes ?? (activityType === "other" ? optStr(formData.get("description")) : null),
     },
   });
-  revalidatePath("/dashboard/exercise");
+  invalidateExercise(userId);
 }
 
 export async function deleteWorkout(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   await prisma.workout.updateMany({ where: { id, userId }, data: { deletedAt: new Date() } });
-  revalidatePath("/dashboard/exercise");
+  invalidateExercise(userId);
 }
 
 export async function addExercise(formData: FormData) {
@@ -72,7 +79,7 @@ export async function addExercise(formData: FormData) {
   if (!owns) return;
   const count = await prisma.workoutExercise.count({ where: { workoutId } });
   await prisma.workoutExercise.create({ data: { workoutId, name, order: count } });
-  revalidatePath(`/dashboard/exercise/${workoutId}`);
+  invalidateExercise(userId, workoutId);
 }
 
 export async function deleteExercise(formData: FormData) {
@@ -84,7 +91,7 @@ export async function deleteExercise(formData: FormData) {
   });
   if (!ex) return;
   await prisma.workoutExercise.delete({ where: { id } });
-  revalidatePath(`/dashboard/exercise/${workoutId}`);
+  invalidateExercise(userId, workoutId);
 }
 
 export async function addSet(formData: FormData) {
@@ -105,7 +112,7 @@ export async function addSet(formData: FormData) {
       order: count,
     },
   });
-  revalidatePath(`/dashboard/exercise/${workoutId}`);
+  invalidateExercise(userId, workoutId);
 }
 
 export async function deleteSet(formData: FormData) {
@@ -117,7 +124,7 @@ export async function deleteSet(formData: FormData) {
   });
   if (!set) return;
   await prisma.exerciseSet.delete({ where: { id } });
-  revalidatePath(`/dashboard/exercise/${workoutId}`);
+  invalidateExercise(userId, workoutId);
 }
 
 export async function logWeight(formData: FormData) {
@@ -127,7 +134,7 @@ export async function logWeight(formData: FormData) {
   await prisma.bodyWeightLog.create({
     data: { userId, weightKg, date: parseDate(formData.get("date")) },
   });
-  revalidatePath("/dashboard/exercise");
+  invalidateExercise(userId);
 }
 
 export async function logMeasurement(formData: FormData) {
@@ -138,5 +145,5 @@ export async function logMeasurement(formData: FormData) {
   await prisma.bodyMeasurement.create({
     data: { userId, label, valueCm, date: parseDate(formData.get("date")) },
   });
-  revalidatePath("/dashboard/exercise");
+  invalidateExercise(userId);
 }

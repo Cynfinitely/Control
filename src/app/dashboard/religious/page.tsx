@@ -1,18 +1,16 @@
-import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import {
-  startOfDay,
-  endOfDay,
   toDateInputValue,
   formatDate,
   formatDayLabel,
   parseDayParam,
-  addDays,
 } from "@/lib/date";
+import { getDayPrayers, getPrayerStreak, getReligiousSidebarData } from "@/lib/queries/religious";
 import PageHeader from "@/components/PageHeader";
 import DayNavigator from "@/components/DayNavigator";
 import SubmitButton from "@/components/SubmitButton";
-import { setPrayer, fulfillQaza, logDhikr, logQuran, logFasting } from "./actions";
+import PrayerStatusPanel from "./PrayerStatusPanel";
+import { fulfillQaza, logDhikr, logQuran, logFasting } from "./actions";
 
 const PRAYERS = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
 
@@ -23,41 +21,25 @@ export default async function ReligiousPage({
 }) {
   const user = await requireUser();
   const now = new Date();
-  const today = startOfDay(now);
+  const today = new Date(toDateInputValue(now) + "T00:00:00");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
   const isToday = day.getTime() === today.getTime();
   const todayValue = toDateInputValue(now);
+  const todayKey = toDateInputValue(now);
 
-  const [dayPrayers, recentPrayers, pendingQaza, dhikr, quran, fasts] = await Promise.all([
-    prisma.prayerLog.findMany({
-      where: { userId: user.id, date: { gte: startOfDay(day), lte: endOfDay(day) } },
-    }),
-    prisma.prayerLog.findMany({
-      where: { userId: user.id, date: { gte: addDays(today, -60) } },
-    }),
-    prisma.qazaPrayer.findMany({
-      where: { userId: user.id, fulfilledAt: null },
-      orderBy: [{ prayer: "asc" }, { createdAt: "asc" }],
-    }),
-    prisma.dhikrLog.findMany({
-      where: { userId: user.id, date: { gte: today, lte: endOfDay(now) } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.quranProgress.findMany({
-      where: { userId: user.id },
-      orderBy: { date: "desc" },
-      take: 7,
-    }),
-    prisma.fastingLog.findMany({
-      where: { userId: user.id },
-      orderBy: { date: "desc" },
-      take: 7,
-    }),
+  const [dayPrayers, streak, sidebar] = await Promise.all([
+    getDayPrayers(user.id, dayValue),
+    getPrayerStreak(user.id, todayKey),
+    getReligiousSidebarData(user.id, todayKey),
   ]);
 
-  const prayerStatus = (p: string) => dayPrayers.find((t) => t.prayer === p)?.status;
+  const { pendingQaza, dhikr, quran, fasts } = sidebar;
+
+  const prayerStatuses = Object.fromEntries(
+    PRAYERS.map((p) => [p, dayPrayers.find((t) => t.prayer === p)?.status])
+  );
 
   const qazaCounts = PRAYERS.map((prayer) => ({
     prayer,
@@ -66,21 +48,6 @@ export default async function ReligiousPage({
   })).filter((q) => q.count > 0);
 
   const totalQaza = pendingQaza.length;
-
-  const byDayOnTime = new Map<string, number>();
-  for (const p of recentPrayers) {
-    if (p.status !== "ontime") continue;
-    const key = toDateInputValue(p.date);
-    byDayOnTime.set(key, (byDayOnTime.get(key) ?? 0) + 1);
-  }
-  let streak = 0;
-  for (let i = 0; i < 60; i++) {
-    const key = toDateInputValue(addDays(today, -i));
-    if ((byDayOnTime.get(key) ?? 0) >= 5) streak++;
-    else if (i === 0) continue;
-    else break;
-  }
-
   const dhikrTotal = dhikr.reduce((s, d) => s + d.count, 0);
   const prayerSectionTitle = isToday ? "Today's prayers" : `Prayers — ${formatDayLabel(day)}`;
 
@@ -123,36 +90,7 @@ export default async function ReligiousPage({
             maxDay={todayValue}
           />
         </div>
-        <div className="space-y-4">
-          {PRAYERS.map((p) => {
-            const current = prayerStatus(p);
-            return (
-              <div key={p} className="flex flex-wrap items-center gap-3">
-                <span className="w-20 font-medium capitalize text-slate-700">{p}</span>
-                <div className="flex gap-2">
-                  {(["ontime", "missed"] as const).map((status) => (
-                    <form key={status} action={setPrayer}>
-                      <input type="hidden" name="prayer" value={p} />
-                      <input type="hidden" name="status" value={status} />
-                      <input type="hidden" name="date" value={dayValue} />
-                      <SubmitButton
-                        className={`touch-target badge px-4 py-2 text-sm ${
-                          current === status
-                            ? status === "ontime"
-                              ? "bg-green-100 text-green-700 ring-2 ring-offset-1 ring-green-300"
-                              : "bg-red-100 text-red-700 ring-2 ring-offset-1 ring-red-300"
-                            : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {status === "ontime" ? "On time" : "Missed"}
-                      </SubmitButton>
-                    </form>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <PrayerStatusPanel dayValue={dayValue} initialStatuses={prayerStatuses} />
       </div>
 
       {qazaCounts.length > 0 && (

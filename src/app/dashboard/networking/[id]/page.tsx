@@ -78,6 +78,7 @@ export default async function ContactDetail({ params }: { params: { id: string }
             {contact.followUps.map((f) => (
               <form key={f.id} action={toggleFollowUp} className="flex items-center gap-3">
                 <input type="hidden" name="id" value={f.id} />
+                <input type="hidden" name="contactId" value={contact.id} />
                 <SubmitIconButton
                   className={`flex h-4 w-4 items-center justify-center rounded border ${
                     f.done ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300"

@@ -3,8 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate, parseOptionalDate } from "@/lib/actions";
+import { revalidateUserCache } from "@/lib/cache";
 
-const path = "/dashboard/career";
+function invalidateCareer(userId: string) {
+  revalidateUserCache(userId, "career");
+  revalidatePath("/dashboard/career");
+}
 
 export async function createCareerGoal(formData: FormData) {
   const userId = await getUserId();
@@ -18,7 +22,7 @@ export async function createCareerGoal(formData: FormData) {
       targetDate: parseOptionalDate(formData.get("targetDate")),
     },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function setCareerGoalStatus(formData: FormData) {
@@ -27,7 +31,7 @@ export async function setCareerGoalStatus(formData: FormData) {
     where: { id: str(formData.get("id")), userId },
     data: { status: str(formData.get("status")) },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function deleteCareerGoal(formData: FormData) {
@@ -36,7 +40,7 @@ export async function deleteCareerGoal(formData: FormData) {
     where: { id: str(formData.get("id")), userId },
     data: { deletedAt: new Date() },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function createSkill(formData: FormData) {
@@ -51,7 +55,7 @@ export async function createSkill(formData: FormData) {
       notes: optStr(formData.get("notes")),
     },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function updateSkillLevel(formData: FormData) {
@@ -60,7 +64,7 @@ export async function updateSkillLevel(formData: FormData) {
     where: { id: str(formData.get("id")), userId },
     data: { level: Math.min(5, Math.max(1, num(formData.get("level"), 1))) },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function deleteSkill(formData: FormData) {
@@ -69,7 +73,7 @@ export async function deleteSkill(formData: FormData) {
     where: { id: str(formData.get("id")), userId },
     data: { deletedAt: new Date() },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function createCertification(formData: FormData) {
@@ -86,7 +90,7 @@ export async function createCertification(formData: FormData) {
       credentialId: optStr(formData.get("credentialId")),
     },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function deleteCertification(formData: FormData) {
@@ -95,7 +99,7 @@ export async function deleteCertification(formData: FormData) {
     where: { id: str(formData.get("id")), userId },
     data: { deletedAt: new Date() },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function createWorkExperience(formData: FormData) {
@@ -114,7 +118,7 @@ export async function createWorkExperience(formData: FormData) {
       summary: optStr(formData.get("summary")),
     },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function deleteWorkExperience(formData: FormData) {
@@ -123,7 +127,7 @@ export async function deleteWorkExperience(formData: FormData) {
     where: { id: str(formData.get("id")), userId },
     data: { deletedAt: new Date() },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function createLearning(formData: FormData) {
@@ -142,7 +146,7 @@ export async function createLearning(formData: FormData) {
       date: parseDate(formData.get("date")),
     },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }
 
 export async function deleteLearning(formData: FormData) {
@@ -151,5 +155,5 @@ export async function deleteLearning(formData: FormData) {
     where: { id: str(formData.get("id")), userId },
     data: { deletedAt: new Date() },
   });
-  revalidatePath(path);
+  invalidateCareer(userId);
 }

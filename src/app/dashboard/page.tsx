@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { startOfDay, endOfDay } from "@/lib/date";
-import { getPeriodKey } from "@/lib/period";
+import { toDateInputValue } from "@/lib/date";
+import { getDashboardStats } from "@/lib/queries/dashboard";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 
@@ -11,88 +10,49 @@ const PRAYERS = 5;
 export default async function DashboardHome() {
   const user = await requireUser();
   const now = new Date();
-  const from = startOfDay(now);
-  const to = endOfDay(now);
-  const userId = user.id;
-  const weekKey = getPeriodKey("weekly", now);
+  const todayKey = toDateInputValue(now);
 
-  const [
-    todayOpenTodos,
-    todayDoneTodos,
-    weeklyGoals,
-    foodToday,
-    target,
-    workoutsToday,
-    prayersToday,
-    pendingQaza,
-    pendingFollowUps,
-  ] = await Promise.all([
-    prisma.todo.count({
-      where: { userId, status: "open", deletedAt: null, inBacklog: false, dayDate: { gte: from, lte: to } },
-    }),
-    prisma.todo.count({
-      where: { userId, status: "done", deletedAt: null, dayDate: { gte: from, lte: to } },
-    }),
-    prisma.goal.count({
-      where: { userId, status: "active", deletedAt: null, period: "weekly", periodKey: weekKey },
-    }),
-    prisma.foodLogEntry.findMany({
-      where: { userId, deletedAt: null, date: { gte: from, lte: to } },
-    }),
-    prisma.nutritionTarget.findUnique({ where: { userId } }),
-    prisma.workout.count({
-      where: { userId, deletedAt: null, date: { gte: from, lte: to } },
-    }),
-    prisma.prayerLog.findMany({
-      where: { userId, date: { gte: from, lte: to } },
-    }),
-    prisma.qazaPrayer.count({ where: { userId, fulfilledAt: null } }),
-    prisma.followUp.count({ where: { userId, done: false } }),
-  ]);
+  const stats = await getDashboardStats(user.id, todayKey);
 
-  const caloriesToday = foodToday.reduce((s, f) => s + f.calories, 0);
-  const calorieTarget = target?.calories ?? 2000;
-  const prayersOnTime = prayersToday.filter((p) => p.status === "ontime").length;
-
-  const stats = [
+  const cards = [
     {
       label: "Todos today",
-      value: `${todayDoneTodos}/${todayOpenTodos + todayDoneTodos}`,
-      sub: todayOpenTodos > 0 ? `${todayOpenTodos} left` : "all done",
+      value: `${stats.todayDoneTodos}/${stats.todayOpenTodos + stats.todayDoneTodos}`,
+      sub: stats.todayOpenTodos > 0 ? `${stats.todayOpenTodos} left` : "all done",
       href: "/dashboard/todos",
       icon: "check",
     },
     {
       label: "Weekly goals",
-      value: weeklyGoals,
+      value: stats.weeklyGoals,
       sub: "active this week",
       href: "/dashboard/goals",
       icon: "target",
     },
     {
       label: "Calories today",
-      value: Math.round(caloriesToday),
-      sub: `of ${Math.round(calorieTarget)} kcal`,
+      value: Math.round(stats.caloriesToday),
+      sub: `of ${Math.round(stats.calorieTarget)} kcal`,
       href: "/dashboard/food",
       icon: "food",
     },
     {
       label: "Workouts today",
-      value: workoutsToday,
-      sub: workoutsToday > 0 ? "logged" : "none yet",
+      value: stats.workoutsToday,
+      sub: stats.workoutsToday > 0 ? "logged" : "none yet",
       href: "/dashboard/exercise",
       icon: "dumbbell",
     },
     {
       label: "Prayers today",
-      value: `${prayersOnTime}/${PRAYERS}`,
-      sub: pendingQaza > 0 ? `${pendingQaza} qaza pending` : "on time",
+      value: `${stats.prayersOnTime}/${PRAYERS}`,
+      sub: stats.pendingQaza > 0 ? `${stats.pendingQaza} qaza pending` : "on time",
       href: "/dashboard/religious",
       icon: "moon",
     },
     {
       label: "Follow-ups",
-      value: pendingFollowUps,
+      value: stats.pendingFollowUps,
       sub: "pending",
       href: "/dashboard/networking",
       icon: "users",
@@ -128,7 +88,7 @@ export default async function DashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {stats.map((s) => (
+        {cards.map((s) => (
           <Link key={s.label} href={s.href} className="card transition hover:shadow-md">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-slate-500">{s.label}</span>

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { startOfWeek, addDays, endOfDay, toDateInputValue, formatDate } from "@/lib/date";
+import { toDateInputValue, formatDate, startOfWeek, addDays } from "@/lib/date";
+import { getWeekMealPlan } from "@/lib/queries/food-planner";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
@@ -18,13 +18,9 @@ const MEALS = ["breakfast", "lunch", "dinner", "snack"];
 export default async function PlannerPage() {
   const user = await requireUser();
   const weekStart = startOfWeek(new Date());
-  const weekEnd = endOfDay(addDays(weekStart, 6));
+  const weekStartKey = toDateInputValue(weekStart);
 
-  const items = await prisma.mealPlanItem.findMany({
-    where: { userId: user.id, deletedAt: null, date: { gte: weekStart, lte: weekEnd } },
-    orderBy: { createdAt: "asc" },
-    include: { ingredients: true },
-  });
+  const items = await getWeekMealPlan(user.id, weekStartKey);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const byDay = (d: Date) =>

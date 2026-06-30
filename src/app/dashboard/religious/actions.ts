@@ -1,9 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
+import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay } from "@/lib/date";
+
+function invalidate(userId: string) {
+  revalidateUserCache(userId, "religious", "dashboard");
+}
 
 export async function setPrayer(formData: FormData) {
   const userId = await getUserId();
@@ -36,7 +40,7 @@ export async function setPrayer(formData: FormData) {
     }
   }
 
-  revalidatePath("/dashboard/religious");
+  invalidate(userId);
 }
 
 export async function fulfillQaza(formData: FormData) {
@@ -46,7 +50,7 @@ export async function fulfillQaza(formData: FormData) {
     where: { id, userId, fulfilledAt: null },
     data: { fulfilledAt: new Date() },
   });
-  revalidatePath("/dashboard/religious");
+  invalidate(userId);
 }
 
 export async function logDhikr(formData: FormData) {
@@ -61,7 +65,7 @@ export async function logDhikr(formData: FormData) {
       date: startOfDay(parseDate(formData.get("date"))),
     },
   });
-  revalidatePath("/dashboard/religious");
+  invalidate(userId);
 }
 
 export async function logQuran(formData: FormData) {
@@ -74,7 +78,7 @@ export async function logQuran(formData: FormData) {
       date: startOfDay(parseDate(formData.get("date"))),
     },
   });
-  revalidatePath("/dashboard/religious");
+  invalidate(userId);
 }
 
 export async function logFasting(formData: FormData) {
@@ -90,5 +94,5 @@ export async function logFasting(formData: FormData) {
       note: optStr(formData.get("note")),
     },
   });
-  revalidatePath("/dashboard/religious");
+  invalidate(userId);
 }

@@ -1,9 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, parseDate } from "@/lib/actions";
+import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay, endOfDay } from "@/lib/date";
+
+function invalidate(userId: string) {
+  revalidateUserCache(userId, "todos", "dashboard");
+}
 
 export async function createTodo(formData: FormData) {
   const userId = await getUserId();
@@ -13,20 +17,23 @@ export async function createTodo(formData: FormData) {
   await prisma.todo.create({
     data: { userId, title, dayDate, inBacklog: false },
   });
-  revalidatePath("/dashboard/todos");
+  invalidate(userId);
 }
 
 export async function toggleTodo(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  const todo = await prisma.todo.findFirst({ where: { id, userId } });
-  if (!todo) return;
-  const done = todo.status !== "done";
-  await prisma.todo.update({
-    where: { id },
-    data: { status: done ? "done" : "open", completedAt: done ? new Date() : null },
+  const openToDone = await prisma.todo.updateMany({
+    where: { id, userId, status: "open" },
+    data: { status: "done", completedAt: new Date() },
   });
-  revalidatePath("/dashboard/todos");
+  if (openToDone.count === 0) {
+    await prisma.todo.updateMany({
+      where: { id, userId, status: "done" },
+      data: { status: "open", completedAt: null },
+    });
+  }
+  invalidate(userId);
 }
 
 export async function moveToBacklog(formData: FormData) {
@@ -36,7 +43,7 @@ export async function moveToBacklog(formData: FormData) {
     where: { id, userId, status: "open" },
     data: { inBacklog: true },
   });
-  revalidatePath("/dashboard/todos");
+  invalidate(userId);
 }
 
 export async function pullFromBacklog(formData: FormData) {
@@ -47,7 +54,7 @@ export async function pullFromBacklog(formData: FormData) {
     where: { id, userId, inBacklog: true },
     data: { inBacklog: false, dayDate, status: "open" },
   });
-  revalidatePath("/dashboard/todos");
+  invalidate(userId);
 }
 
 export async function deleteTodo(formData: FormData) {
@@ -57,7 +64,7 @@ export async function deleteTodo(formData: FormData) {
     where: { id, userId },
     data: { deletedAt: new Date() },
   });
-  revalidatePath("/dashboard/todos");
+  invalidate(userId);
 }
 
 export async function moveUnfinishedToBacklog(formData: FormData) {
@@ -73,5 +80,5 @@ export async function moveUnfinishedToBacklog(formData: FormData) {
     },
     data: { inBacklog: true },
   });
-  revalidatePath("/dashboard/todos");
+  invalidate(userId);
 }
