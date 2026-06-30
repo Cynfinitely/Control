@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/session";
 import { getPeriodKey, periodLabel, type GoalPeriod } from "@/lib/period";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import { createGoal, toggleGoalComplete, incrementGoal, deleteGoal } from "./actions";
 
 const PERIODS: { value: GoalPeriod; label: string }[] = [
@@ -73,7 +75,7 @@ export default async function GoalsPage({
             <input name="targetValue" type="number" min={1} className="input" placeholder="e.g. 12" />
           </div>
           <div className="sm:col-span-2">
-            <button type="submit" className="btn-primary">Add goal</button>
+            <SubmitButton className="btn-primary">Add goal</SubmitButton>
           </div>
         </form>
       </details>
@@ -127,9 +129,7 @@ function GoalRow({
         {!isDone && (
           <form action={incrementGoal}>
             <input type="hidden" name="id" value={goal.id} />
-            <button type="submit" className="btn-primary touch-target min-w-[3rem]">
-              +1
-            </button>
+            <SubmitButton className="btn-primary touch-target min-w-[3rem]">+1</SubmitButton>
           </form>
         )}
         {isDone && (
@@ -144,16 +144,14 @@ function GoalRow({
     <div className={`card flex items-center gap-3 py-3 ${isDone ? "opacity-70" : ""}`}>
       <form action={toggleGoalComplete}>
         <input type="hidden" name="id" value={goal.id} />
-        <button
-          type="submit"
+        <SubmitIconButton
           className={`touch-target flex h-6 w-6 items-center justify-center rounded border ${
             isDone
               ? "border-brand-600 bg-brand-600 text-white"
               : "border-slate-300 hover:border-brand-500"
           }`}
-        >
-          {isDone && <Icon name="check" className="h-3.5 w-3.5" />}
-        </button>
+          icon={isDone ? <Icon name="check" className="h-3.5 w-3.5" /> : null}
+        />
       </form>
       <p className={`flex-1 ${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800"}`}>
         {goal.title}
@@ -167,9 +165,11 @@ function DeleteGoalButton({ id }: { id: string }) {
   return (
     <form action={deleteGoal}>
       <input type="hidden" name="id" value={id} />
-      <button type="submit" className="touch-target text-slate-300 hover:text-red-500" title="Delete">
-        <Icon name="trash" className="h-4 w-4" />
-      </button>
+      <SubmitIconButton
+        className="touch-target text-slate-300 hover:text-red-500"
+        title="Delete"
+        icon={<Icon name="trash" className="h-4 w-4" />}
+      />
     </form>
   );
 }

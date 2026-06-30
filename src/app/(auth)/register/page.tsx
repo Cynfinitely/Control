@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Spinner from "@/components/Spinner";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -98,7 +99,14 @@ export default function RegisterPage() {
           />
         </div>
         <button className="btn-primary w-full" disabled={loading}>
-          {loading ? "Creating..." : "Create account"}
+          {loading ? (
+            <>
+              <Spinner />
+              Creating...
+            </>
+          ) : (
+            "Create account"
+          )}
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-500">

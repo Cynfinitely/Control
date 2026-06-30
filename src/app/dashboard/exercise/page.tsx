@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/session";
 import { toDateInputValue, formatDate } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import {
   createGymWorkout,
   createCardioWorkout,
@@ -86,7 +88,7 @@ export default async function ExercisePage() {
               <input name="notes" className="input" placeholder="optional" />
             </div>
             <div className="sm:col-span-2">
-              <button type="submit" className="btn-primary touch-target">Log run</button>
+              <SubmitButton className="btn-primary touch-target">Log run</SubmitButton>
             </div>
           </form>
         </details>
@@ -112,7 +114,7 @@ export default async function ExercisePage() {
               <input name="notes" className="input" placeholder="optional" />
             </div>
             <div className="sm:col-span-2">
-              <button type="submit" className="btn-primary touch-target">Log swim</button>
+              <SubmitButton className="btn-primary touch-target">Log swim</SubmitButton>
             </div>
           </form>
         </details>
@@ -133,7 +135,7 @@ export default async function ExercisePage() {
               <input name="notes" className="input" placeholder="optional" />
             </div>
             <div className="sm:col-span-2">
-              <button type="submit" className="btn-primary touch-target">Create & add exercises</button>
+              <SubmitButton className="btn-primary touch-target">Create & add exercises</SubmitButton>
             </div>
           </form>
         </details>
@@ -155,7 +157,7 @@ export default async function ExercisePage() {
               <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
             </div>
             <div className="sm:col-span-2">
-              <button type="submit" className="btn-primary touch-target">Log activity</button>
+              <SubmitButton className="btn-primary touch-target">Log activity</SubmitButton>
             </div>
           </form>
         </details>
@@ -184,9 +186,11 @@ export default async function ExercisePage() {
             )}
             <form action={deleteWorkout}>
               <input type="hidden" name="id" value={w.id} />
-              <button type="submit" className="touch-target text-slate-300 hover:text-red-500" title="Delete">
-                <Icon name="trash" className="h-4 w-4" />
-              </button>
+              <SubmitIconButton
+                className="touch-target text-slate-300 hover:text-red-500"
+                title="Delete"
+                icon={<Icon name="trash" className="h-4 w-4" />}
+              />
             </form>
           </div>
         ))}
@@ -218,7 +222,7 @@ export default async function ExercisePage() {
               <label className="label">Date</label>
               <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
             </div>
-            <button type="submit" className="btn-ghost touch-target">Log</button>
+            <SubmitButton className="btn-ghost touch-target">Log</SubmitButton>
           </form>
           <div className="mt-4 space-y-1">
             {weights.map((w) => (
@@ -245,7 +249,7 @@ export default async function ExercisePage() {
               <label className="label">Date</label>
               <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
             </div>
-            <button type="submit" className="btn-ghost touch-target">Log</button>
+            <SubmitButton className="btn-ghost touch-target">Log</SubmitButton>
           </form>
           <div className="mt-4 space-y-1">
             {measurements.map((m) => (

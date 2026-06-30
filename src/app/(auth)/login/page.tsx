@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Spinner from "@/components/Spinner";
 
 function LoginForm() {
   const router = useRouter();
@@ -24,8 +25,8 @@ function LoginForm() {
       password,
       redirect: false,
     });
-    setLoading(false);
     if (res?.error) {
+      setLoading(false);
       setError(
         res.error === "EMAIL_NOT_VERIFIED"
           ? "Please verify your email before signing in."
@@ -70,7 +71,14 @@ function LoginForm() {
           />
         </div>
         <button className="btn-primary w-full" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? (
+            <>
+              <Spinner />
+              Signing in...
+            </>
+          ) : (
+            "Sign in"
+          )}
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-500">

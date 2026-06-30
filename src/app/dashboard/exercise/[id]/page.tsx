@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/session";
 import { formatDate } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import { addExercise, deleteExercise, addSet, deleteSet } from "../actions";
 
 export default async function WorkoutDetail({ params }: { params: { id: string } }) {
@@ -43,9 +45,11 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
               <form action={deleteExercise}>
                 <input type="hidden" name="id" value={ex.id} />
                 <input type="hidden" name="workoutId" value={workout.id} />
-                <button className="text-slate-300 hover:text-red-500" title="Remove exercise">
-                  <Icon name="trash" className="h-4 w-4" />
-                </button>
+                <SubmitIconButton
+                  className="text-slate-300 hover:text-red-500"
+                  title="Remove exercise"
+                  icon={<Icon name="trash" className="h-4 w-4" />}
+                />
               </form>
             </div>
 
@@ -70,9 +74,10 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
                       <form action={deleteSet}>
                         <input type="hidden" name="id" value={s.id} />
                         <input type="hidden" name="workoutId" value={workout.id} />
-                        <button className="text-slate-300 hover:text-red-500">
-                          <Icon name="trash" className="h-3 w-3" />
-                        </button>
+                        <SubmitIconButton
+                          className="text-slate-300 hover:text-red-500"
+                          icon={<Icon name="trash" className="h-3 w-3" />}
+                        />
                       </form>
                     </td>
                   </tr>
@@ -86,7 +91,7 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
               <input name="reps" type="number" className="input w-20" placeholder="reps" />
               <input name="weightKg" type="number" step="any" className="input w-24" placeholder="kg" />
               <input name="durationSec" type="number" className="input w-24" placeholder="sec" />
-              <button className="btn-ghost">+ Set</button>
+              <SubmitButton className="btn-ghost">+ Set</SubmitButton>
             </form>
           </div>
         ))}
@@ -99,7 +104,7 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
             <label className="label">Add exercise</label>
             <input name="name" className="input" placeholder="e.g. Bench press" required />
           </div>
-          <button className="btn-primary">Add</button>
+          <SubmitButton className="btn-primary">Add</SubmitButton>
         </form>
       </div>
     </div>

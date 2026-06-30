@@ -1,18 +1,39 @@
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { startOfDay, endOfDay, toDateInputValue, formatDate, addDays } from "@/lib/date";
+import {
+  startOfDay,
+  endOfDay,
+  toDateInputValue,
+  formatDate,
+  formatDayLabel,
+  parseDayParam,
+  addDays,
+} from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
+import DayNavigator from "@/components/DayNavigator";
+import SubmitButton from "@/components/SubmitButton";
 import { setPrayer, fulfillQaza, logDhikr, logQuran, logFasting } from "./actions";
 
 const PRAYERS = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
 
-export default async function ReligiousPage() {
+export default async function ReligiousPage({
+  searchParams,
+}: {
+  searchParams: { day?: string };
+}) {
   const user = await requireUser();
   const now = new Date();
   const today = startOfDay(now);
+  const day = parseDayParam(searchParams.day);
+  const dayValue = toDateInputValue(day);
+  const dayLabel = formatDayLabel(day);
+  const isToday = day.getTime() === today.getTime();
+  const todayValue = toDateInputValue(now);
 
-  const [todayPrayers, recentPrayers, pendingQaza, dhikr, quran, fasts] = await Promise.all([
-    prisma.prayerLog.findMany({ where: { userId: user.id, date: { gte: today, lte: endOfDay(now) } } }),
+  const [dayPrayers, recentPrayers, pendingQaza, dhikr, quran, fasts] = await Promise.all([
+    prisma.prayerLog.findMany({
+      where: { userId: user.id, date: { gte: startOfDay(day), lte: endOfDay(day) } },
+    }),
     prisma.prayerLog.findMany({
       where: { userId: user.id, date: { gte: addDays(today, -60) } },
     }),
@@ -36,7 +57,7 @@ export default async function ReligiousPage() {
     }),
   ]);
 
-  const prayerStatus = (p: string) => todayPrayers.find((t) => t.prayer === p)?.status;
+  const prayerStatus = (p: string) => dayPrayers.find((t) => t.prayer === p)?.status;
 
   const qazaCounts = PRAYERS.map((prayer) => ({
     prayer,
@@ -46,7 +67,6 @@ export default async function ReligiousPage() {
 
   const totalQaza = pendingQaza.length;
 
-  // streak: consecutive days with all 5 prayers on time
   const byDayOnTime = new Map<string, number>();
   for (const p of recentPrayers) {
     if (p.status !== "ontime") continue;
@@ -62,6 +82,7 @@ export default async function ReligiousPage() {
   }
 
   const dhikrTotal = dhikr.reduce((s, d) => s + d.count, 0);
+  const prayerSectionTitle = isToday ? "Today's prayers" : `Prayers — ${formatDayLabel(day)}`;
 
   return (
     <div>
@@ -93,7 +114,15 @@ export default async function ReligiousPage() {
       </div>
 
       <div className="card mb-6">
-        <h2 className="section-title mb-4">Today&apos;s prayers</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="section-title">{prayerSectionTitle}</h2>
+          <DayNavigator
+            basePath="/dashboard/religious"
+            dayValue={dayValue}
+            dayLabel={dayLabel}
+            maxDay={todayValue}
+          />
+        </div>
         <div className="space-y-4">
           {PRAYERS.map((p) => {
             const current = prayerStatus(p);
@@ -105,9 +134,8 @@ export default async function ReligiousPage() {
                     <form key={status} action={setPrayer}>
                       <input type="hidden" name="prayer" value={p} />
                       <input type="hidden" name="status" value={status} />
-                      <input type="hidden" name="date" value={toDateInputValue(now)} />
-                      <button
-                        type="submit"
+                      <input type="hidden" name="date" value={dayValue} />
+                      <SubmitButton
                         className={`touch-target badge px-4 py-2 text-sm ${
                           current === status
                             ? status === "ontime"
@@ -117,7 +145,7 @@ export default async function ReligiousPage() {
                         }`}
                       >
                         {status === "ontime" ? "On time" : "Missed"}
-                      </button>
+                      </SubmitButton>
                     </form>
                   ))}
                 </div>
@@ -143,14 +171,14 @@ export default async function ReligiousPage() {
                   {items.map((q) => (
                     <form key={q.id} action={fulfillQaza}>
                       <input type="hidden" name="id" value={q.id} />
-                      <button type="submit" className="btn-ghost touch-target text-sm">
+                      <SubmitButton className="btn-ghost touch-target text-sm">
                         Fulfill
                         {q.sourceDate && (
                           <span className="ml-1 text-xs text-slate-400">
                             ({formatDate(q.sourceDate)})
                           </span>
                         )}
-                      </button>
+                      </SubmitButton>
                     </form>
                   ))}
                 </div>
@@ -167,9 +195,7 @@ export default async function ReligiousPage() {
             <input name="name" className="input" placeholder="e.g. Subhanallah" required />
             <input name="count" type="number" className="input" placeholder="count" defaultValue={33} />
             <input type="hidden" name="date" value={toDateInputValue(now)} />
-            <button type="submit" className="btn-primary touch-target w-full">
-              Log dhikr
-            </button>
+            <SubmitButton className="btn-primary touch-target w-full">Log dhikr</SubmitButton>
           </form>
           <div className="mt-4 space-y-1">
             {dhikr.map((d) => (
@@ -187,9 +213,7 @@ export default async function ReligiousPage() {
             <input name="pagesRead" type="number" className="input" placeholder="pages read" defaultValue={1} />
             <input name="note" className="input" placeholder="note (optional)" />
             <input type="hidden" name="date" value={toDateInputValue(now)} />
-            <button type="submit" className="btn-primary touch-target w-full">
-              Log reading
-            </button>
+            <SubmitButton className="btn-primary touch-target w-full">Log reading</SubmitButton>
           </form>
           <div className="mt-4 space-y-1">
             {quran.map((q) => (
@@ -211,9 +235,7 @@ export default async function ReligiousPage() {
               <option value="makeup">Make-up (qada)</option>
             </select>
             <input name="note" className="input" placeholder="note (optional)" />
-            <button type="submit" className="btn-primary touch-target w-full">
-              Log fast
-            </button>
+            <SubmitButton className="btn-primary touch-target w-full">Log fast</SubmitButton>
           </form>
           <div className="mt-4 space-y-1">
             {fasts.map((f) => (

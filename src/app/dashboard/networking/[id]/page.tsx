@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/session";
 import { toDateInputValue, formatDate } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import { logInteraction, addFollowUp, toggleFollowUp, deleteContact } from "../actions";
 
 const TYPES = ["call", "meeting", "message", "event"];
@@ -51,9 +53,9 @@ export default async function ContactDetail({ params }: { params: { id: string }
           {contact.notes && <p className="mt-3 text-sm text-slate-500">{contact.notes}</p>}
           <form action={deleteContact} className="mt-4">
             <input type="hidden" name="id" value={contact.id} />
-            <button className="btn-danger w-full">
+            <SubmitButton className="btn-danger w-full">
               <Icon name="trash" className="h-4 w-4" /> Delete contact
-            </button>
+            </SubmitButton>
           </form>
         </div>
 
@@ -69,20 +71,19 @@ export default async function ContactDetail({ params }: { params: { id: string }
               <label className="label">Due</label>
               <input name="dueDate" type="date" className="input" />
             </div>
-            <button className="btn-ghost">Add</button>
+            <SubmitButton className="btn-ghost">Add</SubmitButton>
           </form>
           <div className="space-y-1">
             {contact.followUps.length === 0 && <p className="text-sm text-slate-400">No follow-ups.</p>}
             {contact.followUps.map((f) => (
               <form key={f.id} action={toggleFollowUp} className="flex items-center gap-3">
                 <input type="hidden" name="id" value={f.id} />
-                <button
+                <SubmitIconButton
                   className={`flex h-4 w-4 items-center justify-center rounded border ${
                     f.done ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300"
                   }`}
-                >
-                  {f.done && <Icon name="check" className="h-3 w-3" />}
-                </button>
+                  icon={f.done ? <Icon name="check" className="h-3 w-3" /> : null}
+                />
                 <span className={`flex-1 text-sm ${f.done ? "text-slate-400 line-through" : "text-slate-700"}`}>
                   {f.note}
                 </span>
@@ -115,7 +116,7 @@ export default async function ContactDetail({ params }: { params: { id: string }
             <label className="label">Summary</label>
             <input name="summary" className="input" placeholder="What was discussed?" />
           </div>
-          <button className="btn-primary">Log</button>
+          <SubmitButton className="btn-primary">Log</SubmitButton>
         </form>
         <div className="space-y-2">
           {contact.interactions.length === 0 && (

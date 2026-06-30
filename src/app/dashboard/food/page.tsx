@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/session";
 import { startOfDay, endOfDay, toDateInputValue } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import { logFood, deleteFood, saveTarget } from "./actions";
 
 const MEALS = ["breakfast", "lunch", "dinner", "snack"];
@@ -70,9 +72,7 @@ export default async function FoodPage() {
           <label className="label">Date</label>
           <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
         </div>
-        <button type="submit" className="btn-primary touch-target w-full sm:w-auto">
-          Log food
-        </button>
+        <SubmitButton className="btn-primary touch-target w-full sm:w-auto">Log food</SubmitButton>
       </form>
 
       <h2 className="section-title mb-3">Today&apos;s entries</h2>
@@ -87,9 +87,11 @@ export default async function FoodPage() {
             </div>
             <form action={deleteFood}>
               <input type="hidden" name="id" value={e.id} />
-              <button type="submit" className="touch-target text-slate-300 hover:text-red-500" title="Delete">
-                <Icon name="trash" className="h-4 w-4" />
-              </button>
+              <SubmitIconButton
+                className="touch-target text-slate-300 hover:text-red-500"
+                title="Delete"
+                icon={<Icon name="trash" className="h-4 w-4" />}
+              />
             </form>
           </div>
         ))}
@@ -102,7 +104,7 @@ export default async function FoodPage() {
             <label className="label">Calories</label>
             <input name="calories" type="number" step="any" className="input" defaultValue={calorieTarget} />
           </div>
-          <button type="submit" className="btn-primary touch-target">Save</button>
+          <SubmitButton className="btn-primary touch-target">Save</SubmitButton>
         </form>
       </details>
     </div>

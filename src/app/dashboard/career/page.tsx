@@ -3,6 +3,8 @@ import { requireUser } from "@/lib/session";
 import { toDateInputValue, formatDate } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import {
   createCareerGoal,
   setCareerGoalStatus,
@@ -54,7 +56,7 @@ export default async function CareerPage() {
               <textarea name="description" className="input" rows={2} />
             </div>
             <div className="sm:col-span-2">
-              <button className="btn-primary">Add goal</button>
+              <SubmitButton className="btn-primary">Add goal</SubmitButton>
             </div>
           </form>
         </details>
@@ -75,12 +77,15 @@ export default async function CareerPage() {
                   <form action={setCareerGoalStatus}>
                     <input type="hidden" name="id" value={g.id} />
                     <input type="hidden" name="status" value="completed" />
-                    <button className="text-xs text-brand-600 hover:underline">Complete</button>
+                    <SubmitButton className="text-xs text-brand-600 hover:underline">Complete</SubmitButton>
                   </form>
                 )}
                 <form action={deleteCareerGoal}>
                   <input type="hidden" name="id" value={g.id} />
-                  <button className="text-slate-300 hover:text-red-500"><Icon name="trash" className="h-4 w-4" /></button>
+                  <SubmitIconButton
+                    className="text-slate-300 hover:text-red-500"
+                    icon={<Icon name="trash" className="h-4 w-4" />}
+                  />
                 </form>
               </div>
             </div>
@@ -106,7 +111,7 @@ export default async function CareerPage() {
               <label className="label">Notes</label>
               <input name="notes" className="input" />
             </div>
-            <button className="btn-primary">Add</button>
+            <SubmitButton className="btn-primary">Add</SubmitButton>
           </form>
         </details>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -127,11 +132,14 @@ export default async function CareerPage() {
                 <form action={updateSkillLevel} className="flex items-center gap-1">
                   <input type="hidden" name="id" value={s.id} />
                   <input name="level" type="number" min={1} max={5} defaultValue={s.level} className="input w-16 py-1" />
-                  <button className="text-xs text-brand-600 hover:underline">Set</button>
+                  <SubmitButton className="text-xs text-brand-600 hover:underline">Set</SubmitButton>
                 </form>
                 <form action={deleteSkill}>
                   <input type="hidden" name="id" value={s.id} />
-                  <button className="text-slate-300 hover:text-red-500"><Icon name="trash" className="h-4 w-4" /></button>
+                  <SubmitIconButton
+                    className="text-slate-300 hover:text-red-500"
+                    icon={<Icon name="trash" className="h-4 w-4" />}
+                  />
                 </form>
               </div>
             </div>
@@ -166,7 +174,7 @@ export default async function CareerPage() {
               <input name="credentialId" className="input" />
             </div>
             <div className="sm:col-span-2">
-              <button className="btn-primary">Add</button>
+              <SubmitButton className="btn-primary">Add</SubmitButton>
             </div>
           </form>
         </details>
@@ -183,7 +191,10 @@ export default async function CareerPage() {
               </div>
               <form action={deleteCertification}>
                 <input type="hidden" name="id" value={c.id} />
-                <button className="text-slate-300 hover:text-red-500"><Icon name="trash" className="h-4 w-4" /></button>
+                <SubmitIconButton
+                  className="text-slate-300 hover:text-red-500"
+                  icon={<Icon name="trash" className="h-4 w-4" />}
+                />
               </form>
             </div>
           ))}
@@ -220,7 +231,7 @@ export default async function CareerPage() {
               <textarea name="summary" className="input" rows={2} />
             </div>
             <div className="sm:col-span-2">
-              <button className="btn-primary">Add</button>
+              <SubmitButton className="btn-primary">Add</SubmitButton>
             </div>
           </form>
         </details>
@@ -239,7 +250,10 @@ export default async function CareerPage() {
               </div>
               <form action={deleteWorkExperience}>
                 <input type="hidden" name="id" value={e.id} />
-                <button className="text-slate-300 hover:text-red-500"><Icon name="trash" className="h-4 w-4" /></button>
+                <SubmitIconButton
+                  className="text-slate-300 hover:text-red-500"
+                  icon={<Icon name="trash" className="h-4 w-4" />}
+                />
               </form>
             </div>
           ))}
@@ -285,7 +299,7 @@ export default async function CareerPage() {
               <input name="skillName" className="input" />
             </div>
             <div className="sm:col-span-3">
-              <button className="btn-primary">Add</button>
+              <SubmitButton className="btn-primary">Add</SubmitButton>
             </div>
           </form>
         </details>
@@ -304,7 +318,10 @@ export default async function CareerPage() {
               </div>
               <form action={deleteLearning}>
                 <input type="hidden" name="id" value={l.id} />
-                <button className="text-slate-300 hover:text-red-500"><Icon name="trash" className="h-4 w-4" /></button>
+                <SubmitIconButton
+                  className="text-slate-300 hover:text-red-500"
+                  icon={<Icon name="trash" className="h-4 w-4" />}
+                />
               </form>
             </div>
           ))}

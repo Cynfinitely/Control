@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/session";
 import { formatDate } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import { createInvite, deleteInvite } from "./actions";
 
 export default async function AdminPage() {
@@ -37,7 +39,7 @@ export default async function AdminPage() {
             <input name="expiresAt" type="date" className="input" />
           </div>
           <div className="sm:col-span-2">
-            <button className="btn-primary">Create invite</button>
+            <SubmitButton className="btn-primary">Create invite</SubmitButton>
           </div>
         </form>
       </details>
@@ -66,9 +68,10 @@ export default async function AdminPage() {
                 )}
                 <form action={deleteInvite}>
                   <input type="hidden" name="id" value={inv.id} />
-                  <button className="text-slate-300 hover:text-red-500">
-                    <Icon name="trash" className="h-4 w-4" />
-                  </button>
+                  <SubmitIconButton
+                    className="text-slate-300 hover:text-red-500"
+                    icon={<Icon name="trash" className="h-4 w-4" />}
+                  />
                 </form>
               </div>
             </div>

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { formatDate, addDays } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
+import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import { createContact, toggleFollowUp } from "./actions";
 
 export default async function NetworkingPage() {
@@ -37,7 +39,11 @@ export default async function NetworkingPage() {
             {pendingFollowUps.map((f) => (
               <form key={f.id} action={toggleFollowUp} className="flex items-center gap-3">
                 <input type="hidden" name="id" value={f.id} />
-                <button className="h-4 w-4 rounded border border-slate-300 hover:border-brand-500" title="Mark done" />
+                <SubmitIconButton
+                  className="h-4 w-4 rounded border border-slate-300 hover:border-brand-500"
+                  title="Mark done"
+                  icon={null}
+                />
                 <span className="flex-1 text-sm text-slate-700">
                   {f.note}{" "}
                   <Link href={`/dashboard/networking/${f.contactId}`} className="text-brand-600 hover:underline">
@@ -83,7 +89,7 @@ export default async function NetworkingPage() {
             <textarea name="notes" className="input" rows={2} />
           </div>
           <div className="sm:col-span-2">
-            <button className="btn-primary">Add contact</button>
+            <SubmitButton className="btn-primary">Add contact</SubmitButton>
           </div>
         </form>
       </details>

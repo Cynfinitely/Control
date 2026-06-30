@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/session";
 import { startOfWeek, addDays, endOfDay, toDateInputValue, formatDate } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import {
   addPlanItem,
   deletePlanItem,
@@ -61,9 +63,10 @@ export default async function PlannerPage() {
                       <span className="font-medium capitalize text-slate-600">{it.meal}</span>
                       <form action={deletePlanItem}>
                         <input type="hidden" name="id" value={it.id} />
-                        <button className="text-slate-300 hover:text-red-500">
-                          <Icon name="trash" className="h-3 w-3" />
-                        </button>
+                        <SubmitIconButton
+                          className="text-slate-300 hover:text-red-500"
+                          icon={<Icon name="trash" className="h-3 w-3" />}
+                        />
                       </form>
                     </div>
                     <p className="text-slate-800">{it.name}</p>
@@ -76,7 +79,7 @@ export default async function PlannerPage() {
                         <input type="hidden" name="mealPlanItemId" value={it.id} />
                         <input name="name" className="input py-1 text-xs" placeholder="ingredient" required />
                         <input name="quantity" className="input py-1 text-xs" placeholder="qty (optional)" />
-                        <button className="btn-primary w-full py-1 text-xs">Add</button>
+                        <SubmitButton className="btn-primary w-full py-1 text-xs">Add</SubmitButton>
                       </form>
                     </details>
                   </div>
@@ -96,7 +99,7 @@ export default async function PlannerPage() {
                     ))}
                   </select>
                   <input name="name" className="input py-1 text-xs" placeholder="meal name" required />
-                  <button className="btn-primary w-full py-1 text-xs">Add meal</button>
+                  <SubmitButton className="btn-primary w-full py-1 text-xs">Add meal</SubmitButton>
                 </form>
               </details>
             </div>
@@ -117,13 +120,12 @@ export default async function PlannerPage() {
           {shopping.map((s) => (
             <form key={s.id} action={toggleShoppingItem} className="flex items-center gap-3">
               <input type="hidden" name="id" value={s.id} />
-              <button
+              <SubmitIconButton
                 className={`flex h-4 w-4 items-center justify-center rounded border ${
                   s.checked ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300"
                 }`}
-              >
-                {s.checked && <Icon name="check" className="h-3 w-3" />}
-              </button>
+                icon={s.checked ? <Icon name="check" className="h-3 w-3" /> : null}
+              />
               <span className={`text-sm ${s.checked ? "text-slate-400 line-through" : "text-slate-700"}`}>
                 {s.name}
                 {s.quantity && <span className="text-slate-400"> · {s.quantity}</span>}
