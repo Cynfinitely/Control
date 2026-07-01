@@ -7,6 +7,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import { navItems } from "@/lib/nav";
 import Icon from "@/components/Icon";
+import Logo from "@/components/Logo";
 
 export default function Sidebar({
   name,
@@ -23,9 +24,7 @@ export default function Sidebar({
   const nav = (
     <>
       <div className="px-5 py-5">
-        <Link href="/dashboard" className="text-2xl font-bold text-brand-700" onClick={() => setOpen(false)}>
-          Control
-        </Link>
+        <Logo href="/dashboard" onClick={() => setOpen(false)} />
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
         {navItems.map((item) => {
@@ -93,9 +92,7 @@ export default function Sidebar({
         >
           <Icon name="menu" className="h-5 w-5" />
         </button>
-        <Link href="/dashboard" className="text-lg font-bold text-brand-700">
-          Control
-        </Link>
+        <Logo href="/dashboard" className="h-7" />
       </header>
 
       {open && (
