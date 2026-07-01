@@ -68,6 +68,20 @@ export function formatDayLabel(d: Date): string {
   return formatDate(day);
 }
 
+export function formatDaysAgo(d: Date | string | null | undefined): string {
+  if (!d) return "Never";
+  const date = typeof d === "string" ? new Date(d) : d;
+  if (isNaN(date.getTime())) return "Never";
+  const today = startOfDay(new Date());
+  const day = startOfDay(date);
+  const diff = Math.round((today.getTime() - day.getTime()) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  if (diff < 7) return `${diff} days ago`;
+  if (diff < 30) return `${Math.floor(diff / 7)} week${Math.floor(diff / 7) === 1 ? "" : "s"} ago`;
+  return formatDate(day);
+}
+
 export function parseDayParam(value: string | undefined): Date {
   if (!value) return startOfDay(new Date());
   const d = new Date(value + "T00:00:00");

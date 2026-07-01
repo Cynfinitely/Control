@@ -6,17 +6,19 @@ type LogoProps = {
   className?: string;
   href?: string;
   onClick?: () => void;
+  variant?: "full" | "mark";
 };
 
-export default function Logo({ className, href, onClick }: LogoProps) {
+export default function Logo({ className, href, onClick, variant = "full" }: LogoProps) {
+  const isMark = variant === "mark";
   const image = (
     <Image
-      src="/logo.png"
+      src={isMark ? "/logo-mark.png" : "/logo.png"}
       alt="Control"
-      width={2172}
-      height={724}
+      width={isMark ? 128 : 800}
+      height={isMark ? 128 : 267}
       priority
-      className={clsx("h-8 w-auto", className)}
+      className={clsx(isMark ? "h-10 w-10" : "h-8 w-auto", className)}
     />
   );
 

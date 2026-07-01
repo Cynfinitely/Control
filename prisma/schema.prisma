@@ -40,6 +40,7 @@ model User {
   bodyMeasurements   BodyMeasurement[]
   prayerLogs         PrayerLog[]
   qazaPrayers        QazaPrayer[]
+  prayerDebts        PrayerDebt[]
   dhikrLogs          DhikrLog[]
   quranProgress      QuranProgress[]
   fastingLogs        FastingLog[]
@@ -239,7 +240,8 @@ model Workout {
   userId       String
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   name         String
-  activityType String            @default("gym") // run | swim | gym | other
+  activityType String            @default("gym") // run | swim | walk | gym | other
+  walkKind     String? // indoor | outdoor (walk only)
   notes        String?
   date         DateTime
   distanceM    Float?
@@ -329,6 +331,23 @@ model QazaPrayer {
 
   @@index([userId, fulfilledAt])
   @@index([userId, prayer])
+}
+
+model PrayerDebt {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prayer      String // fajr | dhuhr | asr | maghrib | isha
+  owed        Int
+  fulfilled   Int       @default(0)
+  periodStart DateTime?
+  periodEnd   DateTime?
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, prayer])
+  @@index([userId])
 }
 
 model DhikrLog {
@@ -464,6 +483,7 @@ model Contact {
   userId           String
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   name             String
+  relationship     String? // family | friend | professional | other
   org              String?
   role             String?
   email            String?

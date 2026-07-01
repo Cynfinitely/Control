@@ -24,7 +24,7 @@ export default function Sidebar({
   const nav = (
     <>
       <div className="px-5 py-5">
-        <Logo href="/dashboard" onClick={() => setOpen(false)} />
+        <Logo href="/dashboard" variant="mark" className="h-10 w-10" onClick={() => setOpen(false)} />
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
         {navItems.map((item) => {
@@ -92,7 +92,7 @@ export default function Sidebar({
         >
           <Icon name="menu" className="h-5 w-5" />
         </button>
-        <Logo href="/dashboard" className="h-7" />
+        <Logo href="/dashboard" variant="mark" className="h-9 w-9" />
       </header>
 
       {open && (

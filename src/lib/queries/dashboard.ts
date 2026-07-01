@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
 import { startOfDay, endOfDay, startOfWeek, addDays } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
+import { historicalDebtRemaining } from "@/lib/prayer-debt";
 
 export type DomainHealth = "good" | "warn" | "bad";
 
@@ -30,7 +31,8 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         workoutsThisWeek,
         prayersToday,
         prayersThisWeek,
-        pendingQaza,
+        pendingQazaDaily,
+        prayerDebts,
         pendingFollowUps,
         careerGoalsActive,
         learningHoursWeek,
@@ -83,6 +85,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
           select: { status: true },
         }),
         prisma.qazaPrayer.count({ where: { userId, fulfilledAt: null } }),
+        prisma.prayerDebt.findMany({ where: { userId } }),
         prisma.followUp.count({ where: { userId, done: false } }),
         prisma.careerGoal.count({ where: { userId, status: "active", deletedAt: null } }),
         prisma.learningEntry.aggregate({
@@ -109,6 +112,9 @@ export async function getDashboardStats(userId: string, todayKey: string) {
       const prayersLoggedWeek = prayersThisWeek.length;
       const weeklyPrayerRate =
         prayersLoggedWeek > 0 ? Math.round((prayersOnTimeWeek / prayersLoggedWeek) * 100) : 0;
+
+      const historicalRemaining = historicalDebtRemaining(prayerDebts);
+      const pendingQaza = pendingQazaDaily + historicalRemaining;
 
       const health = {
         todos:

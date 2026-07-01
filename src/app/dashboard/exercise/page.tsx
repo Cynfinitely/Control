@@ -19,19 +19,24 @@ import {
 const ACTIVITY_LABELS: Record<string, string> = {
   run: "Run",
   swim: "Swim",
+  walk: "Walk",
   gym: "Gym",
   other: "Other",
 };
 
 function formatWorkoutSummary(w: {
   activityType: string;
+  walkKind?: string | null;
   distanceM: number | null;
   durationMin: number | null;
   _count: { exercises: number };
 }): string {
   const parts: string[] = [];
+  if (w.activityType === "walk" && w.walkKind) {
+    parts.push(w.walkKind === "indoor" ? "Indoor" : "Outdoor");
+  }
   if (w.distanceM) {
-    parts.push(w.activityType === "run" ? `${(w.distanceM / 1000).toFixed(1)} km` : `${w.distanceM} m`);
+    parts.push(w.activityType === "run" || w.activityType === "walk" ? `${(w.distanceM / 1000).toFixed(1)} km` : `${w.distanceM} m`);
   }
   if (w.durationMin) parts.push(`${w.durationMin} min`);
   if (w.activityType === "gym") parts.push(`${w._count.exercises} exercises`);
@@ -66,7 +71,7 @@ export default async function ExercisePage() {
 
   return (
     <div>
-      <PageHeader title="Exercise" description="Log runs, swims, gym sessions, and body metrics." />
+      <PageHeader title="Exercise" description="Log runs, walks, swims, gym sessions, and body metrics." />
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <details className="card" open>
@@ -117,6 +122,39 @@ export default async function ExercisePage() {
             </div>
             <div className="sm:col-span-2">
               <SubmitButton className="btn-primary touch-target">Log swim</SubmitButton>
+            </div>
+          </form>
+        </details>
+
+        <details className="card">
+          <summary className="cursor-pointer font-medium text-brand-700">Walk</summary>
+          <form action={createCardioWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <input type="hidden" name="activityType" value="walk" />
+            <div>
+              <label className="label">Type</label>
+              <select name="walkKind" className="input" defaultValue="outdoor">
+                <option value="outdoor">Outdoor</option>
+                <option value="indoor">Indoor</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Duration (min)</label>
+              <input name="durationMin" type="number" className="input" placeholder="30" />
+            </div>
+            <div>
+              <label className="label">Distance (km, optional)</label>
+              <input name="distanceKm" type="number" step="any" className="input" placeholder="3" />
+            </div>
+            <div>
+              <label className="label">Date</label>
+              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label">Notes</label>
+              <input name="notes" className="input" placeholder="optional" />
+            </div>
+            <div className="sm:col-span-2">
+              <SubmitButton className="btn-primary touch-target">Log walk</SubmitButton>
             </div>
           </form>
         </details>

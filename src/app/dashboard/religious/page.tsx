@@ -6,13 +6,22 @@ import {
   parseDayParam,
 } from "@/lib/date";
 import { getDayPrayers, getPrayerStreak, getReligiousSidebarData } from "@/lib/queries/religious";
+import { historicalDebtRemaining, prayerDebtRemaining, PRAYERS } from "@/lib/prayer-debt";
 import PageHeader from "@/components/PageHeader";
 import DayNavigator from "@/components/DayNavigator";
 import SubmitButton from "@/components/SubmitButton";
 import PrayerStatusPanel from "./PrayerStatusPanel";
-import { fulfillQaza, logDhikr, logQuran, logFasting, saveDhikrTarget, deleteDhikrTarget } from "./actions";
-
-const PRAYERS = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+import PrayerDebtSetup from "./PrayerDebtSetup";
+import {
+  fulfillQaza,
+  fulfillPrayerDebt,
+  clearPrayerDebt,
+  logDhikr,
+  logQuran,
+  logFasting,
+  saveDhikrTarget,
+  deleteDhikrTarget,
+} from "./actions";
 
 export default async function ReligiousPage({
   searchParams,
@@ -35,7 +44,7 @@ export default async function ReligiousPage({
     getReligiousSidebarData(user.id, todayKey),
   ]);
 
-  const { pendingQaza, dhikr, quran, fasts, dhikrTargets } = sidebar;
+  const { pendingQaza, prayerDebts, dhikr, quran, fasts, dhikrTargets } = sidebar;
 
   const prayerStatuses = Object.fromEntries(
     PRAYERS.map((p) => [p, dayPrayers.find((t) => t.prayer === p)?.status])
@@ -47,7 +56,13 @@ export default async function ReligiousPage({
     items: pendingQaza.filter((q) => q.prayer === prayer),
   })).filter((q) => q.count > 0);
 
-  const totalQaza = pendingQaza.length;
+  const historicalRemaining = historicalDebtRemaining(prayerDebts);
+  const dailyQazaCount = pendingQaza.length;
+  const totalQaza = dailyQazaCount + historicalRemaining;
+  const debtWithRemaining = prayerDebts
+    .map((d) => ({ ...d, remaining: prayerDebtRemaining(d) }))
+    .filter((d) => d.remaining > 0);
+
   const dhikrTotal = dhikr.reduce((s, d) => s + d.count, 0);
   const prayerSectionTitle = isToday ? "Today's prayers" : `Prayers — ${formatDayLabel(day)}`;
 
@@ -55,7 +70,7 @@ export default async function ReligiousPage({
     <div>
       <PageHeader
         title="Religious"
-        description="Track daily prayers, qaza makeup, dhikr, Quran, and fasting."
+        description="Track daily prayers, qaza makeup, historical debt, dhikr, Quran, and fasting."
       />
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -67,7 +82,9 @@ export default async function ReligiousPage({
         <div className="card">
           <p className="text-sm text-slate-500">Qaza pending</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{totalQaza}</p>
-          <p className="text-xs text-slate-400">makeup prayers</p>
+          <p className="text-xs text-slate-400">
+            {dailyQazaCount} daily · {historicalRemaining} historical
+          </p>
         </div>
         <div className="card">
           <p className="text-sm text-slate-500">Dhikr today</p>
@@ -95,9 +112,10 @@ export default async function ReligiousPage({
 
       {qazaCounts.length > 0 && (
         <div className="card mb-6">
-          <h2 className="section-title mb-4">Qaza prayers</h2>
+          <h2 className="section-title mb-4">Daily qaza</h2>
           <p className="mb-4 text-sm text-slate-500">
-            Missed prayers are added here automatically. Tap Fulfill when you make them up.
+            Missed prayers from your daily log are added here automatically. Tap Fulfill when you
+            make them up.
           </p>
           <div className="space-y-4">
             {qazaCounts.map(({ prayer, count, items }) => (
@@ -125,6 +143,73 @@ export default async function ReligiousPage({
           </div>
         </div>
       )}
+
+      <div className="card mb-6">
+        <h2 className="section-title mb-2">Historical prayer debt</h2>
+        {debtWithRemaining.length > 0 ? (
+          <div className="space-y-4">
+            {prayerDebts[0]?.note && (
+              <p className="text-sm text-slate-500">{prayerDebts[0].note}</p>
+            )}
+            {(prayerDebts[0]?.periodStart || prayerDebts[0]?.periodEnd) && (
+              <p className="text-xs text-slate-400">
+                Period: {prayerDebts[0]?.periodStart ? formatDate(prayerDebts[0].periodStart) : "?"}
+                {" – "}
+                {prayerDebts[0]?.periodEnd ? formatDate(prayerDebts[0].periodEnd) : "?"}
+              </p>
+            )}
+            {debtWithRemaining.map((d) => {
+              const pct = d.owed > 0 ? Math.round((d.fulfilled / d.owed) * 100) : 0;
+              return (
+                <div key={d.prayer}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-medium capitalize text-slate-700">{d.prayer}</span>
+                    <span className="text-slate-500">
+                      {d.fulfilled}/{d.owed} fulfilled · {d.remaining} left
+                    </span>
+                  </div>
+                  <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full bg-brand-500" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <form action={fulfillPrayerDebt}>
+                      <input type="hidden" name="prayer" value={d.prayer} />
+                      <input type="hidden" name="amount" value="1" />
+                      <SubmitButton className="btn-ghost touch-target text-sm">Fulfill 1</SubmitButton>
+                    </form>
+                    <form action={fulfillPrayerDebt} className="flex items-center gap-2">
+                      <input type="hidden" name="prayer" value={d.prayer} />
+                      <input
+                        name="amount"
+                        type="number"
+                        min={1}
+                        max={d.remaining}
+                        defaultValue={5}
+                        className="input w-16 py-1 text-sm"
+                      />
+                      <SubmitButton className="btn-ghost touch-target text-sm">Fulfill</SubmitButton>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+            <form action={clearPrayerDebt}>
+              <SubmitButton className="btn-ghost text-sm text-red-600">Clear all historical debt</SubmitButton>
+            </form>
+          </div>
+        ) : (
+          <p className="mb-4 text-sm text-slate-500">
+            No historical debt logged yet. Use the setup below if you owe prayers from before you
+            started tracking.
+          </p>
+        )}
+        <details className="mt-4">
+          <summary className="cursor-pointer font-medium text-brand-700">
+            {debtWithRemaining.length > 0 ? "Update historical debt" : "Set up historical debt"}
+          </summary>
+          <PrayerDebtSetup existingDebts={prayerDebts} />
+        </details>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="card">

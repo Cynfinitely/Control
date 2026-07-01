@@ -12,6 +12,11 @@ function invalidateNetworking(userId: string, contactId?: string) {
   if (contactId) revalidatePath(`/dashboard/networking/${contactId}`);
 }
 
+function parseRelationship(value: FormDataEntryValue | null): string | null {
+  const v = str(value);
+  return v || null;
+}
+
 export async function createContact(formData: FormData) {
   const userId = await getUserId();
   const name = str(formData.get("name"));
@@ -20,6 +25,7 @@ export async function createContact(formData: FormData) {
     data: {
       userId,
       name,
+      relationship: parseRelationship(formData.get("relationship")),
       org: optStr(formData.get("org")),
       role: optStr(formData.get("role")),
       email: optStr(formData.get("email")),
@@ -42,6 +48,7 @@ export async function updateContact(formData: FormData) {
     where: { id, userId },
     data: {
       name: str(formData.get("name")),
+      relationship: parseRelationship(formData.get("relationship")),
       org: optStr(formData.get("org")),
       role: optStr(formData.get("role")),
       email: optStr(formData.get("email")),
@@ -95,6 +102,23 @@ export async function logInteraction(formData: FormData) {
     });
   }
 
+  invalidateNetworking(userId, contactId);
+}
+
+export async function logCallToday(formData: FormData) {
+  const userId = await getUserId();
+  const contactId = str(formData.get("contactId"));
+  const owns = await prisma.contact.findFirst({ where: { id: contactId, userId } });
+  if (!owns) return;
+  await prisma.interaction.create({
+    data: {
+      userId,
+      contactId,
+      type: "call",
+      summary: optStr(formData.get("summary")),
+      date: new Date(),
+    },
+  });
   invalidateNetworking(userId, contactId);
 }
 

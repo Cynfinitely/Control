@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { getPeriodKey } from "@/lib/period";
 import { startOfWeek, addDays, toDateInputValue, formatDate } from "@/lib/date";
+import { historicalDebtRemaining } from "@/lib/prayer-debt";
 import { getBacklogTodos } from "@/lib/queries/todos";
 import { getGoalsForPeriod } from "@/lib/queries/goals";
 import PageHeader from "@/components/PageHeader";
@@ -16,11 +17,12 @@ export default async function WeeklyReviewPage() {
   const weekStart = startOfWeek(now);
   const yesterday = addDays(now, -1);
 
-  const [backlog, goals, pendingQaza, pendingFollowUps, shoppingRemaining, incompleteGoals] =
+  const [backlog, goals, pendingQazaDaily, prayerDebts, pendingFollowUps, shoppingRemaining, incompleteGoals] =
     await Promise.all([
       getBacklogTodos(user.id),
       getGoalsForPeriod(user.id, "weekly", weekKey),
       prisma.qazaPrayer.count({ where: { userId: user.id, fulfilledAt: null } }),
+      prisma.prayerDebt.findMany({ where: { userId: user.id } }),
       prisma.followUp.findMany({
         where: { userId: user.id, done: false },
         include: { contact: true },
@@ -47,6 +49,8 @@ export default async function WeeklyReviewPage() {
         },
       }),
     ]);
+
+  const pendingQaza = pendingQazaDaily + historicalDebtRemaining(prayerDebts);
 
   const completedGoals = goals.filter((g) => g.status === "completed").length;
 
@@ -120,7 +124,7 @@ export default async function WeeklyReviewPage() {
         <h2 className="section-title mb-2">4. Spiritual catch-up</h2>
         <p className="text-sm text-slate-500">
           {pendingQaza > 0
-            ? `${pendingQaza} qaza prayers waiting — oldest first on the religious page.`
+            ? `${pendingQaza} qaza prayers waiting (daily misses + historical debt) — work through them on the religious page.`
             : "No pending qaza — keep it up."}
         </p>
         <Link href="/dashboard/religious" className="btn-ghost mt-3 inline-block text-sm">
@@ -130,6 +134,9 @@ export default async function WeeklyReviewPage() {
 
       <section className="card mb-6">
         <h2 className="section-title mb-2">5. Relationships</h2>
+        <p className="mb-2 text-sm text-slate-500">
+          Stay in touch with family, friends, and professional contacts — log calls and follow-ups.
+        </p>
         {pendingFollowUps.length === 0 ? (
           <p className="text-sm text-slate-400">No pending follow-ups.</p>
         ) : (

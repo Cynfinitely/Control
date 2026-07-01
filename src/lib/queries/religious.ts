@@ -55,11 +55,12 @@ export async function getReligiousSidebarData(userId: string, todayKey: string) 
     ["religious-sidebar", userId, todayKey],
     [cacheTag("religious", userId)],
     async () => {
-      const [pendingQaza, dhikr, quran, fasts, dhikrTargets] = await Promise.all([
+      const [pendingQaza, prayerDebts, dhikr, quran, fasts, dhikrTargets] = await Promise.all([
         prisma.qazaPrayer.findMany({
           where: { userId, fulfilledAt: null },
           orderBy: [{ sourceDate: "asc" }, { prayer: "asc" }],
         }),
+        prisma.prayerDebt.findMany({ where: { userId }, orderBy: { prayer: "asc" } }),
         prisma.dhikrLog.findMany({
           where: { userId, date: { gte: today, lte: endOfDay(now) } },
           orderBy: { createdAt: "desc" },
@@ -76,7 +77,7 @@ export async function getReligiousSidebarData(userId: string, todayKey: string) 
         }),
         prisma.dhikrTarget.findMany({ where: { userId }, orderBy: { name: "asc" } }),
       ]);
-      return { pendingQaza, dhikr, quran, fasts, dhikrTargets };
+      return { pendingQaza, prayerDebts, dhikr, quran, fasts, dhikrTargets };
     }
   );
 }

@@ -47,6 +47,30 @@ export async function createCardioWorkout(formData: FormData) {
   } else if (activityType === "swim") {
     distanceM = num(formData.get("distanceM")) || null;
     if (!name) name = distanceM ? `Swim ${distanceM} m` : "Swim";
+  } else if (activityType === "walk") {
+    const km = num(formData.get("distanceKm"));
+    distanceM = km > 0 ? km * 1000 : null;
+    const walkKind = str(formData.get("walkKind")) || "outdoor";
+    const kindLabel = walkKind === "indoor" ? "Indoor" : "Outdoor";
+    if (!name) {
+      name = distanceM ? `${kindLabel} walk ${(distanceM / 1000).toFixed(1)} km` : `${kindLabel} walk`;
+    }
+    const walkNotes = [notes, walkKind ? `(${walkKind})` : null].filter(Boolean).join(" ");
+    await prisma.workout.create({
+      data: {
+        userId,
+        name,
+        activityType,
+        walkKind,
+        date,
+        durationMin,
+        distanceM,
+        notes: walkNotes || null,
+      },
+    });
+    await incrementLinkedGoals(userId, "workout", date);
+    invalidateExercise(userId);
+    return;
   } else {
     if (!name) name = str(formData.get("description")) || "Other activity";
   }

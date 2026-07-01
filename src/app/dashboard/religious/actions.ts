@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
+import { getUserId, str, optStr, num, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay } from "@/lib/date";
 import { incrementLinkedGoals } from "@/lib/goal-links";
@@ -51,6 +51,79 @@ export async function fulfillQaza(formData: FormData) {
     where: { id, userId, fulfilledAt: null },
     data: { fulfilledAt: new Date() },
   });
+  invalidate(userId);
+}
+
+export async function savePrayerDebt(formData: FormData) {
+  const userId = await getUserId();
+  const periodStart = parseOptionalDate(formData.get("periodStart"));
+  const periodEnd = parseOptionalDate(formData.get("periodEnd"));
+  const note = optStr(formData.get("note"));
+  const prayers = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+
+  for (const prayer of prayers) {
+    const owed = num(formData.get(`owed_${prayer}`));
+    if (owed <= 0) {
+      await prisma.prayerDebt.deleteMany({ where: { userId, prayer } });
+      continue;
+    }
+    const existing = await prisma.prayerDebt.findUnique({
+      where: { userId_prayer: { userId, prayer } },
+    });
+    await prisma.prayerDebt.upsert({
+      where: { userId_prayer: { userId, prayer } },
+      update: {
+        owed,
+        fulfilled: existing ? Math.min(existing.fulfilled, owed) : 0,
+        periodStart,
+        periodEnd,
+        note,
+      },
+      create: {
+        userId,
+        prayer,
+        owed,
+        fulfilled: 0,
+        periodStart,
+        periodEnd,
+        note,
+      },
+    });
+  }
+
+  invalidate(userId);
+}
+
+export async function fulfillPrayerDebt(formData: FormData) {
+  const userId = await getUserId();
+  const prayer = str(formData.get("prayer"));
+  const amount = Math.max(1, num(formData.get("amount"), 1));
+  if (!prayer) return;
+
+  const debt = await prisma.prayerDebt.findUnique({
+    where: { userId_prayer: { userId, prayer } },
+  });
+  if (!debt) return;
+
+  const remaining = debt.owed - debt.fulfilled;
+  if (remaining <= 0) return;
+
+  await prisma.prayerDebt.update({
+    where: { id: debt.id },
+    data: { fulfilled: Math.min(debt.owed, debt.fulfilled + amount) },
+  });
+
+  invalidate(userId);
+}
+
+export async function clearPrayerDebt(formData: FormData) {
+  const userId = await getUserId();
+  const prayer = optStr(formData.get("prayer"));
+  if (prayer) {
+    await prisma.prayerDebt.deleteMany({ where: { userId, prayer } });
+  } else {
+    await prisma.prayerDebt.deleteMany({ where: { userId } });
+  }
   invalidate(userId);
 }
 

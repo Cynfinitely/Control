@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { rangeFor } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
+import { historicalDebtRemaining } from "@/lib/prayer-debt";
 
 export type Period = "daily" | "weekly" | "monthly";
 
@@ -27,7 +28,8 @@ export async function buildReport(userId: string, period: Period) {
     weights,
     prayers,
     qazaFulfilled,
-    qazaPending,
+    qazaPendingDaily,
+    prayerDebts,
     dhikr,
     quran,
     fasts,
@@ -62,6 +64,7 @@ export async function buildReport(userId: string, period: Period) {
       where: { userId, fulfilledAt: { gte: from, lte: to } },
     }),
     prisma.qazaPrayer.count({ where: { userId, fulfilledAt: null } }),
+    prisma.prayerDebt.findMany({ where: { userId } }),
     prisma.dhikrLog.findMany({ where: { userId, date: { gte: from, lte: to } } }),
     prisma.quranProgress.findMany({ where: { userId, date: { gte: from, lte: to } } }),
     prisma.fastingLog.count({ where: { userId, date: { gte: from, lte: to } } }),
@@ -87,7 +90,10 @@ export async function buildReport(userId: string, period: Period) {
   const avgProtein = foodEntries.length ? totalProtein / days : 0;
   const calorieTarget = target?.calories ?? 2000;
 
+  const qazaPending = qazaPendingDaily + historicalDebtRemaining(prayerDebts);
+
   const gymWorkouts = workouts.filter((w) => w.activityType === "gym");
+  const walkWorkouts = workouts.filter((w) => w.activityType === "walk");
   const cardioWorkouts = workouts.filter((w) => w.activityType !== "gym");
   const totalSets = gymWorkouts.reduce(
     (s, w) => s + w.exercises.reduce((a, e) => a + e.sets.length, 0),
@@ -142,6 +148,7 @@ export async function buildReport(userId: string, period: Period) {
         stats: [
           { label: "Workouts", value: workouts.length, href: "/dashboard/exercise" },
           { label: "Gym sessions", value: gymWorkouts.length, href: "/dashboard/exercise" },
+          { label: "Walks", value: walkWorkouts.length, href: "/dashboard/exercise" },
           { label: "Cardio (min)", value: totalCardioMin, href: "/dashboard/exercise" },
           { label: "Gym sets", value: totalSets, href: "/dashboard/exercise" },
           {
