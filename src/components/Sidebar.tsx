@@ -70,6 +70,17 @@ export default function Sidebar({
           <p className="truncate text-sm font-medium text-slate-700">{name}</p>
           <p className="truncate text-xs text-slate-400">{email}</p>
         </div>
+        <Link
+          href="/dashboard/settings"
+          onClick={() => setOpen(false)}
+          className={clsx(
+            "btn-ghost touch-target mb-1 w-full",
+            pathname.startsWith("/dashboard/settings") && "bg-brand-50 text-brand-700"
+          )}
+        >
+          <Icon name="settings" className="h-4 w-4" />
+          Settings
+        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="btn-ghost touch-target w-full"
