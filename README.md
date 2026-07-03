@@ -90,7 +90,7 @@ New users register with an invite code, then verify their email. Since no email 
    - `NEXTAUTH_SECRET` — generate with `openssl rand -base64 32`
    - `NEXTAUTH_URL` — your Vercel URL (e.g. `https://control.vercel.app`)
 4. Add the same `DATABASE_URL` and `DIRECT_URL` as **GitHub repository secrets** (Settings → Secrets → Actions)
-5. Deploy — Vercel builds the app only (`prisma generate` + `next build`). Database migrations run via GitHub Actions when `prisma/` changes on `main`.
+5. Deploy — Vercel builds the app only (`prisma generate` + `next build`). Database migrations run via GitHub Actions when `prisma/` changes on `master`.
 6. Seed the production database once (from your machine):
 
 ```bash
@@ -104,7 +104,7 @@ Open the Vercel URL on any device — Safari on iPhone works as a responsive mob
 ### When you change the database schema
 
 1. Create a migration locally: `npm run db:migrate`
-2. Push to `main` — the **Database migrations** GitHub Action applies it to Neon (with retries for cold starts)
+2. Push to `master` — the **Database migrations** GitHub Action applies it to Neon (with retries for cold starts)
 3. Vercel deploys the new app code in parallel (no DB connection needed at build time)
 
 To apply migrations manually: `DATABASE_URL=... DIRECT_URL=... npm run db:migrate:deploy`

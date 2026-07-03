@@ -2,12 +2,13 @@ name: Database migrations
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - "prisma/migrations/**"
       - "prisma/schema.prisma"
       - "scripts/setup-db.mjs"
       - "scripts/sync-prisma-provider.mjs"
+  workflow_dispatch: {}
 
 jobs:
   migrate:
