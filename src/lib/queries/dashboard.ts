@@ -3,6 +3,7 @@ import { cacheTag, cachedQuery } from "@/lib/cache";
 import { startOfDay, endOfDay, startOfWeek, addDays } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
+import { getBudgetSummaryForDashboard } from "@/lib/queries/budget";
 
 export type DomainHealth = "good" | "warn" | "bad";
 
@@ -38,6 +39,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         learningHoursWeek,
         expiringCerts,
         waterToday,
+        budgetSummary,
       ] = await Promise.all([
         prisma.todo.count({
           where: {
@@ -103,6 +105,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
           where: { userId, date: { gte: from, lte: to } },
           _sum: { glasses: true },
         }),
+        getBudgetSummaryForDashboard(userId, now),
       ]);
 
       const calorieTarget = target?.calories ?? 2000;
@@ -135,6 +138,12 @@ export async function getDashboardStats(userId: string, todayKey: string) {
               : ("warn" as DomainHealth),
         career: (learningHoursWeek._sum.hours ?? 0) >= 2 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
         networking: pendingFollowUps > 5 ? ("bad" as DomainHealth) : pendingFollowUps === 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
+        budget:
+          !budgetSummary.setupComplete
+            ? ("warn" as DomainHealth)
+            : budgetSummary.monthNetCents >= 0
+              ? ("good" as DomainHealth)
+              : ("bad" as DomainHealth),
       };
 
       return {
@@ -155,6 +164,9 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         learningHoursWeek: learningHoursWeek._sum.hours ?? 0,
         expiringCerts,
         waterGlasses: waterToday._sum.glasses ?? 0,
+        budgetBalanceCents: budgetSummary.balanceCents,
+        budgetMonthNetCents: budgetSummary.monthNetCents,
+        budgetSetupComplete: budgetSummary.setupComplete,
         health,
       };
     }

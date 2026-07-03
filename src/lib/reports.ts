@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { rangeFor } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
+import { computePeriodTotals, computeSavingsRate, formatEuro, formatEuroSigned } from "@/lib/budget";
 
 export type Period = "daily" | "weekly" | "monthly";
 
@@ -39,6 +40,7 @@ export async function buildReport(userId: string, period: Period) {
     interactions,
     followUpsDone,
     waterGlasses,
+    budgetTransactions,
   ] = await Promise.all([
     prisma.todo.count({ where: { userId, completedAt: { gte: from, lte: to } } }),
     prisma.todo.count({ where: { userId, createdAt: { gte: from, lte: to }, deletedAt: null } }),
@@ -81,6 +83,10 @@ export async function buildReport(userId: string, period: Period) {
       where: { userId, date: { gte: from, lte: to } },
       _sum: { glasses: true },
     }),
+    prisma.budgetTransaction.findMany({
+      where: { userId, deletedAt: null, date: { gte: from, lte: to } },
+      include: { category: true },
+    }),
   ]);
 
   const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / 86400000));
@@ -111,6 +117,27 @@ export async function buildReport(userId: string, period: Period) {
 
   const weightDelta =
     weights.length >= 2 ? weights[weights.length - 1].weightKg - weights[0].weightKg : null;
+
+  const budgetRows = budgetTransactions.map((tx) => ({
+    type: tx.type,
+    amountCents: tx.amountCents,
+    date: tx.date,
+    categoryId: tx.categoryId,
+    deletedAt: tx.deletedAt,
+  }));
+  const budgetTotals = computePeriodTotals(budgetRows, from, to);
+  const budgetSavingsRate = computeSavingsRate(budgetTotals.incomeCents, budgetTotals.expenseCents);
+  const expenseByCategory = new Map<string, { name: string; total: number }>();
+  for (const tx of budgetTransactions) {
+    if (tx.type !== "expense") continue;
+    const existing = expenseByCategory.get(tx.categoryId);
+    if (existing) {
+      existing.total += tx.amountCents;
+    } else {
+      expenseByCategory.set(tx.categoryId, { name: tx.category.name, total: tx.amountCents });
+    }
+  }
+  const topExpenseCategory = [...expenseByCategory.values()].sort((a, b) => b.total - a.total)[0];
 
   return {
     period,
@@ -185,6 +212,25 @@ export async function buildReport(userId: string, period: Period) {
         stats: [
           { label: "Interactions", value: interactions, href: "/dashboard/networking" },
           { label: "Follow-ups done", value: followUpsDone, href: "/dashboard/networking" },
+        ],
+      },
+      {
+        title: "Budget",
+        stats: [
+          { label: "Income", value: formatEuro(budgetTotals.incomeCents), href: "/dashboard/budget" },
+          { label: "Expenses", value: formatEuro(budgetTotals.expenseCents), href: "/dashboard/budget" },
+          { label: "Net", value: formatEuroSigned(budgetTotals.netCents), href: "/dashboard/budget" },
+          {
+            label: "Savings rate",
+            value: budgetSavingsRate === null ? "-" : `${budgetSavingsRate}%`,
+            href: "/dashboard/budget",
+          },
+          {
+            label: "Top spending",
+            value: topExpenseCategory ? topExpenseCategory.name : "-",
+            href: "/dashboard/budget",
+          },
+          { label: "Transactions", value: budgetTransactions.length, href: "/dashboard/budget" },
         ],
       },
     ],

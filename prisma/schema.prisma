@@ -56,6 +56,9 @@ model User {
   waterLogs          WaterLog[]
   journalEntries     JournalEntry[]
   jobApplications    JobApplication[]
+  budgetProfile      BudgetProfile?
+  budgetCategories   BudgetCategory[]
+  budgetTransactions BudgetTransaction[]
 }
 
 model VerificationToken {
@@ -585,4 +588,59 @@ model FollowUp {
 
   @@index([userId, done])
   @@index([contactId])
+}
+
+// ----------------------------------------------------------------------------
+// 11. Budget — income/expense ledger (limits & accounts deferred to v2+)
+// ----------------------------------------------------------------------------
+
+model BudgetProfile {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startingBalanceCents   Int      @default(0)
+  startingBalanceDate    DateTime @default(now())
+  currency               String   @default("EUR")
+  setupComplete          Boolean  @default(false)
+  updatedAt              DateTime @updatedAt
+}
+
+model BudgetCategory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String
+  kind      String   // expense | income
+  icon      String?
+  sortOrder Int      @default(0)
+  isHidden  Boolean  @default(false)
+  isPreset  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions BudgetTransaction[]
+
+  @@unique([userId, slug])
+  @@index([userId, kind])
+}
+
+model BudgetTransaction {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String    // income | expense
+  amountCents   Int
+  categoryId    String
+  category      BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  date          DateTime
+  note          String?
+  deletedAt     DateTime?
+  // recurringRuleId String?  — v3 recurring bills
+  // accountId       String?  — v4 multi-account
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, categoryId])
 }

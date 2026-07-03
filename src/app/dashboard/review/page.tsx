@@ -2,10 +2,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { getPeriodKey } from "@/lib/period";
-import { startOfWeek, addDays, toDateInputValue, formatDate } from "@/lib/date";
+import { startOfWeek, addDays, toDateInputValue, formatDate, endOfDay } from "@/lib/date";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
 import { getBacklogTodos } from "@/lib/queries/todos";
 import { getGoalsForPeriod } from "@/lib/queries/goals";
+import { getWeekExpenseTotal } from "@/lib/queries/budget";
+import { formatEuro } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import SubmitButton from "@/components/SubmitButton";
 import { moveUnfinishedToBacklog } from "../todos/actions";
@@ -15,9 +17,10 @@ export default async function WeeklyReviewPage() {
   const now = new Date();
   const weekKey = getPeriodKey("weekly", now);
   const weekStart = startOfWeek(now);
+  const weekEnd = endOfDay(addDays(weekStart, 6));
   const yesterday = addDays(now, -1);
 
-  const [backlog, goals, pendingQazaDaily, prayerDebts, pendingFollowUps, shoppingRemaining, incompleteGoals] =
+  const [backlog, goals, pendingQazaDaily, prayerDebts, pendingFollowUps, shoppingRemaining, incompleteGoals, weekExpensesCents] =
     await Promise.all([
       getBacklogTodos(user.id),
       getGoalsForPeriod(user.id, "weekly", weekKey),
@@ -48,6 +51,7 @@ export default async function WeeklyReviewPage() {
           status: "active",
         },
       }),
+      getWeekExpenseTotal(user.id, weekStart, weekEnd),
     ]);
 
   const pendingQaza = pendingQazaDaily + historicalDebtRemaining(prayerDebts);
@@ -61,7 +65,7 @@ export default async function WeeklyReviewPage() {
         description={`Week of ${formatDate(weekStart)} — your command center for the week ahead.`}
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div className="card">
           <p className="text-sm text-slate-500">Backlog</p>
           <p className="text-2xl font-bold">{backlog.length}</p>
@@ -71,6 +75,10 @@ export default async function WeeklyReviewPage() {
           <p className="text-2xl font-bold">
             {completedGoals}/{goals.length}
           </p>
+        </div>
+        <div className="card">
+          <p className="text-sm text-slate-500">Spent this week</p>
+          <p className="text-2xl font-bold">{formatEuro(weekExpensesCents)}</p>
         </div>
         <div className="card">
           <p className="text-sm text-slate-500">Qaza pending</p>

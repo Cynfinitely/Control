@@ -87,3 +87,21 @@ export function parseDayParam(value: string | undefined): Date {
   const d = new Date(value + "T00:00:00");
   return isNaN(d.getTime()) ? startOfDay(new Date()) : startOfDay(d);
 }
+
+export function endOfMonth(d: Date): Date {
+  return endOfDay(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+}
+
+export function parseMonthParam(value: string | undefined, fallback?: Date): Date {
+  if (value && /^\d{4}-\d{2}$/.test(value)) {
+    const [y, m] = value.split("-").map(Number);
+    return startOfMonth(new Date(y, m - 1, 1));
+  }
+  return startOfMonth(fallback ?? new Date());
+}
+
+export function toMonthKey(d: Date): string {
+  const x = startOfDay(d);
+  const m = String(x.getMonth() + 1).padStart(2, "0");
+  return `${x.getFullYear()}-${m}`;
+}

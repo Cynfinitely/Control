@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/session";
 import { toDateInputValue } from "@/lib/date";
 import { getDashboardStats, type DomainHealth } from "@/lib/queries/dashboard";
+import { formatEuro, formatEuroSigned } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 
@@ -51,6 +52,18 @@ export default async function DashboardHome() {
       health: stats.health.food,
     },
     {
+      label: "Balance",
+      value: stats.budgetSetupComplete
+        ? formatEuro(stats.budgetBalanceCents)
+        : "Set up",
+      sub: stats.budgetSetupComplete
+        ? `${formatEuroSigned(stats.budgetMonthNetCents)} this month`
+        : "Add starting balance",
+      href: "/dashboard/budget",
+      icon: "wallet",
+      health: stats.health.budget,
+    },
+    {
       label: "Workouts",
       value: `${stats.workoutsToday} today`,
       sub: `${stats.workoutsThisWeek} this week`,
@@ -87,6 +100,7 @@ export default async function DashboardHome() {
   const quickLinks = [
     { href: "/dashboard/todos", label: "Add todo", icon: "check" },
     { href: "/dashboard/food", label: "Log meal", icon: "food" },
+    { href: "/dashboard/budget", label: "Log transaction", icon: "wallet" },
     { href: "/dashboard/exercise", label: "Log workout", icon: "dumbbell" },
     { href: "/dashboard/religious", label: "Log prayers", icon: "moon" },
     { href: "/dashboard/review", label: "Weekly review", icon: "chart" },

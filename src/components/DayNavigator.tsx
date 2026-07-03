@@ -8,9 +8,10 @@ type Props = {
   dayValue: string;
   dayLabel: string;
   maxDay?: string;
+  monthKey?: string;
 };
 
-export default function DayNavigator({ basePath, dayValue, dayLabel, maxDay }: Props) {
+export default function DayNavigator({ basePath, dayValue, dayLabel, maxDay, monthKey }: Props) {
   const router = useRouter();
   const day = new Date(dayValue + "T00:00:00");
   const todayValue = toDateInputValue(new Date());
@@ -18,12 +19,16 @@ export default function DayNavigator({ basePath, dayValue, dayLabel, maxDay }: P
   const nextDayValue = toDateInputValue(addDays(day, 1));
   const canGoNext = !maxDay || nextDayValue <= maxDay;
 
+  function buildUrl(nextDay: string) {
+    const params = new URLSearchParams();
+    if (monthKey) params.set("month", monthKey);
+    if (nextDay !== todayValue) params.set("day", nextDay);
+    const qs = params.toString();
+    return qs ? `${basePath}?${qs}` : basePath;
+  }
+
   function navigate(nextDay: string) {
-    if (nextDay === todayValue) {
-      router.push(basePath);
-      return;
-    }
-    router.push(`${basePath}?day=${nextDay}`);
+    router.push(buildUrl(nextDay));
   }
 
   return (
