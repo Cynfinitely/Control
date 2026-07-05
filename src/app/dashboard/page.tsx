@@ -2,9 +2,11 @@ import Link from "next/link";
 import { requireUser } from "@/lib/session";
 import { toDateInputValue } from "@/lib/date";
 import { getDashboardStats, type DomainHealth } from "@/lib/queries/dashboard";
+import { getPlanPreviewBlocks, getPlanDayStats } from "@/lib/queries/plan";
 import { formatEuro, formatEuroSigned } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import PlanPreview from "./plan/PlanPreview";
 
 const PRAYERS = 5;
 
@@ -20,6 +22,10 @@ export default async function DashboardHome() {
   const todayKey = toDateInputValue(now);
 
   const stats = await getDashboardStats(user.id, todayKey);
+  const [planPreview, planStats] = await Promise.all([
+    getPlanPreviewBlocks(user.id, todayKey),
+    getPlanDayStats(user.id, todayKey, now),
+  ]);
 
   const cards = [
     {
@@ -98,6 +104,7 @@ export default async function DashboardHome() {
   ];
 
   const quickLinks = [
+    { href: "/dashboard/plan", label: "Daily plan", icon: "calendar" },
     { href: "/dashboard/todos", label: "Add todo", icon: "check" },
     { href: "/dashboard/food", label: "Log meal", icon: "food" },
     { href: "/dashboard/budget", label: "Log transaction", icon: "wallet" },
@@ -117,6 +124,14 @@ export default async function DashboardHome() {
           month: "long",
           year: "numeric",
         })}
+      />
+
+      <PlanPreview
+        blocks={planPreview.blocks}
+        stats={planStats}
+        currentBlockId={planPreview.currentBlockId}
+        dayValue={todayKey}
+        isToday
       />
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

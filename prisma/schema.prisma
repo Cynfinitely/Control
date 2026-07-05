@@ -59,6 +59,9 @@ model User {
   budgetProfile      BudgetProfile?
   budgetCategories   BudgetCategory[]
   budgetTransactions BudgetTransaction[]
+  planBlocks           PlanBlock[]
+  planTemplates        PlanTemplate[]
+  planSuggestionDismissals PlanSuggestionDismissal[]
 }
 
 model VerificationToken {
@@ -643,4 +646,72 @@ model BudgetTransaction {
 
   @@index([userId, date])
   @@index([userId, categoryId])
+}
+
+// ----------------------------------------------------------------------------
+// 12. Daily plan — time-blocked schedule with module links
+// ----------------------------------------------------------------------------
+
+model PlanBlock {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planDate  DateTime
+  title     String
+  startTime String // HH:mm in user timezone
+  endTime   String
+  kind      String  @default("custom") // custom | todo | meal | prayer | workout | followup | break
+  status    String  @default("planned") // planned | done | skipped
+  linkType  String?
+  linkId    String?
+  color     String?
+  notes     String?
+  sortOrder Int       @default(0)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, planDate])
+  @@index([userId, linkType, linkId])
+}
+
+model PlanTemplate {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  dayOfWeek Int? // 0=Sun..6=Sat, null = generic
+  isDefault Boolean             @default(false)
+  blocks    PlanTemplateBlock[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@index([userId])
+}
+
+model PlanTemplateBlock {
+  id         String       @id @default(cuid())
+  templateId String
+  template   PlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  title      String
+  startTime  String
+  endTime    String
+  kind       String       @default("custom")
+  linkType   String?
+  color      String?
+  sortOrder  Int          @default(0)
+
+  @@index([templateId])
+}
+
+model PlanSuggestionDismissal {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planDate       DateTime
+  suggestionKey  String
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, planDate, suggestionKey])
+  @@index([userId, planDate])
 }

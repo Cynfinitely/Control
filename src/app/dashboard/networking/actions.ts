@@ -7,7 +7,7 @@ import { getUserId, str, optStr, parseDate, parseOptionalDate } from "@/lib/acti
 import { revalidateUserCache } from "@/lib/cache";
 
 function invalidateNetworking(userId: string, contactId?: string) {
-  revalidateUserCache(userId, "dashboard", "networking");
+  revalidateUserCache(userId, "dashboard", "networking", "plan");
   revalidatePath("/dashboard/networking");
   if (contactId) revalidatePath(`/dashboard/networking/${contactId}`);
 }

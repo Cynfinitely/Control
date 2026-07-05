@@ -165,9 +165,18 @@ export default async function WeeklyReviewPage() {
         </Link>
       </section>
 
-      <section className="card">
+      <section className="card mb-6">
         <h2 className="section-title mb-2">6. Plan next week</h2>
-        <p className="text-sm text-slate-500">
+        <p className="mb-3 text-sm text-slate-500">
+          Schedule tomorrow and the week ahead with time blocks — todos, meals, prayers, and follow-ups.
+        </p>
+        <Link
+          href={`/dashboard/plan?day=${toDateInputValue(addDays(now, 1))}`}
+          className="btn-ghost inline-block text-sm"
+        >
+          Plan tomorrow →
+        </Link>
+        <p className="mt-3 text-sm text-slate-500">
           {shoppingRemaining > 0
             ? `${shoppingRemaining} shopping items left for this week&apos;s meal plan.`
             : "Meal plan shopping looks complete."}

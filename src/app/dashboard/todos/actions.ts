@@ -6,7 +6,7 @@ import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay, endOfDay } from "@/lib/date";
 
 function invalidate(userId: string) {
-  revalidateUserCache(userId, "todos", "dashboard");
+  revalidateUserCache(userId, "todos", "dashboard", "plan");
 }
 
 export async function createTodo(formData: FormData) {

@@ -18,7 +18,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
 
   return cachedQuery(
     ["dashboard-stats", userId, todayKey],
-    [cacheTag("dashboard", userId)],
+    [cacheTag("dashboard", userId), cacheTag("plan", userId)],
     async () => {
       const [
         todayOpenTodos,
@@ -40,6 +40,8 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         expiringCerts,
         waterToday,
         budgetSummary,
+        planBlocksToday,
+        planBlocksDoneToday,
       ] = await Promise.all([
         prisma.todo.count({
           where: {
@@ -106,6 +108,12 @@ export async function getDashboardStats(userId: string, todayKey: string) {
           _sum: { glasses: true },
         }),
         getBudgetSummaryForDashboard(userId, now),
+        prisma.planBlock.count({
+          where: { userId, deletedAt: null, planDate: { gte: from, lte: to } },
+        }),
+        prisma.planBlock.count({
+          where: { userId, deletedAt: null, status: "done", planDate: { gte: from, lte: to } },
+        }),
       ]);
 
       const calorieTarget = target?.calories ?? 2000;
@@ -167,6 +175,10 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         budgetBalanceCents: budgetSummary.balanceCents,
         budgetMonthNetCents: budgetSummary.monthNetCents,
         budgetSetupComplete: budgetSummary.setupComplete,
+        planBlocksToday,
+        planBlocksDoneToday,
+        planCompletionPct:
+          planBlocksToday === 0 ? 0 : Math.round((planBlocksDoneToday / planBlocksToday) * 100),
         health,
       };
     }
