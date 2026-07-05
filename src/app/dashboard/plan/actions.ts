@@ -6,6 +6,7 @@ import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay, endOfDay, addDays, toDateInputValue } from "@/lib/date";
 import { isValidTimeRange } from "@/lib/plan/time";
 import { findOverlappingBlock } from "@/lib/plan/overlap";
+import { parsePlanText } from "@/lib/plan/parse-text";
 import { getDayPlanBlocks } from "@/lib/queries/plan";
 
 function invalidate(userId: string) {
@@ -374,4 +375,99 @@ export async function copyYesterdayPlan(formData: FormData) {
   fd.set("sourceDate", toDateInputValue(sourceDate));
   fd.set("replace", str(formData.get("replace")) || "false");
   await copyPlanFromDay(fd);
+}
+
+export type ImportPlanFromTextResult = {
+  imported: number;
+  skipped: number;
+  warnings: string[];
+};
+
+export async function importPlanFromText(formData: FormData): Promise<ImportPlanFromTextResult> {
+  const userId = await getUserId();
+  const planDate = startOfDay(parseDate(formData.get("planDate")));
+  const text = str(formData.get("text"));
+  const mode = str(formData.get("mode")) || "replace";
+
+  const empty: ImportPlanFromTextResult = { imported: 0, skipped: 0, warnings: [] };
+  if (!text) return empty;
+
+  const { entries, warnings } = parsePlanText(text);
+  if (entries.length === 0) {
+    return { imported: 0, skipped: 0, warnings };
+  }
+
+  if (mode === "replace") {
+    await prisma.planBlock.updateMany({
+      where: {
+        userId,
+        deletedAt: null,
+        planDate: { gte: startOfDay(planDate), lte: endOfDay(planDate) },
+      },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  const existing =
+    mode === "merge" ? await getExistingBlocks(userId, planDate) : [];
+
+  let skipped = 0;
+  const toCreate: {
+    userId: string;
+    planDate: Date;
+    title: string;
+    startTime: string;
+    endTime: string;
+    kind: string;
+    status: string;
+    sortOrder: number;
+  }[] = [];
+
+  const maxOrder =
+    mode === "merge"
+      ? (
+          await prisma.planBlock.aggregate({
+            where: {
+              userId,
+              deletedAt: null,
+              planDate: { gte: startOfDay(planDate), lte: endOfDay(planDate) },
+            },
+            _max: { sortOrder: true },
+          })
+        )._max.sortOrder ?? -1
+      : -1;
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    if (mode === "merge" && findOverlappingBlock(existing, entry)) {
+      skipped += 1;
+      continue;
+    }
+
+    toCreate.push({
+      userId,
+      planDate,
+      title: entry.title,
+      startTime: entry.startTime,
+      endTime: entry.endTime,
+      kind: entry.kind,
+      status: "planned",
+      sortOrder: maxOrder + 1 + toCreate.length,
+    });
+
+    if (mode === "merge") {
+      existing.push({
+        id: `import-${i}`,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+      });
+    }
+  }
+
+  if (toCreate.length > 0) {
+    await prisma.planBlock.createMany({ data: toCreate });
+  }
+
+  invalidate(userId);
+  return { imported: toCreate.length, skipped, warnings };
 }

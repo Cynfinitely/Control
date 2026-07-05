@@ -13,6 +13,7 @@ import SubmitButton from "@/components/SubmitButton";
 import PlanTimeline from "./PlanTimeline";
 import SuggestionPanel from "./SuggestionPanel";
 import TemplatePicker from "./TemplatePicker";
+import PlanTextImport from "./PlanTextImport";
 import { createPlanBlock, applyPlanTemplate } from "./actions";
 import { PLAN_KIND_LABELS } from "@/lib/plan/kinds";
 
@@ -122,6 +123,11 @@ export default async function PlanPage({
           <div>
             <h2 className="section-title mb-3">Templates</h2>
             <TemplatePicker templates={templates} dayValue={dayValue} blockCount={blocks.length} />
+          </div>
+
+          <div>
+            <h2 className="section-title mb-3">Import from text</h2>
+            <PlanTextImport dayValue={dayValue} />
           </div>
         </div>
       </div>
