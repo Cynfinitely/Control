@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/session";
 import {
   toDateInputValue,
   formatDayLabel,
+  formatDate,
   parseDayParam,
   parseMonthParam,
   toMonthKey,
@@ -124,7 +125,7 @@ export default async function BudgetPage({
             <p className="mt-2 text-2xl font-bold text-slate-900">{formatEuro(balanceCents)}</p>
             {profile?.startingBalanceDate && (
               <p className="text-xs text-slate-400">
-                from {profile.startingBalanceDate.toLocaleDateString("en-GB")}
+                from {formatDate(profile.startingBalanceDate)}
               </p>
             )}
           </div>

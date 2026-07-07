@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { startOfDay, endOfDay, rangeFor, toDateInputValue } from "@/lib/date";
+import { coerceDate, startOfDay, endOfDay, rangeFor, toDateInputValue } from "@/lib/date";
 import type { LedgerTypeFilter } from "@/lib/budget-range";
 import { ensureBudgetCategories } from "@/lib/budget-categories";
+import type { BudgetCategory, BudgetProfile } from "@prisma/client";
 import {
   computeBalance,
   computePeriodTotals,
@@ -42,6 +43,40 @@ async function loadBudgetContext(userId: string) {
   return { profile, categories, transactions: txRows };
 }
 
+type CachedTxRow = BudgetTxRow & { id: string; note: string | null; categoryName: string };
+
+type CachedProfile = Omit<BudgetProfile, "startingBalanceDate"> & {
+  startingBalanceDate: Date | string;
+};
+
+function reviveProfile(profile: CachedProfile | null): BudgetProfile | null {
+  if (!profile) return null;
+  return { ...profile, startingBalanceDate: coerceDate(profile.startingBalanceDate) };
+}
+
+function reviveTxRow<T extends { date: Date | string; deletedAt?: Date | string | null }>(
+  tx: T
+): Omit<T, "date" | "deletedAt"> & { date: Date; deletedAt: Date | null } {
+  return {
+    ...tx,
+    date: coerceDate(tx.date),
+    deletedAt: tx.deletedAt ? coerceDate(tx.deletedAt) : null,
+  };
+}
+
+function reviveDayBudget(data: {
+  profile: CachedProfile | null;
+  categories: BudgetCategory[];
+  entries: CachedTxRow[];
+  balanceCents: number;
+}) {
+  return {
+    ...data,
+    profile: reviveProfile(data.profile),
+    entries: data.entries.map(reviveTxRow),
+  };
+}
+
 export async function getBudgetProfile(userId: string) {
   return cachedQuery(
     ["budget-profile", userId],
@@ -68,7 +103,7 @@ export async function getBudgetCategories(userId: string, includeHidden = false)
 }
 
 export async function getDayBudget(userId: string, dayKey: string) {
-  return cachedQuery(
+  const data = await cachedQuery(
     ["budget-day", userId, dayKey],
     [cacheTag("budget", userId), cacheTag("dashboard", userId)],
     async () => {
@@ -89,11 +124,12 @@ export async function getDayBudget(userId: string, dayKey: string) {
       };
     }
   );
+  return reviveDayBudget(data);
 }
 
 export async function getMonthBudget(userId: string, monthStart: Date) {
   const monthKey = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`;
-  return cachedQuery(
+  const data = await cachedQuery(
     ["budget-month", userId, monthKey],
     [cacheTag("budget", userId), cacheTag("dashboard", userId)],
     async () => {
@@ -118,6 +154,12 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
       };
     }
   );
+  return {
+    ...data,
+    profile: reviveProfile(data.profile),
+    from: coerceDate(data.from),
+    to: coerceDate(data.to),
+  };
 }
 
 export async function getBudgetSummaryForDashboard(userId: string, ref: Date) {
@@ -164,7 +206,7 @@ export async function getRangeBudget(
   const typeKey = filters?.type ?? "all";
   const categoryKey = filters?.categoryId ?? "all";
 
-  return cachedQuery(
+  const data = await cachedQuery(
     ["budget-range", userId, fromKey, toKey, typeKey, categoryKey],
     [cacheTag("budget", userId)],
     async () => {
@@ -215,4 +257,10 @@ export async function getRangeBudget(
       };
     }
   );
+  return {
+    ...data,
+    entries: data.entries.map(reviveTxRow),
+    from: coerceDate(data.from),
+    to: coerceDate(data.to),
+  };
 }

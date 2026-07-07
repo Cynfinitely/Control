@@ -10,6 +10,10 @@ export function revalidateUserCache(userId: string, ...scopes: string[]) {
   }
 }
 
+/**
+ * Wraps unstable_cache. Note: cached values are JSON-serialized, so Date fields
+ * come back as ISO strings on cache hits. Revive dates after await (see coerceDate).
+ */
 export function cachedQuery<T>(
   keyParts: string[],
   tags: string[],

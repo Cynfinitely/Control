@@ -1,5 +1,12 @@
-export function startOfDay(d: Date): Date {
-  const x = new Date(d);
+/** Normalize Date or ISO string (e.g. after unstable_cache JSON round-trip). */
+export function coerceDate(d: Date | string | null | undefined): Date {
+  if (!d) return new Date(0);
+  const date = typeof d === "string" ? new Date(d) : d;
+  return isNaN(date.getTime()) ? new Date(0) : date;
+}
+
+export function startOfDay(d: Date | string): Date {
+  const x = coerceDate(d);
   x.setHours(0, 0, 0, 0);
   return x;
 }

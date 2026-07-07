@@ -14,7 +14,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "node scripts/sync-prisma-provider.mjs && prisma studio",
     "setup": "node scripts/sync-prisma-provider.mjs && prisma generate && node scripts/setup-db.mjs && tsx prisma/seed.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run test && npm run build"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
