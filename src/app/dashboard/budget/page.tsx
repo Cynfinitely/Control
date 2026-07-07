@@ -8,8 +8,9 @@ import {
   toMonthKey,
 } from "@/lib/date";
 import { periodLabel } from "@/lib/period";
-import { getDayBudget, getMonthBudget } from "@/lib/queries/budget";
+import { getDayBudget, getMonthBudget, getRangeBudget } from "@/lib/queries/budget";
 import { formatEuro, formatEuroSigned, centsToEuros } from "@/lib/budget";
+import { parseLedgerParams } from "@/lib/budget-range";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import DayNavigator from "@/components/DayNavigator";
@@ -17,12 +18,21 @@ import MonthNavigator from "@/components/MonthNavigator";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
 import BudgetTransactionForm from "./BudgetTransactionForm";
+import SpendingLedger from "./SpendingLedger";
 import { logTransactionForm, deleteTransaction, saveStartingBalance } from "./actions";
 
 export default async function BudgetPage({
   searchParams,
 }: {
-  searchParams: { day?: string; month?: string };
+  searchParams: {
+    day?: string;
+    month?: string;
+    ledger?: string;
+    from?: string;
+    to?: string;
+    filter?: string;
+    category?: string;
+  };
 }) {
   const user = await requireUser();
   const day = parseDayParam(searchParams.day);
@@ -32,9 +42,17 @@ export default async function BudgetPage({
   const monthKey = toMonthKey(monthStart);
   const monthLabel = periodLabel("monthly", monthKey);
 
-  const [dayData, monthData] = await Promise.all([
+  const ledger = parseLedgerParams(searchParams);
+  const ledgerFromValue = toDateInputValue(ledger.from);
+  const ledgerToValue = toDateInputValue(ledger.to);
+
+  const [dayData, monthData, rangeData] = await Promise.all([
     getDayBudget(user.id, dayValue),
     getMonthBudget(user.id, monthStart),
+    getRangeBudget(user.id, ledger.from, ledger.to, {
+      type: ledger.typeFilter,
+      categoryId: ledger.categoryId,
+    }),
   ]);
 
   const { profile, categories, entries, balanceCents } = dayData;
@@ -157,6 +175,18 @@ export default async function BudgetPage({
           </div>
         )}
       </section>
+
+      <SpendingLedger
+        searchParams={searchParams}
+        ledger={ledger}
+        rangeData={rangeData}
+        categories={rangeData.categories}
+        dayValue={dayValue}
+        monthKey={monthKey}
+        refDay={day}
+        fromValue={ledgerFromValue}
+        toValue={ledgerToValue}
+      />
 
       <section>
         <div className="card mb-4 flex flex-wrap items-center justify-between gap-3">

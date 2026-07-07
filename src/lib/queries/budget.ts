@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { startOfDay, endOfDay, rangeFor } from "@/lib/date";
+import { startOfDay, endOfDay, rangeFor, toDateInputValue } from "@/lib/date";
+import type { LedgerTypeFilter } from "@/lib/budget-range";
 import { ensureBudgetCategories } from "@/lib/budget-categories";
 import {
   computeBalance,
@@ -140,4 +141,78 @@ export async function getWeekExpenseTotal(userId: string, weekStart: Date, weekE
   const active = transactions.filter((tx) => !tx.deletedAt);
   const { expenseCents } = computePeriodTotals(active, weekStart, weekEnd);
   return expenseCents;
+}
+
+export type RangeBudgetEntry = {
+  id: string;
+  type: string;
+  amountCents: number;
+  date: Date;
+  note: string | null;
+  categoryId: string;
+  categoryName: string;
+};
+
+export async function getRangeBudget(
+  userId: string,
+  from: Date,
+  to: Date,
+  filters?: { type?: LedgerTypeFilter; categoryId?: string | null }
+) {
+  const fromKey = toDateInputValue(from);
+  const toKey = toDateInputValue(to);
+  const typeKey = filters?.type ?? "all";
+  const categoryKey = filters?.categoryId ?? "all";
+
+  return cachedQuery(
+    ["budget-range", userId, fromKey, toKey, typeKey, categoryKey],
+    [cacheTag("budget", userId)],
+    async () => {
+      await ensureBudgetCategories(userId);
+
+      const where = {
+        userId,
+        deletedAt: null,
+        date: { gte: startOfDay(from), lte: endOfDay(to) },
+        ...(filters?.type && filters.type !== "all" ? { type: filters.type } : {}),
+        ...(filters?.categoryId ? { categoryId: filters.categoryId } : {}),
+      };
+
+      const [entries, categories] = await Promise.all([
+        prisma.budgetTransaction.findMany({
+          where,
+          include: { category: true },
+          orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        }),
+        prisma.budgetCategory.findMany({
+          where: { userId, isHidden: false },
+          orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+        }),
+      ]);
+
+      const txRows: RangeBudgetEntry[] = entries.map((tx) => ({
+        id: tx.id,
+        type: tx.type,
+        amountCents: tx.amountCents,
+        date: tx.date,
+        note: tx.note,
+        categoryId: tx.categoryId,
+        categoryName: tx.category.name,
+      }));
+
+      const totals = computePeriodTotals(txRows, from, to);
+      const expenseCategories = categories.filter((c) => c.kind === "expense");
+      const breakdown = expenseBreakdownByCategory(txRows, expenseCategories, from, to);
+
+      return {
+        entries: txRows,
+        categories,
+        from,
+        to,
+        ...totals,
+        breakdown,
+        transactionCount: txRows.length,
+      };
+    }
+  );
 }
