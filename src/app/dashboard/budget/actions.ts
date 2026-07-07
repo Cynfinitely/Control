@@ -7,6 +7,7 @@ import { revalidateUserCache } from "@/lib/cache";
 import { parseAmountToCents } from "@/lib/budget";
 import { ensureBudgetCategories } from "@/lib/budget-categories";
 import { startOfDay } from "@/lib/date";
+import { success, failure, wrapFormAction } from "@/lib/action-result";
 
 function invalidateBudget(userId: string) {
   revalidateUserCache(userId, "dashboard", "budget");
@@ -51,14 +52,14 @@ export async function logTransaction(formData: FormData) {
   await ensureBudgetCategories(userId);
 
   const type = str(formData.get("type"));
-  if (type !== "income" && type !== "expense") return;
+  if (type !== "income" && type !== "expense") return failure("Invalid transaction type");
 
   const amountCents = parseAmountToCents(formData.get("amount"));
-  if (amountCents === null) return;
+  if (amountCents === null) return failure("Enter a valid amount");
 
   const categoryId = str(formData.get("categoryId"));
   const category = await getCategoryForUser(userId, categoryId, type);
-  if (!category) return;
+  if (!category) return failure("Select a valid category");
 
   await prisma.budgetTransaction.create({
     data: {
@@ -71,7 +72,10 @@ export async function logTransaction(formData: FormData) {
     },
   });
   invalidateBudget(userId);
+  return success("Transaction logged");
 }
+
+export const logTransactionForm = wrapFormAction(logTransaction, "Transaction logged");
 
 export async function deleteTransaction(formData: FormData) {
   const userId = await getUserId();

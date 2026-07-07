@@ -10,6 +10,7 @@ import {
   isPersonalRelationship,
 } from "@/lib/contacts";
 import PageHeader from "@/components/PageHeader";
+import Breadcrumb from "@/components/Breadcrumb";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
@@ -55,14 +56,15 @@ export default async function ContactDetail({
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Networking", href: "/dashboard/networking" },
+          { label: contact.name },
+        ]}
+      />
       <PageHeader
         title={contact.name}
         description={descriptionParts.join(" · ") || undefined}
-        action={
-          <Link href="/dashboard/networking" className="btn-ghost">
-            ← All contacts
-          </Link>
-        }
       />
 
       <div className="card mb-6 flex flex-wrap items-center justify-between gap-4">

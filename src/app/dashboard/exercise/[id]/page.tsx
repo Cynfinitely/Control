@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { formatDate } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
+import Breadcrumb from "@/components/Breadcrumb";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
@@ -25,14 +26,15 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Exercise", href: "/dashboard/exercise" },
+          { label: workout.name },
+        ]}
+      />
       <PageHeader
         title={workout.name}
         description={formatDate(workout.date)}
-        action={
-          <Link href="/dashboard/exercise" className="btn-ghost">
-            ← All workouts
-          </Link>
-        }
       />
 
       {workout.notes && <p className="mb-6 text-sm text-slate-500">{workout.notes}</p>}

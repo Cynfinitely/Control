@@ -82,7 +82,7 @@ export default async function PlanPage({
             showCurrentTimeLine
           />
 
-          <h2 className="section-title mb-3 mt-8">Add block</h2>
+          <h2 className="section-title mb-3 mt-8" id="add-block">Add block</h2>
           <form action={createPlanBlock} className="card grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input type="hidden" name="planDate" value={dayValue} />
             <input name="title" className="input sm:col-span-2" placeholder="Block title" required />
@@ -126,7 +126,6 @@ export default async function PlanPage({
           </div>
 
           <div>
-            <h2 className="section-title mb-3">Import from text</h2>
             <PlanTextImport dayValue={dayValue} />
           </div>
         </div>

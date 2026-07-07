@@ -1,23 +1,23 @@
+import { Suspense } from "react";
 import { requireUser } from "@/lib/session";
 import { toDateInputValue, addDays, formatDayLabel, parseDayParam } from "@/lib/date";
 import { getBacklogTodos, getDayTodos } from "@/lib/queries/todos";
 import PageHeader from "@/components/PageHeader";
-import Icon from "@/components/Icon";
 import DayNavigator from "@/components/DayNavigator";
 import SubmitButton from "@/components/SubmitButton";
-import SubmitIconButton from "@/components/SubmitIconButton";
+import FormAction from "@/components/FormAction";
+import FocusTarget from "@/components/FocusTarget";
 import TodoList from "./TodoList";
+import BacklogRow from "./BacklogRow";
 import {
-  createTodo,
-  deleteTodo,
-  pullFromBacklog,
-  moveUnfinishedToBacklog,
+  createTodoForm,
+  moveUnfinishedToBacklogForm,
 } from "./actions";
 
 export default async function TodosPage({
   searchParams,
 }: {
-  searchParams: { day?: string };
+  searchParams: { day?: string; focus?: string };
 }) {
   const user = await requireUser();
   const day = parseDayParam(searchParams.day);
@@ -36,50 +36,68 @@ export default async function TodosPage({
       <div className="card mb-6 flex flex-wrap items-center justify-between gap-3">
         <DayNavigator basePath="/dashboard/todos" dayValue={dayValue} dayLabel={dayLabel} />
         {!searchParams.day && dayTodos.some((t) => t.status === "open") && (
-          <form action={moveUnfinishedToBacklog}>
+          <FormAction action={moveUnfinishedToBacklogForm} successMessage="Moved to backlog">
             <input type="hidden" name="dayDate" value={toDateInputValue(addDays(day, -1))} />
             <SubmitButton className="btn-ghost text-xs">Move yesterday&apos;s open to backlog</SubmitButton>
-          </form>
+          </FormAction>
         )}
       </div>
 
-      <form action={createTodo} className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <input type="hidden" name="dayDate" value={dayValue} />
-        <div className="sm:col-span-2 lg:col-span-4">
-          <input
-            name="title"
-            className="input w-full"
-            placeholder="Add a todo for this day…"
-            required
-            autoComplete="off"
-          />
-        </div>
-        <div>
-          <label className="label">Priority</label>
-          <select name="priority" className="input" defaultValue="medium">
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
-        </div>
-        <div>
-          <label className="label">Category</label>
-          <input name="category" className="input" placeholder="e.g. work, health" />
-        </div>
-        <div>
-          <label className="label">Due date</label>
-          <input name="dueDate" type="date" className="input" />
-        </div>
-        <div className="flex items-end">
-          <SubmitButton className="btn-primary touch-target w-full">Add</SubmitButton>
-        </div>
-      </form>
+      <Suspense fallback={null}>
+        <FocusTarget param="focus">
+          <FormAction
+            action={createTodoForm}
+            successMessage="Todo added"
+            className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <input type="hidden" name="dayDate" value={dayValue} />
+            <div className="sm:col-span-2 lg:col-span-4">
+              <label htmlFor="todo-title" className="sr-only">
+                Todo title
+              </label>
+              <input
+                id="todo-title"
+                name="title"
+                className="input w-full"
+                placeholder="Add a todo for this day…"
+                required
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label htmlFor="todo-priority" className="label">
+                Priority
+              </label>
+              <select id="todo-priority" name="priority" className="input" defaultValue="medium">
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="todo-category" className="label">
+                Category
+              </label>
+              <input id="todo-category" name="category" className="input" placeholder="e.g. work, health" />
+            </div>
+            <div>
+              <label htmlFor="todo-due" className="label">
+                Due date
+              </label>
+              <input id="todo-due" name="dueDate" type="date" className="input" />
+            </div>
+            <div className="flex items-end">
+              <SubmitButton className="btn-primary touch-target w-full">Add</SubmitButton>
+            </div>
+          </FormAction>
+        </FocusTarget>
+      </Suspense>
 
       <TodoList initialTodos={dayTodos} />
 
       {backlog.length > 0 && (
         <details className="card mt-8">
-          <summary className="cursor-pointer font-medium text-slate-700">
+          <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
             Backlog ({backlog.length})
           </summary>
           <p className="mt-2 text-xs text-slate-400">
@@ -87,22 +105,7 @@ export default async function TodosPage({
           </p>
           <div className="mt-4 space-y-2">
             {backlog.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2">
-                <span className="flex-1 text-slate-700">{t.title}</span>
-                <form action={pullFromBacklog}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <input type="hidden" name="dayDate" value={dayValue} />
-                  <SubmitButton className="btn-ghost touch-target text-xs">Add to today</SubmitButton>
-                </form>
-                <form action={deleteTodo}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <SubmitIconButton
-                    className="touch-target text-slate-300 hover:text-red-500"
-                    title="Delete"
-                    icon={<Icon name="trash" className="h-4 w-4" />}
-                  />
-                </form>
-              </div>
+              <BacklogRow key={t.id} id={t.id} title={t.title} dayValue={dayValue} />
             ))}
           </div>
         </details>

@@ -4,15 +4,16 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay, endOfDay } from "@/lib/date";
+import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "todos", "dashboard", "plan");
 }
 
-export async function createTodo(formData: FormData) {
+export async function createTodo(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const title = str(formData.get("title"));
-  if (!title) return;
+  if (!title) return failure("Title is required");
   const dayDate = startOfDay(parseDate(formData.get("dayDate")));
   const priority = str(formData.get("priority")) || "medium";
   const category = str(formData.get("category")) || null;
@@ -21,11 +22,15 @@ export async function createTodo(formData: FormData) {
     data: { userId, title, dayDate, inBacklog: false, priority, category, dueDate },
   });
   invalidate(userId);
+  return success("Todo added");
 }
 
-export async function toggleTodo(formData: FormData) {
+export const createTodoForm = wrapFormAction(createTodo, "Todo added");
+
+export async function toggleTodo(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
+  if (!id) return failure("Invalid todo");
   const openToDone = await prisma.todo.updateMany({
     where: { id, userId, status: "open" },
     data: { status: "done", completedAt: new Date() },
@@ -37,40 +42,59 @@ export async function toggleTodo(formData: FormData) {
     });
   }
   invalidate(userId);
+  return success();
 }
 
-export async function moveToBacklog(formData: FormData) {
+export async function moveToBacklog(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
+  if (!id) return failure("Invalid todo");
   await prisma.todo.updateMany({
     where: { id, userId, status: "open" },
     data: { inBacklog: true },
   });
   invalidate(userId);
+  return success("Moved to backlog");
 }
 
-export async function pullFromBacklog(formData: FormData) {
+export async function pullFromBacklog(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
+  if (!id) return failure("Invalid todo");
   const dayDate = startOfDay(parseDate(formData.get("dayDate")));
   await prisma.todo.updateMany({
     where: { id, userId, inBacklog: true },
     data: { inBacklog: false, dayDate, status: "open" },
   });
   invalidate(userId);
+  return success("Added to today");
 }
 
-export async function deleteTodo(formData: FormData) {
+export async function deleteTodo(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
+  if (!id) return failure("Invalid todo");
   await prisma.todo.updateMany({
     where: { id, userId },
     data: { deletedAt: new Date() },
   });
   invalidate(userId);
+  return success("Todo deleted");
 }
 
-export async function moveUnfinishedToBacklog(formData: FormData) {
+export async function restoreTodo(formData: FormData): Promise<ActionResult> {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  if (!id) return failure("Invalid todo");
+  await prisma.todo.updateMany({
+    where: { id, userId },
+    data: { deletedAt: null },
+  });
+  invalidate(userId);
+  return success("Todo restored");
+}
+
+export async function moveUnfinishedToBacklog(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const dayDate = startOfDay(parseDate(formData.get("dayDate")));
   await prisma.todo.updateMany({
@@ -84,4 +108,8 @@ export async function moveUnfinishedToBacklog(formData: FormData) {
     data: { inBacklog: true },
   });
   invalidate(userId);
+  return success("Open todos moved to backlog");
 }
+
+export const pullFromBacklogForm = wrapFormAction(pullFromBacklog, "Added to today");
+export const moveUnfinishedToBacklogForm = wrapFormAction(moveUnfinishedToBacklog, "Moved to backlog");

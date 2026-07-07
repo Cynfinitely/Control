@@ -4,7 +4,9 @@ import { prisma } from "@/lib/db";
 import PageHeader from "@/components/PageHeader";
 import DayNavigator from "@/components/DayNavigator";
 import SubmitButton from "@/components/SubmitButton";
-import { saveJournalEntry } from "./actions";
+import FormAction from "@/components/FormAction";
+import EmptyState from "@/components/EmptyState";
+import { saveJournalEntryForm } from "./actions";
 
 export default async function JournalPage({
   searchParams,
@@ -20,6 +22,8 @@ export default async function JournalPage({
     where: { userId_date: { userId: user.id, date: new Date(dayValue + "T00:00:00") } },
   });
 
+  const isEmpty = !entry?.wins && !entry?.blockers && !entry?.note && !entry?.mood;
+
   return (
     <div>
       <PageHeader
@@ -31,11 +35,22 @@ export default async function JournalPage({
         <DayNavigator basePath="/dashboard/journal" dayValue={dayValue} dayLabel={dayLabel} />
       </div>
 
-      <form action={saveJournalEntry} className="card space-y-4">
+      {isEmpty && (
+        <EmptyState
+          icon="book"
+          title="Start today's reflection"
+          description="Capture your mood, wins, and blockers to build a daily habit of self-awareness."
+          tip="Even a few words each day adds up over time."
+        />
+      )}
+
+      <FormAction action={saveJournalEntryForm} successMessage="Journal saved" className="card space-y-4">
         <input type="hidden" name="date" value={dayValue} />
         <div>
-          <label className="label">Mood (1–5)</label>
-          <select name="mood" className="input w-32" defaultValue={entry?.mood ?? ""}>
+          <label htmlFor="journal-mood" className="label">
+            Mood (1–5)
+          </label>
+          <select id="journal-mood" name="mood" className="input w-32" defaultValue={entry?.mood ?? ""}>
             <option value="">—</option>
             {[1, 2, 3, 4, 5].map((n) => (
               <option key={n} value={n}>
@@ -45,8 +60,11 @@ export default async function JournalPage({
           </select>
         </div>
         <div>
-          <label className="label">Wins</label>
+          <label htmlFor="journal-wins" className="label">
+            Wins
+          </label>
           <textarea
+            id="journal-wins"
             name="wins"
             className="input"
             rows={2}
@@ -55,8 +73,11 @@ export default async function JournalPage({
           />
         </div>
         <div>
-          <label className="label">Blockers</label>
+          <label htmlFor="journal-blockers" className="label">
+            Blockers
+          </label>
           <textarea
+            id="journal-blockers"
             name="blockers"
             className="input"
             rows={2}
@@ -65,8 +86,11 @@ export default async function JournalPage({
           />
         </div>
         <div>
-          <label className="label">Notes</label>
+          <label htmlFor="journal-note" className="label">
+            Notes
+          </label>
           <textarea
+            id="journal-note"
             name="note"
             className="input"
             rows={3}
@@ -75,7 +99,7 @@ export default async function JournalPage({
           />
         </div>
         <SubmitButton className="btn-primary touch-target">Save entry</SubmitButton>
-      </form>
+      </FormAction>
     </div>
   );
 }

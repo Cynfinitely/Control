@@ -1,9 +1,14 @@
 "use client";
 
 import { useOptimistic, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Icon from "@/components/Icon";
+import EmptyState from "@/components/EmptyState";
+import PendingIndicator from "@/components/PendingIndicator";
+import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import { useToast } from "@/components/Toast";
 import { formatDate } from "@/lib/date";
-import { toggleTodo, deleteTodo, moveToBacklog } from "./actions";
+import { toggleTodo, deleteTodo, moveToBacklog, restoreTodo } from "./actions";
 import type { TodoItem } from "@/lib/queries/todos";
 
 type Props = {
@@ -61,14 +66,14 @@ function TodoRow({
         className={`touch-target flex h-6 w-6 shrink-0 items-center justify-center rounded border disabled:opacity-50 ${
           isDone
             ? "border-brand-600 bg-brand-600 text-white"
-            : "border-slate-300 hover:border-brand-500"
+            : "border-slate-300 hover:border-brand-500 dark:border-slate-600"
         }`}
-        title={isDone ? "Mark open" : "Mark done"}
+        aria-label={isDone ? "Mark open" : "Mark done"}
       >
         {isDone ? <Icon name="check" className="h-3.5 w-3.5" /> : null}
       </button>
       <div className="min-w-0 flex-1">
-        <p className={`${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800"}`}>
+        <p className={`${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800 dark:text-slate-100"}`}>
           {todo.title}
         </p>
         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
@@ -96,15 +101,12 @@ function TodoRow({
           Backlog
         </button>
       )}
-      <button
-        type="button"
+      <DeleteConfirmButton
         disabled={pending}
-        onClick={() => onDelete(todo.id)}
-        className="touch-target shrink-0 text-slate-300 hover:text-red-500 disabled:opacity-50"
-        title="Delete"
-      >
-        <Icon name="trash" className="h-4 w-4" />
-      </button>
+        title="Delete todo?"
+        message={`Remove "${todo.title}"? This cannot be undone.`}
+        onConfirm={() => onDelete(todo.id)}
+      />
     </div>
   );
 }
@@ -112,11 +114,21 @@ function TodoRow({
 export default function TodoList({ initialTodos }: Props) {
   const [isPending, startTransition] = useTransition();
   const [optimisticTodos, updateOptimistic] = useOptimistic(initialTodos, applyOptimistic);
+  const router = useRouter();
+  const { success, error } = useToast();
 
-  function runAction(action: OptimisticAction, fn: () => Promise<void>) {
+  function runAction(action: OptimisticAction, fn: () => Promise<{ ok: boolean; error?: string }>, undo?: () => void) {
     startTransition(async () => {
       updateOptimistic(action);
-      await fn();
+      const result = await fn();
+      if (!result.ok) {
+        error(result.error ?? "Couldn't save — try again");
+        router.refresh();
+        return;
+      }
+      if (undo) {
+        success("Todo deleted", { label: "Undo", onClick: undo });
+      }
     });
   }
 
@@ -129,7 +141,19 @@ export default function TodoList({ initialTodos }: Props) {
   function handleDelete(id: string) {
     const fd = new FormData();
     fd.set("id", id);
-    runAction({ type: "delete", id }, () => deleteTodo(fd));
+    runAction(
+      { type: "delete", id },
+      () => deleteTodo(fd),
+      () => {
+        const restoreFd = new FormData();
+        restoreFd.set("id", id);
+        startTransition(async () => {
+          await restoreTodo(restoreFd);
+          router.refresh();
+          success("Todo restored");
+        });
+      }
+    );
   }
 
   function handleBacklog(id: string) {
@@ -142,36 +166,44 @@ export default function TodoList({ initialTodos }: Props) {
   const done = optimisticTodos.filter((t) => t.status === "done");
 
   return (
-    <div className={`space-y-2 ${isPending ? "opacity-80" : ""}`}>
+    <div className={isPending ? "opacity-80" : ""}>
+      <PendingIndicator pending={isPending} />
       {optimisticTodos.length === 0 && (
-        <p className="text-sm text-slate-400">No todos for this day. Add one above.</p>
-      )}
-      {open.map((t) => (
-        <TodoRow
-          key={t.id}
-          todo={t}
-          showBacklog
-          onToggle={handleToggle}
-          onDelete={handleDelete}
-          onBacklog={handleBacklog}
-          pending={isPending}
+        <EmptyState
+          icon="check"
+          title="Your day is clear"
+          description="No todos scheduled for this day. Add one above to get started."
+          tip="Use priority and category tags to stay organized."
         />
-      ))}
-      {done.length > 0 && (
-        <>
-          <p className="section-title mt-6 text-sm text-slate-500">Done ({done.length})</p>
-          {done.map((t) => (
-            <TodoRow
-              key={t.id}
-              todo={t}
-              onToggle={handleToggle}
-              onDelete={handleDelete}
-              onBacklog={handleBacklog}
-              pending={isPending}
-            />
-          ))}
-        </>
       )}
+      <div className="space-y-2">
+        {open.map((t) => (
+          <TodoRow
+            key={t.id}
+            todo={t}
+            showBacklog
+            onToggle={handleToggle}
+            onDelete={handleDelete}
+            onBacklog={handleBacklog}
+            pending={isPending}
+          />
+        ))}
+        {done.length > 0 && (
+          <>
+            <p className="section-title mt-6 text-sm text-slate-500">Done ({done.length})</p>
+            {done.map((t) => (
+              <TodoRow
+                key={t.id}
+                todo={t}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+                onBacklog={handleBacklog}
+                pending={isPending}
+              />
+            ))}
+          </>
+        )}
+      </div>
     </div>
   );
 }

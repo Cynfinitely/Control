@@ -1,9 +1,14 @@
 "use client";
 
 import { useOptimistic, useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
+import EmptyState from "@/components/EmptyState";
+import PendingIndicator from "@/components/PendingIndicator";
+import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import { useToast } from "@/components/Toast";
 import { kindColor, PLAN_KIND_LABELS, PLAN_KIND_LINKS, type PlanKind } from "@/lib/plan/kinds";
 import { isBlockActive, isBlockOverdue } from "@/lib/plan/time";
 import { blocksOverlap } from "@/lib/plan/overlap";
@@ -76,7 +81,7 @@ function BlockRow({
           disabled={pending || isSkipped}
           onClick={() => onToggle(block.id)}
           className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
-            isDone ? "border-green-500 bg-green-500 text-white" : "border-slate-300 bg-white"
+            isDone ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
           }`}
           aria-label={isDone ? "Mark planned" : "Mark done"}
         >
@@ -125,15 +130,12 @@ function BlockRow({
           >
             Edit
           </button>
-          <button
-            type="button"
+          <DeleteConfirmButton
             disabled={pending}
-            onClick={() => onDelete(block.id)}
-            className="touch-target text-slate-300 hover:text-red-500"
-            aria-label="Delete"
-          >
-            <Icon name="trash" className="h-4 w-4" />
-          </button>
+            title="Delete block?"
+            message={`Remove "${block.title}" from your plan?`}
+            onConfirm={() => onDelete(block.id)}
+          />
         </div>
       </div>
 
@@ -165,13 +167,20 @@ function BlockRow({
 export default function PlanTimeline({ initialBlocks, dayValue, isToday, showCurrentTimeLine }: Props) {
   const [pending, startTransition] = useTransition();
   const [blocks, setOptimistic] = useOptimistic(initialBlocks, applyOptimistic);
+  const router = useRouter();
+  const { error } = useToast();
 
   function run(action: OptimisticAction, fn: (fd: FormData) => Promise<void>) {
     startTransition(async () => {
       setOptimistic(action);
-      const fd = new FormData();
-      fd.set("id", action.id);
-      await fn(fd);
+      try {
+        const fd = new FormData();
+        fd.set("id", action.id);
+        await fn(fd);
+      } catch {
+        error("Couldn't save — try again");
+        router.refresh();
+      }
     });
   }
 
@@ -187,14 +196,20 @@ export default function PlanTimeline({ initialBlocks, dayValue, isToday, showCur
 
   if (blocks.length === 0) {
     return (
-      <div className="card py-8 text-center text-sm text-slate-400">
-        No blocks scheduled for this day. Add one below or accept suggestions.
-      </div>
+      <EmptyState
+        icon="calendar"
+        title="No blocks scheduled"
+        description="Your day is open. Add a block below or accept smart suggestions."
+        actionLabel="Add a block"
+        actionHref="#add-block"
+        tip="Try applying a template for a quick start."
+      />
     );
   }
 
   return (
     <div className="relative space-y-3">
+      <PendingIndicator pending={pending} />
       {showCurrentTimeLine && isToday && (
         <div className="mb-2 flex items-center gap-2 text-xs text-brand-600">
           <span className="inline-block h-2 w-2 rounded-full bg-brand-500" />

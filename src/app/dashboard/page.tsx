@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { toDateInputValue } from "@/lib/date";
 import { getDashboardStats, type DomainHealth } from "@/lib/queries/dashboard";
@@ -6,6 +7,8 @@ import { getPlanPreviewBlocks, getPlanDayStats } from "@/lib/queries/plan";
 import { formatEuro, formatEuroSigned } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import DashboardStatCard, { greetingForHour } from "@/components/DashboardStatCard";
+import OnboardingChecklist from "@/components/OnboardingChecklist";
 import PlanPreview from "./plan/PlanPreview";
 
 const PRAYERS = 5;
@@ -17,20 +20,33 @@ const HEALTH_STYLE: Record<DomainHealth, string> = {
 };
 
 export default async function DashboardHome() {
-  const user = await requireUser();
+  const sessionUser = await requireUser();
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: sessionUser.id },
+    select: { name: true, timezone: true, createdAt: true },
+  });
   const now = new Date();
   const todayKey = toDateInputValue(now);
 
-  const stats = await getDashboardStats(user.id, todayKey);
+  const stats = await getDashboardStats(sessionUser.id, todayKey);
   const [planPreview, planStats] = await Promise.all([
-    getPlanPreviewBlocks(user.id, todayKey),
-    getPlanDayStats(user.id, todayKey, now),
+    getPlanPreviewBlocks(sessionUser.id, todayKey),
+    getPlanDayStats(sessionUser.id, todayKey, now),
+  ]);
+
+  const todoTotal = stats.todayOpenTodos + stats.todayDoneTodos;
+  const goalTotal = stats.weeklyGoals + stats.weeklyGoalsCompleted;
+
+  const [hasMeal, hasWeeklyGoal, hasPrayerDebt] = await Promise.all([
+    prisma.foodLogEntry.count({ where: { userId: sessionUser.id, deletedAt: null } }).then((n) => n > 0),
+    prisma.goal.count({ where: { userId: sessionUser.id, deletedAt: null, period: "weekly" } }).then((n) => n > 0),
+    prisma.prayerDebt.count({ where: { userId: sessionUser.id } }).then((n) => n > 0),
   ]);
 
   const cards = [
     {
       label: "Todos today",
-      value: `${stats.todayDoneTodos}/${stats.todayOpenTodos + stats.todayDoneTodos}`,
+      value: `${stats.todayDoneTodos}/${todoTotal || 0}`,
       sub:
         stats.overdueTodos > 0
           ? `${stats.overdueTodos} overdue`
@@ -40,14 +56,16 @@ export default async function DashboardHome() {
       href: "/dashboard/todos",
       icon: "check",
       health: stats.health.todos,
+      progress: todoTotal > 0 ? (stats.todayDoneTodos / todoTotal) * 100 : 0,
     },
     {
       label: "Weekly goals",
-      value: `${stats.weeklyGoalsCompleted}/${stats.weeklyGoals + stats.weeklyGoalsCompleted}`,
+      value: `${stats.weeklyGoalsCompleted}/${goalTotal || 0}`,
       sub: "completed this week",
       href: "/dashboard/goals",
       icon: "target",
       health: stats.health.goals,
+      progress: goalTotal > 0 ? (stats.weeklyGoalsCompleted / goalTotal) * 100 : 0,
     },
     {
       label: "Calories today",
@@ -56,6 +74,7 @@ export default async function DashboardHome() {
       href: "/dashboard/food",
       icon: "food",
       health: stats.health.food,
+      progress: stats.calorieTarget > 0 ? (stats.caloriesToday / stats.calorieTarget) * 100 : 0,
     },
     {
       label: "Balance",
@@ -76,6 +95,7 @@ export default async function DashboardHome() {
       href: "/dashboard/exercise",
       icon: "dumbbell",
       health: stats.health.exercise,
+      progress: Math.min(100, (stats.workoutsThisWeek / 3) * 100),
     },
     {
       label: "Prayers today",
@@ -84,6 +104,7 @@ export default async function DashboardHome() {
       href: "/dashboard/religious",
       icon: "moon",
       health: stats.health.religious,
+      progress: (stats.prayersOnTime / PRAYERS) * 100,
     },
     {
       label: "Career",
@@ -104,26 +125,64 @@ export default async function DashboardHome() {
   ];
 
   const quickLinks = [
-    { href: "/dashboard/plan", label: "Daily plan", icon: "calendar" },
-    { href: "/dashboard/todos", label: "Add todo", icon: "check" },
-    { href: "/dashboard/food", label: "Log meal", icon: "food" },
-    { href: "/dashboard/budget", label: "Log transaction", icon: "wallet" },
-    { href: "/dashboard/exercise", label: "Log workout", icon: "dumbbell" },
+    { href: "/dashboard/plan?focus=add", label: "Daily plan", icon: "calendar" },
+    { href: "/dashboard/todos?focus=add", label: "Add todo", icon: "check" },
+    { href: "/dashboard/food?focus=log", label: "Log meal", icon: "food" },
+    { href: "/dashboard/budget?focus=log", label: "Log transaction", icon: "wallet" },
+    { href: "/dashboard/exercise?focus=log", label: "Log workout", icon: "dumbbell" },
     { href: "/dashboard/religious", label: "Log prayers", icon: "moon" },
-    { href: "/dashboard/review", label: "Weekly review", icon: "chart" },
-    { href: "/dashboard/journal", label: "Journal", icon: "book" },
+    { href: "/dashboard/review", label: "Weekly review", icon: "clipboard" },
+    { href: "/dashboard/journal?focus=add", label: "Journal", icon: "book" },
   ];
+
+  const displayName = user.name ?? "there";
 
   return (
     <div>
       <PageHeader
-        title={`Welcome back, ${user.name ?? "there"}`}
+        title={greetingForHour(now.getHours(), displayName)}
         description={now.toLocaleDateString("en-GB", {
           weekday: "long",
           day: "numeric",
           month: "long",
           year: "numeric",
         })}
+      />
+
+      <OnboardingChecklist
+        userCreatedAt={user.createdAt.toISOString()}
+        items={[
+          {
+            id: "timezone",
+            label: "Review your timezone in Settings",
+            href: "/dashboard/settings",
+            done: Boolean(user.timezone),
+          },
+          {
+            id: "meal",
+            label: "Log your first meal",
+            href: "/dashboard/food?focus=log",
+            done: hasMeal,
+          },
+          {
+            id: "goal",
+            label: "Create a weekly goal",
+            href: "/dashboard/goals?focus=add",
+            done: hasWeeklyGoal,
+          },
+          {
+            id: "budget",
+            label: "Set up your budget",
+            href: "/dashboard/budget",
+            done: stats.budgetSetupComplete,
+          },
+          {
+            id: "prayer",
+            label: "Configure prayer debt (if needed)",
+            href: "/dashboard/religious",
+            done: hasPrayerDebt || stats.prayersOnTime > 0,
+          },
+        ]}
       />
 
       <PlanPreview
@@ -136,20 +195,16 @@ export default async function DashboardHome() {
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {cards.map((c) => (
-          <Link
+          <DashboardStatCard
             key={c.label}
+            label={c.label}
+            value={c.value}
+            sub={c.sub}
             href={c.href}
-            className={`card transition hover:shadow-md ${HEALTH_STYLE[c.health]}`}
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-slate-500">{c.label}</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">{c.value}</p>
-                <p className="mt-0.5 text-xs text-slate-400">{c.sub}</p>
-              </div>
-              <Icon name={c.icon} className="h-5 w-5 text-brand-500" />
-            </div>
-          </Link>
+            icon={c.icon}
+            healthClass={HEALTH_STYLE[c.health]}
+            progress={c.progress}
+          />
         ))}
       </div>
 

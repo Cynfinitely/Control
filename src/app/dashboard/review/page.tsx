@@ -10,7 +10,8 @@ import { getWeekExpenseTotal } from "@/lib/queries/budget";
 import { formatEuro } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import SubmitButton from "@/components/SubmitButton";
-import { moveUnfinishedToBacklog } from "../todos/actions";
+import FormAction from "@/components/FormAction";
+import { moveUnfinishedToBacklogForm } from "../todos/actions";
 
 export default async function WeeklyReviewPage() {
   const user = await requireUser();
@@ -95,10 +96,10 @@ export default async function WeeklyReviewPage() {
         <p className="mb-3 text-sm text-slate-500">
           Move unfinished todos from yesterday into backlog so today starts clean.
         </p>
-        <form action={moveUnfinishedToBacklog}>
+        <FormAction action={moveUnfinishedToBacklogForm} successMessage="Moved to backlog">
           <input type="hidden" name="dayDate" value={toDateInputValue(yesterday)} />
           <SubmitButton className="btn-ghost">Move yesterday&apos;s open todos to backlog</SubmitButton>
-        </form>
+        </FormAction>
       </section>
 
       <section className="card mb-6">

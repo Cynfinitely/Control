@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
+import { success, failure, wrapFormAction } from "@/lib/action-result";
 
 function invalidateFood(userId: string) {
   revalidateUserCache(userId, "dashboard", "food");
@@ -18,7 +19,7 @@ function invalidatePlanner(userId: string) {
 export async function logFood(formData: FormData) {
   const userId = await getUserId();
   const name = str(formData.get("name"));
-  if (!name) return;
+  if (!name) return failure("Food name is required");
   await prisma.foodLogEntry.create({
     data: {
       userId,
@@ -32,7 +33,10 @@ export async function logFood(formData: FormData) {
     },
   });
   invalidateFood(userId);
+  return success("Meal logged");
 }
+
+export const logFoodForm = wrapFormAction(logFood, "Meal logged");
 
 export async function logFromPlan(formData: FormData) {
   const userId = await getUserId();

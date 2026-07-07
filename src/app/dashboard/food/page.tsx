@@ -12,7 +12,8 @@ import Icon from "@/components/Icon";
 import DayNavigator from "@/components/DayNavigator";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
-import { logFood, deleteFood, saveTarget, logWater } from "./actions";
+import FormAction from "@/components/FormAction";
+import { logFoodForm, deleteFood, saveTarget, logWater } from "./actions";
 
 const MEALS = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -94,10 +95,10 @@ export default async function FoodPage({
         </div>
       </div>
 
-      <form action={logFood} className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <FormAction action={logFoodForm} successMessage="Meal logged" className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="sm:col-span-2">
-          <label className="label">Food</label>
-          <input name="name" className="input" placeholder="e.g. Chicken salad" required />
+          <label htmlFor="food-name" className="label">Food</label>
+          <input id="food-name" name="name" className="input" placeholder="e.g. Chicken salad" required />
         </div>
         <div>
           <label className="label">Calories</label>
@@ -132,7 +133,7 @@ export default async function FoodPage({
         <div className="flex items-end">
           <SubmitButton className="btn-primary touch-target w-full">Log food</SubmitButton>
         </div>
-      </form>
+      </FormAction>
 
       <h2 className="section-title mb-3">{dayLabel}&apos;s entries</h2>
       <div className="space-y-2">

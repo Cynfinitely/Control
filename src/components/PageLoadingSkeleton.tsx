@@ -1,4 +1,4 @@
-type Variant = "default" | "todos" | "religious" | "career" | "planner";
+type Variant = "default" | "todos" | "religious" | "career" | "planner" | "plan" | "goals";
 
 type Props = {
   variant?: Variant;
@@ -68,7 +68,7 @@ export default function PageLoadingSkeleton({ variant = "default" }: Props) {
 
   if (variant === "planner") {
     return (
-      <div className="space-y-6" aria-busy="true" aria-label="Loading">
+      <div className="space-y-6 motion-reduce:animate-none" aria-busy="true" aria-label="Loading">
         <div>
           <Skeleton className="h-8 w-40" />
           <Skeleton className="mt-2 h-4 w-56" />
@@ -79,6 +79,38 @@ export default function PageLoadingSkeleton({ variant = "default" }: Props) {
           ))}
         </div>
         <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (variant === "plan") {
+    return (
+      <div className="space-y-6" aria-busy="true" aria-label="Loading">
+        <Skeleton className="h-8 w-36" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-xl" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Skeleton className="h-48 w-full rounded-xl lg:col-span-2" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "goals") {
+    return (
+      <div className="space-y-6" aria-busy="true" aria-label="Loading">
+        <Skeleton className="h-8 w-28" />
+        <Skeleton className="h-14 w-full rounded-xl" />
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }

@@ -17,7 +17,7 @@ import MonthNavigator from "@/components/MonthNavigator";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
 import BudgetTransactionForm from "./BudgetTransactionForm";
-import { logTransaction, deleteTransaction, saveStartingBalance } from "./actions";
+import { logTransactionForm, deleteTransaction, saveStartingBalance } from "./actions";
 
 export default async function BudgetPage({
   searchParams,
@@ -171,7 +171,7 @@ export default async function BudgetPage({
         <BudgetTransactionForm
           categories={categories}
           dayValue={dayValue}
-          action={logTransaction}
+          action={logTransactionForm}
         />
 
         <h2 className="section-title mb-3">{dayLabel}&apos;s transactions</h2>

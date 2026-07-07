@@ -68,6 +68,13 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M3 10h18M8 3v4M16 3v4" />
     </>
   ),
+  clipboard: (
+    <>
+      <rect x="8" y="2" width="8" height="4" rx="1" />
+      <path d="M16 4h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1" />
+      <path d="M9 12h6M9 16h6" />
+    </>
+  ),
 };
 
 export default function Icon({ name, className }: Props) {

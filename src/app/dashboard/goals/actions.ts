@@ -4,15 +4,16 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, num, optStr } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { getPeriodKey, type GoalPeriod } from "@/lib/period";
+import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "goals", "dashboard");
 }
 
-export async function createGoal(formData: FormData) {
+export async function createGoal(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const title = str(formData.get("title"));
-  if (!title) return;
+  if (!title) return failure("Title is required");
   const period = (str(formData.get("period")) || "weekly") as GoalPeriod;
   const type = str(formData.get("type")) || "boolean";
   const periodKey = str(formData.get("periodKey")) || getPeriodKey(period, new Date());
@@ -31,11 +32,15 @@ export async function createGoal(formData: FormData) {
     },
   });
   invalidate(userId);
+  return success("Goal added");
 }
 
-export async function toggleGoalComplete(formData: FormData) {
+export const createGoalForm = wrapFormAction(createGoal, "Goal added");
+
+export async function toggleGoalComplete(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
+  if (!id) return failure("Invalid goal");
   const toCompleted = await prisma.goal.updateMany({
     where: { id, userId, type: "boolean", status: "active" },
     data: { status: "completed" },
@@ -47,11 +52,13 @@ export async function toggleGoalComplete(formData: FormData) {
     });
   }
   invalidate(userId);
+  return success();
 }
 
-export async function incrementGoal(formData: FormData) {
+export async function incrementGoal(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
+  if (!id) return failure("Invalid goal");
   const note = optStr(formData.get("note"));
   await prisma.goal.updateMany({
     where: { id, userId, type: "numeric" },
@@ -73,13 +80,25 @@ export async function incrementGoal(formData: FormData) {
     }
   }
   invalidate(userId);
+  return success();
 }
 
-export async function deleteGoal(formData: FormData) {
+export async function deleteGoal(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
+  if (!id) return failure("Invalid goal");
   await prisma.goal.updateMany({ where: { id, userId }, data: { deletedAt: new Date() } });
   invalidate(userId);
+  return success("Goal deleted");
+}
+
+export async function restoreGoal(formData: FormData): Promise<ActionResult> {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  if (!id) return failure("Invalid goal");
+  await prisma.goal.updateMany({ where: { id, userId }, data: { deletedAt: null } });
+  invalidate(userId);
+  return success("Goal restored");
 }
 
 export async function addMilestone(formData: FormData) {

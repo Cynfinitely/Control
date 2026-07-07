@@ -4,8 +4,9 @@ import { getPeriodKey, periodLabel, shiftPeriodDate, type GoalPeriod } from "@/l
 import { getGoalsForPeriod } from "@/lib/queries/goals";
 import PageHeader from "@/components/PageHeader";
 import SubmitButton from "@/components/SubmitButton";
+import FormAction from "@/components/FormAction";
 import GoalList from "./GoalList";
-import { createGoal, rolloverGoals } from "./actions";
+import { createGoalForm, rolloverGoals } from "./actions";
 
 const PERIODS: { value: GoalPeriod; label: string }[] = [
   { value: "weekly", label: "Weekly" },
@@ -86,7 +87,7 @@ export default async function GoalsPage({
 
       <details className="card mb-6">
         <summary className="cursor-pointer font-medium text-brand-700">+ Add goal</summary>
-        <form action={createGoal} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormAction action={createGoalForm} successMessage="Goal added" className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <input type="hidden" name="period" value={period} />
           <input type="hidden" name="periodKey" value={periodKey} />
           <div className="sm:col-span-2">
@@ -116,7 +117,7 @@ export default async function GoalsPage({
           <div className="sm:col-span-2">
             <SubmitButton className="btn-primary">Add goal</SubmitButton>
           </div>
-        </form>
+        </FormAction>
       </details>
 
       <GoalList initialGoals={goals} />

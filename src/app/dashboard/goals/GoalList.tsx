@@ -1,18 +1,22 @@
 "use client";
 
 import { useOptimistic, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Icon from "@/components/Icon";
-import { formatDate } from "@/lib/date";
+import EmptyState from "@/components/EmptyState";
+import PendingIndicator from "@/components/PendingIndicator";
+import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import { useToast } from "@/components/Toast";
 import {
   toggleGoalComplete,
   incrementGoal,
   deleteGoal,
-  addMilestone,
-  toggleMilestone,
-  deleteMilestone,
+  restoreGoal,
 } from "./actions";
 import type { GoalItem } from "@/lib/queries/goals";
 import SubmitButton from "@/components/SubmitButton";
+import { formatDate } from "@/lib/date";
+import { addMilestone, toggleMilestone, deleteMilestone } from "./actions";
 
 type Props = {
   initialGoals: GoalItem[];
@@ -47,31 +51,9 @@ function applyOptimistic(goals: GoalItem[], action: OptimisticAction): GoalItem[
   }
 }
 
-function DeleteGoalButton({
-  id,
-  onDelete,
-  pending,
-}: {
-  id: string;
-  onDelete: (id: string) => void;
-  pending: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={() => onDelete(id)}
-      className="touch-target text-slate-300 hover:text-red-500 disabled:opacity-50"
-      title="Delete"
-    >
-      <Icon name="trash" className="h-4 w-4" />
-    </button>
-  );
-}
-
 function GoalMilestones({ goal, pending }: { goal: GoalItem; pending: boolean }) {
   return (
-    <details className="mt-2 border-t border-slate-100 pt-2">
+    <details className="mt-2 border-t border-slate-100 pt-2 dark:border-slate-700">
       <summary className="cursor-pointer text-xs text-brand-600">
         Milestones ({goal.milestones.filter((m) => m.done).length}/{goal.milestones.length})
       </summary>
@@ -82,19 +64,20 @@ function GoalMilestones({ goal, pending }: { goal: GoalItem; pending: boolean })
               <input type="hidden" name="id" value={m.id} />
               <input type="hidden" name="goalId" value={goal.id} />
               <SubmitButton
-                className={`flex h-4 w-4 items-center justify-center rounded border ${
-                  m.done ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300"
+                className={`flex h-5 w-5 items-center justify-center rounded border ${
+                  m.done ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 dark:border-slate-600"
                 }`}
                 disabled={pending}
+                aria-label={m.done ? "Mark milestone open" : "Mark milestone done"}
               >
                 {m.done ? <Icon name="check" className="h-2.5 w-2.5" /> : null}
               </SubmitButton>
             </form>
-            <span className={m.done ? "text-slate-400 line-through" : "text-slate-700"}>{m.title}</span>
+            <span className={m.done ? "text-slate-400 line-through" : "text-slate-700 dark:text-slate-200"}>{m.title}</span>
             <form action={deleteMilestone}>
               <input type="hidden" name="id" value={m.id} />
               <input type="hidden" name="goalId" value={goal.id} />
-              <SubmitButton className="text-slate-300 hover:text-red-500" disabled={pending}>
+              <SubmitButton className="text-slate-300 hover:text-red-500" disabled={pending} aria-label="Delete milestone">
                 <Icon name="trash" className="h-3 w-3" />
               </SubmitButton>
             </form>
@@ -102,7 +85,7 @@ function GoalMilestones({ goal, pending }: { goal: GoalItem; pending: boolean })
         ))}
         <form action={addMilestone} className="mt-2 flex gap-1">
           <input type="hidden" name="goalId" value={goal.id} />
-          <input name="title" className="input flex-1 py-1 text-xs" placeholder="Add milestone…" required />
+          <input name="title" className="input flex-1 py-1 text-xs" placeholder="Add milestone…" required aria-label="Milestone title" />
           <SubmitButton className="btn-ghost py-1 text-xs" disabled={pending}>
             Add
           </SubmitButton>
@@ -115,7 +98,7 @@ function GoalMilestones({ goal, pending }: { goal: GoalItem; pending: boolean })
 function GoalCheckIns({ goal }: { goal: GoalItem }) {
   if (goal.checkIns.length === 0) return null;
   return (
-    <div className="mt-2 border-t border-slate-100 pt-2">
+    <div className="mt-2 border-t border-slate-100 pt-2 dark:border-slate-700">
       <p className="text-xs text-slate-400">Recent check-ins</p>
       <ul className="mt-1 space-y-0.5">
         {goal.checkIns.map((c) => (
@@ -150,7 +133,7 @@ function GoalRow({
       <div className={`card py-3 ${isDone ? "opacity-70" : ""}`}>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1">
-            <p className={`font-medium ${isDone ? "text-slate-500 line-through" : "text-slate-800"}`}>
+            <p className={`font-medium ${isDone ? "text-slate-500 line-through" : "text-slate-800 dark:text-slate-100"}`}>
               {goal.title}
             </p>
             <p className="text-sm text-slate-400">
@@ -171,7 +154,12 @@ function GoalRow({
             </button>
           )}
           {isDone && <span className="badge bg-green-100 text-green-700">Done</span>}
-          <DeleteGoalButton id={goal.id} onDelete={onDelete} pending={pending} />
+          <DeleteConfirmButton
+            disabled={pending}
+            title="Delete goal?"
+            message={`Remove "${goal.title}"?`}
+            onConfirm={() => onDelete(goal.id)}
+          />
         </div>
         <GoalMilestones goal={goal} pending={pending} />
         <GoalCheckIns goal={goal} />
@@ -189,16 +177,21 @@ function GoalRow({
           className={`touch-target flex h-6 w-6 items-center justify-center rounded border disabled:opacity-50 ${
             isDone
               ? "border-brand-600 bg-brand-600 text-white"
-              : "border-slate-300 hover:border-brand-500"
+              : "border-slate-300 hover:border-brand-500 dark:border-slate-600"
           }`}
-          title={isDone ? "Mark active" : "Mark complete"}
+          aria-label={isDone ? "Mark active" : "Mark complete"}
         >
           {isDone ? <Icon name="check" className="h-3.5 w-3.5" /> : null}
         </button>
-        <p className={`flex-1 ${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800"}`}>
+        <p className={`flex-1 ${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800 dark:text-slate-100"}`}>
           {goal.title}
         </p>
-        <DeleteGoalButton id={goal.id} onDelete={onDelete} pending={pending} />
+        <DeleteConfirmButton
+          disabled={pending}
+          title="Delete goal?"
+          message={`Remove "${goal.title}"?`}
+          onConfirm={() => onDelete(goal.id)}
+        />
       </div>
       <GoalMilestones goal={goal} pending={pending} />
     </div>
@@ -208,11 +201,23 @@ function GoalRow({
 export default function GoalList({ initialGoals }: Props) {
   const [isPending, startTransition] = useTransition();
   const [optimisticGoals, updateOptimistic] = useOptimistic(initialGoals, applyOptimistic);
+  const router = useRouter();
+  const { success, error } = useToast();
 
-  function runAction(action: OptimisticAction, fn: () => Promise<void>) {
+  function runAction(
+    action: OptimisticAction,
+    fn: () => Promise<{ ok: boolean; error?: string }>,
+    undo?: () => void
+  ) {
     startTransition(async () => {
       updateOptimistic(action);
-      await fn();
+      const result = await fn();
+      if (!result.ok) {
+        error(result.error ?? "Couldn't save — try again");
+        router.refresh();
+        return;
+      }
+      if (undo) success("Goal deleted", { label: "Undo", onClick: undo });
     });
   }
 
@@ -231,42 +236,63 @@ export default function GoalList({ initialGoals }: Props) {
   function handleDelete(id: string) {
     const fd = new FormData();
     fd.set("id", id);
-    runAction({ type: "delete", id }, () => deleteGoal(fd));
+    runAction(
+      { type: "delete", id },
+      () => deleteGoal(fd),
+      () => {
+        const restoreFd = new FormData();
+        restoreFd.set("id", id);
+        startTransition(async () => {
+          await restoreGoal(restoreFd);
+          router.refresh();
+          success("Goal restored");
+        });
+      }
+    );
   }
 
   const active = optimisticGoals.filter((g) => g.status === "active");
   const completed = optimisticGoals.filter((g) => g.status === "completed");
 
   return (
-    <div className={`space-y-2 ${isPending ? "opacity-80" : ""}`}>
+    <div className={isPending ? "opacity-80" : ""}>
+      <PendingIndicator pending={isPending} />
       {optimisticGoals.length === 0 && (
-        <p className="text-sm text-slate-400">No goals for this period yet.</p>
-      )}
-      {active.map((g) => (
-        <GoalRow
-          key={g.id}
-          goal={g}
-          onToggle={handleToggle}
-          onIncrement={handleIncrement}
-          onDelete={handleDelete}
-          pending={isPending}
+        <EmptyState
+          icon="target"
+          title="No goals yet"
+          description="Set a weekly, monthly, or yearly goal to track progress over time."
+          actionHref="/dashboard/goals?focus=add"
+          actionLabel="Add your first goal"
         />
-      ))}
-      {completed.length > 0 && (
-        <>
-          <p className="section-title mt-6 text-sm text-slate-500">Completed ({completed.length})</p>
-          {completed.map((g) => (
-            <GoalRow
-              key={g.id}
-              goal={g}
-              onToggle={handleToggle}
-              onIncrement={handleIncrement}
-              onDelete={handleDelete}
-              pending={isPending}
-            />
-          ))}
-        </>
       )}
+      <div className="space-y-2">
+        {active.map((g) => (
+          <GoalRow
+            key={g.id}
+            goal={g}
+            onToggle={handleToggle}
+            onIncrement={handleIncrement}
+            onDelete={handleDelete}
+            pending={isPending}
+          />
+        ))}
+        {completed.length > 0 && (
+          <>
+            <p className="section-title mt-6 text-sm text-slate-500">Completed ({completed.length})</p>
+            {completed.map((g) => (
+              <GoalRow
+                key={g.id}
+                goal={g}
+                onToggle={handleToggle}
+                onIncrement={handleIncrement}
+                onDelete={handleDelete}
+                pending={isPending}
+              />
+            ))}
+          </>
+        )}
+      </div>
     </div>
   );
 }

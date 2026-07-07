@@ -44,7 +44,7 @@ export default function PlanTextImport({ dayValue }: Props) {
 
   return (
     <details className="card">
-      <summary className="cursor-pointer font-medium text-slate-700">Import from text</summary>
+      <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">Import from text</summary>
       <p className="mt-2 text-xs text-slate-400">
         Paste one line per block: <code className="text-slate-500">HH:MM  Title</code>. End times are
         inferred from the next line.

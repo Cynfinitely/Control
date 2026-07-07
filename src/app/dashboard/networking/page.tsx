@@ -10,8 +10,8 @@ import {
 } from "@/lib/contacts";
 import PageHeader from "@/components/PageHeader";
 import SubmitButton from "@/components/SubmitButton";
-import SubmitIconButton from "@/components/SubmitIconButton";
-import { createContact, toggleFollowUp } from "./actions";
+import FollowUpCheckbox from "@/components/FollowUpCheckbox";
+import { createContact } from "./actions";
 
 export default async function NetworkingPage({
   searchParams,
@@ -83,22 +83,16 @@ export default async function NetworkingPage({
           <h2 className="section-title mb-3">Pending follow-ups</h2>
           <div className="space-y-1">
             {pendingFollowUps.map((f) => (
-              <form key={f.id} action={toggleFollowUp} className="flex items-center gap-3">
-                <input type="hidden" name="id" value={f.id} />
-                <input type="hidden" name="contactId" value={f.contactId} />
-                <SubmitIconButton
-                  className="h-4 w-4 rounded border border-slate-300 hover:border-brand-500"
-                  title="Mark done"
-                  icon={null}
-                />
-                <span className="flex-1 text-sm text-slate-700">
+              <div key={f.id} className="flex items-center gap-3">
+                <FollowUpCheckbox id={f.id} contactId={f.contactId} />
+                <span className="flex-1 text-sm text-slate-700 dark:text-slate-200">
                   {f.note}{" "}
                   <Link href={`/dashboard/networking/${f.contactId}`} className="text-brand-600 hover:underline">
                     {f.contact.name}
                   </Link>
                 </span>
                 {f.dueDate && <span className="text-xs text-slate-400">{formatDate(f.dueDate)}</span>}
-              </form>
+              </div>
             ))}
           </div>
         </div>

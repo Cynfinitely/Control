@@ -5,6 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
+import CareerTabs from "@/components/CareerTabs";
 import {
   createCareerGoal,
   setCareerGoalStatus,
@@ -57,7 +58,9 @@ export default async function CareerPage() {
     <div>
       <PageHeader title="Career" description="Track goals, skills, certifications, work history, and learning." />
 
-      {/* Career goals */}
+      <CareerTabs
+        panels={{
+          goals: (
       <section className="mb-8">
         <h2 className="section-title mb-3">Career goals</h2>
         <details className="card mb-3">
@@ -112,8 +115,9 @@ export default async function CareerPage() {
           ))}
         </div>
       </section>
-
-      {/* Skills */}
+          ),
+          skills: (
+      <>
       <section className="mb-8">
         <h2 className="section-title mb-3">Skills</h2>
         <details className="card mb-3">
@@ -231,8 +235,9 @@ export default async function CareerPage() {
           })}
         </div>
       </section>
-
-      {/* Work experience */}
+      </>
+          ),
+          work: (
       <section className="mb-8">
         <h2 className="section-title mb-3">Work history</h2>
         <details className="card mb-3">
@@ -290,8 +295,8 @@ export default async function CareerPage() {
           ))}
         </div>
       </section>
-
-      {/* Learning */}
+          ),
+          learning: (
       <section>
         <h2 className="section-title mb-3">Learning log</h2>
         <details className="card mb-3">
@@ -365,8 +370,8 @@ export default async function CareerPage() {
           ))}
         </div>
       </section>
-
-      {/* Job applications */}
+          ),
+          applications: (
       <section className="mt-8">
         <h2 className="section-title mb-3">Job applications</h2>
         <details className="card mb-3">
@@ -452,6 +457,9 @@ export default async function CareerPage() {
           ))}
         </div>
       </section>
+          ),
+        }}
+      />
     </div>
   );
 }
