@@ -53,7 +53,13 @@ export async function getDashboardStats(userId: string, todayKey: string) {
           },
         }),
         prisma.todo.count({
-          where: { userId, status: "done", deletedAt: null, dayDate: { gte: from, lte: to } },
+          where: {
+            userId,
+            status: "done",
+            deletedAt: null,
+            inBacklog: false,
+            dayDate: { gte: from, lte: to },
+          },
         }),
         prisma.todo.count({
           where: {

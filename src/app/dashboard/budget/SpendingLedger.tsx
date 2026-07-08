@@ -7,10 +7,8 @@ import {
 } from "@/lib/budget-range";
 import { formatEuro, formatEuroSigned } from "@/lib/budget";
 import type { RangeBudgetEntry } from "@/lib/queries/budget";
-import Icon from "@/components/Icon";
 import LedgerRangeNavigator from "@/components/LedgerRangeNavigator";
-import SubmitIconButton from "@/components/SubmitIconButton";
-import { deleteTransaction } from "./actions";
+import BudgetTransactionRow from "./BudgetTransactionRow";
 
 type Category = { id: string; name: string; kind: string };
 
@@ -163,39 +161,7 @@ export default function SpendingLedger({
                 </div>
                 <div className="space-y-2">
                   {group.entries.map((e) => (
-                    <div key={e.id} className="card flex items-center gap-3 py-3">
-                      <span
-                        className={`badge capitalize ${
-                          e.type === "income"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {e.type}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-slate-800">
-                          {e.note || e.categoryName}
-                        </p>
-                        <p className="text-xs text-slate-400">{e.categoryName}</p>
-                      </div>
-                      <p
-                        className={`shrink-0 font-semibold ${
-                          e.type === "income" ? "text-emerald-600" : "text-red-600"
-                        }`}
-                      >
-                        {e.type === "income" ? "+" : "−"}
-                        {formatEuro(e.amountCents)}
-                      </p>
-                      <form action={deleteTransaction}>
-                        <input type="hidden" name="id" value={e.id} />
-                        <SubmitIconButton
-                          className="touch-target text-slate-300 hover:text-red-500"
-                          title="Delete"
-                          icon={<Icon name="trash" className="h-4 w-4" />}
-                        />
-                      </form>
-                    </div>
+                    <BudgetTransactionRow key={e.id} entry={e} categories={categories} />
                   ))}
                 </div>
               </div>

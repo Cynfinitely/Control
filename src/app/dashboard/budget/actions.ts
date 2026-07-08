@@ -77,6 +77,41 @@ export async function logTransaction(formData: FormData) {
 
 export const logTransactionForm = wrapFormAction(logTransaction, "Transaction logged");
 
+export async function updateTransaction(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  if (!id) return failure("Invalid transaction");
+
+  await ensureBudgetCategories(userId);
+
+  const type = str(formData.get("type"));
+  if (type !== "income" && type !== "expense") return failure("Invalid transaction type");
+
+  const amountCents = parseAmountToCents(formData.get("amount"));
+  if (amountCents === null) return failure("Enter a valid amount");
+
+  const categoryId = str(formData.get("categoryId"));
+  const category = await getCategoryForUser(userId, categoryId, type);
+  if (!category) return failure("Select a valid category");
+
+  const result = await prisma.budgetTransaction.updateMany({
+    where: { id, userId, deletedAt: null },
+    data: {
+      type,
+      amountCents,
+      categoryId: category.id,
+      date: parseDate(formData.get("date")),
+      note: optStr(formData.get("note")),
+    },
+  });
+  if (result.count === 0) return failure("Transaction not found");
+
+  invalidateBudget(userId);
+  return success("Transaction updated");
+}
+
+export const updateTransactionForm = wrapFormAction(updateTransaction, "Transaction updated");
+
 export async function deleteTransaction(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));

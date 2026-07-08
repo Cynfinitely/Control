@@ -11,17 +11,40 @@ type Props = {
   currentBlockId: string | null;
   dayValue: string;
   isToday: boolean;
+  todoOpen?: number;
+  todoDone?: number;
 };
 
-export default function PlanPreview({ blocks, stats, currentBlockId, dayValue, isToday }: Props) {
+export default function PlanPreview({
+  blocks,
+  stats,
+  currentBlockId,
+  dayValue,
+  isToday,
+  todoOpen = 0,
+  todoDone = 0,
+}: Props) {
+  const todoTotal = todoOpen + todoDone;
   return (
     <section className="card mb-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="section-title">Today&apos;s plan</h2>
-          {stats.totalBlocks > 0 ? (
+          {stats.totalBlocks > 0 || todoTotal > 0 ? (
             <p className="mt-1 text-sm text-slate-500">
-              {stats.doneBlocks}/{stats.totalBlocks} done · {stats.completionPct}% complete
+              {todoTotal > 0 && (
+                <>
+                  {todoOpen > 0 ? `${todoOpen} open` : "All done"}
+                  {" · "}
+                  {todoDone}/{todoTotal} todos
+                </>
+              )}
+              {stats.totalBlocks > 0 && (
+                <>
+                  {todoTotal > 0 && " · "}
+                  {stats.doneBlocks}/{stats.totalBlocks} blocks · {stats.completionPct}%
+                </>
+              )}
             </p>
           ) : (
             <p className="mt-1 text-sm text-slate-400">No blocks scheduled yet</p>

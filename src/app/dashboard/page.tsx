@@ -46,13 +46,13 @@ export default async function DashboardHome() {
   const cards = [
     {
       label: "Todos today",
-      value: `${stats.todayDoneTodos}/${todoTotal || 0}`,
+      value: `${stats.todayOpenTodos}`,
       sub:
         stats.overdueTodos > 0
-          ? `${stats.overdueTodos} overdue`
-          : stats.todayOpenTodos > 0
-            ? `${stats.todayOpenTodos} left`
-            : "all done",
+          ? `${stats.overdueTodos} overdue · ${stats.todayDoneTodos}/${todoTotal || 0} done`
+          : todoTotal > 0
+            ? `${stats.todayDoneTodos}/${todoTotal} done`
+            : "no todos yet",
       href: "/dashboard/todos",
       icon: "check",
       health: stats.health.todos,
@@ -191,6 +191,8 @@ export default async function DashboardHome() {
         currentBlockId={planPreview.currentBlockId}
         dayValue={todayKey}
         isToday
+        todoOpen={stats.todayOpenTodos}
+        todoDone={stats.todayDoneTodos}
       />
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
