@@ -62,6 +62,7 @@ model User {
   planBlocks           PlanBlock[]
   planTemplates        PlanTemplate[]
   planSuggestionDismissals PlanSuggestionDismissal[]
+  inspirations         Inspiration[]
 }
 
 model VerificationToken {
@@ -114,6 +115,22 @@ model Todo {
   @@index([userId, dueDate])
   @@index([userId, dayDate])
   @@index([userId, inBacklog])
+}
+
+// ----------------------------------------------------------------------------
+// 1b. Inspirations — personal quotes and motivational notes
+// ----------------------------------------------------------------------------
+
+model Inspiration {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  author    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ----------------------------------------------------------------------------

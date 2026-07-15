@@ -111,5 +111,24 @@ export async function moveUnfinishedToBacklog(formData: FormData): Promise<Actio
   return success("Open todos moved to backlog");
 }
 
+export async function moveAllStaleToBacklog(): Promise<ActionResult> {
+  const userId = await getUserId();
+  const today = startOfDay(new Date());
+  const result = await prisma.todo.updateMany({
+    where: {
+      userId,
+      deletedAt: null,
+      inBacklog: false,
+      status: "open",
+      dayDate: { lt: today },
+    },
+    data: { inBacklog: true },
+  });
+  invalidate(userId);
+  if (result.count === 0) return success("No stale todos to move");
+  return success(`Moved ${result.count} todo${result.count === 1 ? "" : "s"} to backlog`);
+}
+
 export const pullFromBacklogForm = wrapFormAction(pullFromBacklog, "Added to today");
 export const moveUnfinishedToBacklogForm = wrapFormAction(moveUnfinishedToBacklog, "Moved to backlog");
+export const moveAllStaleToBacklogForm = wrapFormAction(moveAllStaleToBacklog, "Moved to backlog");

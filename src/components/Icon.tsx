@@ -76,6 +76,12 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M9 12h6M9 16h6" />
     </>
   ),
+  sparkles: (
+    <>
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
+      <path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" />
+    </>
+  ),
 };
 
 export default function Icon({ name, className }: Props) {

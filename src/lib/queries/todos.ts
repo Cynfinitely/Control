@@ -57,6 +57,26 @@ export async function getBacklogTodos(userId: string) {
   );
 }
 
+function staleOpenWhere(userId: string) {
+  const today = startOfDay(new Date());
+  return {
+    userId,
+    deletedAt: null,
+    inBacklog: false,
+    status: "open" as const,
+    dayDate: { lt: today },
+  };
+}
+
+export async function getStaleOpenTodoCount(userId: string) {
+  const todayKey = startOfDay(new Date()).toISOString().slice(0, 10);
+  return cachedQuery(
+    ["todos-stale", userId, todayKey],
+    [cacheTag("todos", userId)],
+    () => prisma.todo.count({ where: staleOpenWhere(userId) })
+  );
+}
+
 export async function getOverdueTodoCount(userId: string) {
   const today = startOfDay(new Date());
   return cachedQuery(

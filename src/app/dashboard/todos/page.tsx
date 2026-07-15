@@ -1,18 +1,16 @@
 import { Suspense } from "react";
 import { requireUser } from "@/lib/session";
-import { toDateInputValue, addDays, formatDayLabel, parseDayParam } from "@/lib/date";
-import { getBacklogTodos, getDayTodos } from "@/lib/queries/todos";
+import { toDateInputValue, formatDayLabel, parseDayParam } from "@/lib/date";
+import { getBacklogTodos, getDayTodos, getStaleOpenTodoCount } from "@/lib/queries/todos";
 import PageHeader from "@/components/PageHeader";
 import DayNavigator from "@/components/DayNavigator";
 import SubmitButton from "@/components/SubmitButton";
 import FormAction from "@/components/FormAction";
 import FocusTarget from "@/components/FocusTarget";
+import StaleBacklogButton from "@/components/StaleBacklogButton";
 import TodoList from "./TodoList";
 import BacklogRow from "./BacklogRow";
-import {
-  createTodoForm,
-  moveUnfinishedToBacklogForm,
-} from "./actions";
+import { createTodoForm } from "./actions";
 
 export default async function TodosPage({
   searchParams,
@@ -24,9 +22,10 @@ export default async function TodosPage({
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
 
-  const [dayTodos, backlog] = await Promise.all([
+  const [dayTodos, backlog, staleCount] = await Promise.all([
     getDayTodos(user.id, dayValue),
     getBacklogTodos(user.id),
+    getStaleOpenTodoCount(user.id),
   ]);
 
   return (
@@ -35,12 +34,7 @@ export default async function TodosPage({
 
       <div className="card mb-6 flex flex-wrap items-center justify-between gap-3">
         <DayNavigator basePath="/dashboard/todos" dayValue={dayValue} dayLabel={dayLabel} />
-        {!searchParams.day && dayTodos.some((t) => t.status === "open") && (
-          <FormAction action={moveUnfinishedToBacklogForm} successMessage="Moved to backlog">
-            <input type="hidden" name="dayDate" value={toDateInputValue(addDays(day, -1))} />
-            <SubmitButton className="btn-ghost text-xs">Move yesterday&apos;s open to backlog</SubmitButton>
-          </FormAction>
-        )}
+        {staleCount > 0 && <StaleBacklogButton count={staleCount} />}
       </div>
 
       <Suspense fallback={null}>

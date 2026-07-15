@@ -4,14 +4,12 @@ import { requireUser } from "@/lib/session";
 import { getPeriodKey } from "@/lib/period";
 import { startOfWeek, addDays, toDateInputValue, formatDate, endOfDay } from "@/lib/date";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
-import { getBacklogTodos } from "@/lib/queries/todos";
+import { getBacklogTodos, getStaleOpenTodoCount } from "@/lib/queries/todos";
 import { getGoalsForPeriod } from "@/lib/queries/goals";
 import { getWeekExpenseTotal } from "@/lib/queries/budget";
 import { formatEuro } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
-import SubmitButton from "@/components/SubmitButton";
-import FormAction from "@/components/FormAction";
-import { moveUnfinishedToBacklogForm } from "../todos/actions";
+import StaleBacklogButton from "@/components/StaleBacklogButton";
 
 export default async function WeeklyReviewPage() {
   const user = await requireUser();
@@ -19,11 +17,11 @@ export default async function WeeklyReviewPage() {
   const weekKey = getPeriodKey("weekly", now);
   const weekStart = startOfWeek(now);
   const weekEnd = endOfDay(addDays(weekStart, 6));
-  const yesterday = addDays(now, -1);
 
-  const [backlog, goals, pendingQazaDaily, prayerDebts, pendingFollowUps, shoppingRemaining, incompleteGoals, weekExpensesCents] =
+  const [backlog, staleCount, goals, pendingQazaDaily, prayerDebts, pendingFollowUps, shoppingRemaining, incompleteGoals, weekExpensesCents] =
     await Promise.all([
       getBacklogTodos(user.id),
+      getStaleOpenTodoCount(user.id),
       getGoalsForPeriod(user.id, "weekly", weekKey),
       prisma.qazaPrayer.count({ where: { userId: user.id, fulfilledAt: null } }),
       prisma.prayerDebt.findMany({ where: { userId: user.id } }),
@@ -92,14 +90,15 @@ export default async function WeeklyReviewPage() {
       </div>
 
       <section className="card mb-6">
-        <h2 className="section-title mb-2">1. Clear yesterday</h2>
+        <h2 className="section-title mb-2">1. Clear past todos</h2>
         <p className="mb-3 text-sm text-slate-500">
-          Move unfinished todos from yesterday into backlog so today starts clean.
+          Move unfinished todos from previous days into backlog so today starts clean.
         </p>
-        <FormAction action={moveUnfinishedToBacklogForm} successMessage="Moved to backlog">
-          <input type="hidden" name="dayDate" value={toDateInputValue(yesterday)} />
-          <SubmitButton className="btn-ghost">Move yesterday&apos;s open todos to backlog</SubmitButton>
-        </FormAction>
+        {staleCount > 0 ? (
+          <StaleBacklogButton count={staleCount} className="btn-ghost" />
+        ) : (
+          <p className="text-sm text-slate-400">No stale open todos — you&apos;re caught up.</p>
+        )}
       </section>
 
       <section className="card mb-6">
