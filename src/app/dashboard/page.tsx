@@ -130,6 +130,7 @@ export default async function DashboardHome() {
   const quickLinks = [
     { href: "/dashboard/plan?focus=add", label: "Daily plan", icon: "calendar" },
     { href: "/dashboard/todos?focus=add", label: "Add todo", icon: "check" },
+    { href: "/dashboard/work?focus=add", label: "Work focus", icon: "briefcase" },
     { href: "/dashboard/food?focus=log", label: "Log meal", icon: "food" },
     { href: "/dashboard/budget?focus=log", label: "Log transaction", icon: "wallet" },
     { href: "/dashboard/exercise?focus=log", label: "Log workout", icon: "dumbbell" },

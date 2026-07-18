@@ -63,6 +63,8 @@ model User {
   planTemplates        PlanTemplate[]
   planSuggestionDismissals PlanSuggestionDismissal[]
   inspirations         Inspiration[]
+  workDays             WorkDay[]
+  workFocusItems       WorkFocusItem[]
 }
 
 model VerificationToken {
@@ -88,6 +90,47 @@ model InviteCode {
   usedById    String?   @unique
   usedBy      User?     @relation("InviteUsedBy", fields: [usedById], references: [id])
   createdAt   DateTime  @default(now())
+}
+
+// ----------------------------------------------------------------------------
+// 1a. Work — daily focus board + light end-of-day log (separate from personal Todos)
+// ----------------------------------------------------------------------------
+
+model WorkDay {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       DateTime
+  logNote    String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  focusItems WorkFocusItem[]
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model WorkFocusItem {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workDayId   String
+  workDay     WorkDay   @relation(fields: [workDayId], references: [id], onDelete: Cascade)
+  title       String
+  status      String    @default("open") // open | done | skipped
+  sortOrder   Int       @default(0)
+  notes       String?
+  // Optional Career bridge: career_goal | skill
+  linkType    String?
+  linkId      String?
+  completedAt DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, workDayId])
+  @@index([workDayId, sortOrder])
+  @@index([userId, linkType, linkId])
 }
 
 // ----------------------------------------------------------------------------
