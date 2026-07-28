@@ -65,6 +65,9 @@ model User {
   inspirations         Inspiration[]
   workDays             WorkDay[]
   workFocusItems       WorkFocusItem[]
+  calendarEvents       CalendarEvent[]
+  reminders            Reminder[]
+  notifications        Notification[]
 }
 
 model VerificationToken {
@@ -774,4 +777,95 @@ model PlanSuggestionDismissal {
 
   @@unique([userId, planDate, suggestionKey])
   @@index([userId, planDate])
+}
+
+// ----------------------------------------------------------------------------
+// 13. Calendar — events, recurrence exceptions, reminders, in-app notifications
+// ----------------------------------------------------------------------------
+
+model CalendarEvent {
+  id             String                   @id @default(cuid())
+  userId         String
+  user           User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  location       String?
+  allDay         Boolean                  @default(false)
+  startsAt       DateTime
+  endsAt         DateTime
+  timezone       String                   @default("Europe/Istanbul")
+  rrule          String?
+  rruleUntil     DateTime?
+  status         String                   @default("confirmed") // confirmed | cancelled
+  externalSource String?
+  externalId     String?
+  etag           String?
+  deletedAt      DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  exceptions     CalendarEventException[]
+  reminders      Reminder[]
+
+  @@index([userId, startsAt])
+  @@index([userId, rruleUntil])
+  @@index([userId, deletedAt])
+  @@index([userId, externalSource, externalId])
+}
+
+model CalendarEventException {
+  id               String        @id @default(cuid())
+  eventId          String
+  event            CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  originalStartsAt DateTime
+  cancelled        Boolean       @default(false)
+  title            String?
+  description      String?
+  location         String?
+  allDay           Boolean?
+  startsAt         DateTime?
+  endsAt           DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([eventId, originalStartsAt])
+  @@index([eventId])
+}
+
+model Reminder {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String?
+  eventId       String?
+  event         CalendarEvent? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  remindAt      DateTime?
+  offsetMinutes Int?
+  rrule         String?
+  status        String         @default("active") // active | dismissed | cancelled
+  deletedAt     DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([userId, remindAt])
+  @@index([userId, status])
+  @@index([eventId])
+}
+
+model Notification {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  body       String?
+  dueAt      DateTime
+  readAt     DateTime?
+  sourceType String // event | reminder
+  sourceId   String
+  dedupeKey  String
+  href       String?
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, dueAt])
+  @@index([userId, dueAt])
 }

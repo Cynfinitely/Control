@@ -14,7 +14,8 @@ export const navSections: NavSection[] = [
     title: "Today",
     items: [
       { href: "/dashboard", label: "Home", icon: "home" },
-      { href: "/dashboard/plan", label: "Plan", icon: "calendar" },
+      { href: "/dashboard/plan", label: "Plan", icon: "clipboard" },
+      { href: "/dashboard/calendar", label: "Calendar", icon: "calendar" },
       { href: "/dashboard/todos", label: "Todos", icon: "check" },
       { href: "/dashboard/work", label: "Work", icon: "briefcase" },
       { href: "/dashboard/journal", label: "Journal", icon: "book" },

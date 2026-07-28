@@ -10,6 +10,7 @@ type Props = {
   maxDay?: string;
   monthKey?: string;
   sticky?: boolean;
+  extraParams?: Record<string, string>;
 };
 
 export default function DayNavigator({
@@ -19,6 +20,7 @@ export default function DayNavigator({
   maxDay,
   monthKey,
   sticky = true,
+  extraParams,
 }: Props) {
   const router = useRouter();
   const day = new Date(dayValue + "T00:00:00");
@@ -28,7 +30,7 @@ export default function DayNavigator({
   const canGoNext = !maxDay || nextDayValue <= maxDay;
 
   function buildUrl(nextDay: string) {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(extraParams);
     if (monthKey) params.set("month", monthKey);
     if (nextDay !== todayValue) params.set("day", nextDay);
     const qs = params.toString();

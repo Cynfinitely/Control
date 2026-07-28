@@ -8,6 +8,7 @@ import clsx from "clsx";
 import { navSections } from "@/lib/nav";
 import Icon from "@/components/Icon";
 import Logo from "@/components/Logo";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Sidebar({
   name,
@@ -39,8 +40,11 @@ export default function Sidebar({
 
   const nav = (
     <>
-      <div className="px-5 py-5">
+      <div className="flex items-center justify-between px-5 py-5">
         <Logo href="/dashboard" variant="mark" className="h-10 w-10" onClick={() => setOpen(false)} />
+        <div className="hidden md:block">
+          <NotificationBell />
+        </div>
       </div>
       <nav className="flex-1 overflow-y-auto px-3" aria-label="Main navigation">
         {navSections.map((section) => (
@@ -131,6 +135,9 @@ export default function Sidebar({
           <Icon name="menu" className="h-5 w-5" />
         </button>
         <Logo href="/dashboard" variant="mark" className="h-9 w-9" />
+        <div className="ml-auto">
+          <NotificationBell />
+        </div>
       </header>
 
       {open && (

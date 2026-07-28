@@ -9,9 +9,10 @@ type Props = {
   monthKey: string;
   monthLabel: string;
   dayValue?: string;
+  extraParams?: Record<string, string>;
 };
 
-export default function MonthNavigator({ basePath, monthKey, monthLabel, dayValue }: Props) {
+export default function MonthNavigator({ basePath, monthKey, monthLabel, dayValue, extraParams }: Props) {
   const router = useRouter();
   const [year, month] = monthKey.split("-").map(Number);
   const ref = new Date(year, month - 1, 1);
@@ -19,7 +20,7 @@ export default function MonthNavigator({ basePath, monthKey, monthLabel, dayValu
   const isCurrentMonth = monthKey === todayKey;
 
   function buildUrl(nextMonthKey: string) {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(extraParams);
     params.set("month", nextMonthKey);
     if (dayValue) params.set("day", dayValue);
     return `${basePath}?${params.toString()}`;
@@ -31,7 +32,7 @@ export default function MonthNavigator({ basePath, monthKey, monthLabel, dayValu
   }
 
   function goCurrentMonth() {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(extraParams);
     if (dayValue) params.set("day", dayValue);
     const qs = params.toString();
     router.push(qs ? `${basePath}?${qs}` : basePath);

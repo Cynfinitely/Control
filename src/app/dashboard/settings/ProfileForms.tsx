@@ -78,6 +78,9 @@ export function ProfileForm({
             </option>
           ))}
         </select>
+        <p className="mt-1 text-xs text-slate-400">
+          Used for calendar events, reminders, and when notifications fire.
+        </p>
       </div>
       <div>
         <label className="label" htmlFor="email">
