@@ -63,6 +63,8 @@ model User {
   planTemplates        PlanTemplate[]
   planSuggestionDismissals PlanSuggestionDismissal[]
   inspirations         Inspiration[]
+  principles           Principle[]
+  principleReviews     PrincipleReview[]
   workDays             WorkDay[]
   workFocusItems       WorkFocusItem[]
   calendarEvents       CalendarEvent[]
@@ -177,6 +179,34 @@ model Inspiration {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+// ----------------------------------------------------------------------------
+// 1c. Principles — behavioral guardrails + daily review check-in
+// ----------------------------------------------------------------------------
+
+model Principle {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text       String
+  category   String // environment | urge | tracking | sleep_food | structure | self_talk | support
+  sortOrder  Int       @default(0)
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId, archivedAt])
+}
+
+model PrincipleReview {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       DateTime
+  reviewedAt DateTime @default(now())
+
+  @@unique([userId, date])
 }
 
 // ----------------------------------------------------------------------------

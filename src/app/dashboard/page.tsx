@@ -5,12 +5,14 @@ import { toDateInputValue } from "@/lib/date";
 import { getDashboardStats, type DomainHealth } from "@/lib/queries/dashboard";
 import { getPlanPreviewBlocks, getPlanDayStats } from "@/lib/queries/plan";
 import { getInspirations } from "@/lib/queries/inspirations";
+import { getPrincipleReviewedToday } from "@/lib/queries/principles";
 import { formatEuro, formatEuroSigned } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import DashboardStatCard, { greetingForHour } from "@/components/DashboardStatCard";
 import OnboardingChecklist from "@/components/OnboardingChecklist";
 import InspirationSpotlight from "@/components/InspirationSpotlight";
+import PrincipleReviewCard from "@/components/PrincipleReviewCard";
 import PlanPreview from "./plan/PlanPreview";
 
 const PRAYERS = 5;
@@ -31,10 +33,11 @@ export default async function DashboardHome() {
   const todayKey = toDateInputValue(now);
 
   const stats = await getDashboardStats(sessionUser.id, todayKey);
-  const [planPreview, planStats, inspirations] = await Promise.all([
+  const [planPreview, planStats, inspirations, principlesReviewed] = await Promise.all([
     getPlanPreviewBlocks(sessionUser.id, todayKey),
     getPlanDayStats(sessionUser.id, todayKey, now),
     getInspirations(sessionUser.id),
+    getPrincipleReviewedToday(sessionUser.id, now),
   ]);
 
   const todoTotal = stats.todayOpenTodos + stats.todayDoneTodos;
@@ -154,6 +157,8 @@ export default async function DashboardHome() {
       />
 
       <InspirationSpotlight items={inspirations} />
+
+      <PrincipleReviewCard reviewedToday={principlesReviewed} />
 
       <OnboardingChecklist
         userCreatedAt={user.createdAt.toISOString()}

@@ -42,6 +42,7 @@ export const navSections: NavSection[] = [
   {
     title: "Reflect",
     items: [
+      { href: "/dashboard/principles", label: "Principles", icon: "shield" },
       { href: "/dashboard/review", label: "Review", icon: "clipboard" },
       { href: "/dashboard/reports", label: "Reports", icon: "chart" },
     ],

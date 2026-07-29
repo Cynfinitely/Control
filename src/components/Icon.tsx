@@ -82,6 +82,11 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" />
     </>
   ),
+  shield: (
+    <>
+      <path d="M12 3 4 6v6c0 5 3.5 8.5 8 9.5 4.5-1 8-4.5 8-9.5V6l-8-3z" />
+    </>
+  ),
   bell: (
     <>
       <path d="M6 9a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
