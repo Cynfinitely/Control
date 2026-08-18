@@ -23,6 +23,7 @@ import SpendingLedger from "./SpendingLedger";
 import ImportUpload from "./ImportUpload";
 import UncategorizedQueue from "./UncategorizedQueue";
 import BudgetAnalysisExtras from "./BudgetAnalysisExtras";
+import ResetBudgetPanel from "./ResetBudgetPanel";
 import { undoImportBatchForm } from "./actions";
 
 export default async function BudgetPage({
@@ -223,6 +224,8 @@ export default async function BudgetPage({
           )}
         </>
       )}
+
+      <ResetBudgetPanel />
     </div>
   );
 }

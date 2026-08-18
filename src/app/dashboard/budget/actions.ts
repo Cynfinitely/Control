@@ -440,3 +440,35 @@ export async function moveCategory(formData: FormData) {
   ]);
   invalidateBudget(userId);
 }
+
+/** Wipe transactions, imports, and merchant rules. Keeps categories. */
+export async function resetBudgetData(formData: FormData) {
+  const userId = await getUserId();
+  const confirm = str(formData.get("confirm")).toUpperCase();
+  if (confirm !== "RESET") {
+    return failure('Type RESET to confirm clearing all budget transactions');
+  }
+
+  await prisma.$transaction([
+    prisma.budgetTransaction.deleteMany({ where: { userId } }),
+    prisma.budgetImportBatch.deleteMany({ where: { userId } }),
+    prisma.budgetCategoryRule.deleteMany({ where: { userId } }),
+    prisma.budgetProfile.upsert({
+      where: { userId },
+      update: {
+        setupComplete: false,
+        startingBalanceCents: 0,
+        startingBalanceDate: new Date(),
+      },
+      create: { userId, setupComplete: false },
+    }),
+  ]);
+
+  invalidateBudget(userId);
+  return success("Budget data cleared — import your July file next");
+}
+
+export const resetBudgetDataForm = wrapFormAction(
+  resetBudgetData,
+  "Budget data cleared — import your July file next"
+);
