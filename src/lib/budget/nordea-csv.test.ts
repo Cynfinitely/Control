@@ -56,6 +56,18 @@ describe("nordea csv parser", () => {
     expect(result.transactions[1].amountCents).toBe(250000);
   });
 
+  it("prefers Name over Message for Current Account semicolon CSV", () => {
+    const content = readFileSync(join(fixtures, "nordea-fi-current-account.csv"), "utf8");
+    const result = parseNordeaCsv(content);
+    expect(result.transactions).toHaveLength(3);
+    expect(result.transactions[0].rawDescription).toBe("VFI*LIDA OY SUN MARKET LA");
+    expect(result.transactions[0].merchantKey).toBe("VFI*LIDA OY SUN MARKET LA");
+    expect(result.transactions[0].rawDescription).not.toContain("ESPOO");
+    expect(result.transactions[1].rawDescription).toBe("HM FI0023");
+    expect(result.transactions[2].type).toBe("income");
+    expect(result.transactions[2].rawDescription).toBe("NARI CELAL tai KUMCU NARI NIHA");
+  });
+
   it("skips preamble and parses English CSV", () => {
     const content = readFileSync(join(fixtures, "nordea-en-csv.txt"), "utf8");
     const result = parseNordeaCsv(content);

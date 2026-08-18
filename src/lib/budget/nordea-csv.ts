@@ -24,6 +24,7 @@ export class NordeaParseError extends Error {
 }
 
 const DATE_ALIASES = [
+  "booking date",
   "book date",
   "kirjauspäivä",
   "kirjauspaiva",
@@ -39,17 +40,19 @@ const DATE_ALIASES = [
 
 const AMOUNT_ALIASES = ["amount", "määrä", "maara", "belopp", "summa"];
 
-const PAYEE_ALIASES = [
+/** Prefer these for display / merchant identity (Nordea FI "Current Account" export). */
+const NAME_ALIASES = ["name", "namn"];
+const TITLE_ALIASES = ["title", "rubrik"];
+
+const COUNTERPARTY_ALIASES = [
   "beneficiary/remitter",
   "saaja/maksaja",
   "recipient",
   "mottagare",
-  "avsändare",
-  "avsandare",
   "payee",
-  "name",
-  "namn",
 ];
+
+const SENDER_ALIASES = ["sender", "avsändare", "avsandare"];
 
 const MESSAGE_ALIASES = ["message", "viesti", "meddelande", "memo", "description", "text"];
 
@@ -121,6 +124,35 @@ function looksLikeHeader(cells: string[]): boolean {
   return hasDate && hasAmount;
 }
 
+function looksLikeIbanOrAccount(value: string): boolean {
+  const compact = value.replace(/\s+/g, "").toUpperCase();
+  return /^[A-Z]{2}\d{2}/.test(compact) || /^\d{6,}$/.test(compact);
+}
+
+/** Pick merchant/payee label: Name → Title → non-IBAN counterparty → message. */
+export function resolveNordeaLabel(parts: {
+  name?: string;
+  title?: string;
+  recipient?: string;
+  sender?: string;
+  message?: string;
+  eventType?: string;
+}): string {
+  const name = parts.name?.trim() ?? "";
+  const title = parts.title?.trim() ?? "";
+  if (name) return name;
+  if (title) return title;
+
+  for (const candidate of [parts.recipient, parts.sender, parts.eventType]) {
+    const v = candidate?.trim() ?? "";
+    if (v && !looksLikeIbanOrAccount(v)) return v;
+  }
+
+  const message = parts.message?.trim() ?? "";
+  if (message) return message;
+  return "";
+}
+
 export function parseNordeaAmount(raw: string): number | null {
   const cleaned = raw.trim().replace(/\s/g, "").replace(/€/g, "").replace(/EUR/gi, "");
   if (!cleaned || cleaned === "-" || cleaned === "+") return null;
@@ -159,10 +191,6 @@ export function parseNordeaDate(raw: string): Date | null {
   return null;
 }
 
-function buildDescription(payee: string, message: string, eventType: string): string {
-  return [payee, message, eventType].map((p) => p.trim()).filter(Boolean).join(" — ");
-}
-
 /**
  * Parse Nordea FI personal Netbank CSV/TSV export.
  * Skips preamble until a header row with date + amount columns is found.
@@ -196,7 +224,10 @@ export function parseNordeaCsv(content: string): NordeaParseResult {
 
   const dateIdx = findColumn(headers, DATE_ALIASES);
   const amountIdx = findColumn(headers, AMOUNT_ALIASES);
-  const payeeIdx = findColumn(headers, PAYEE_ALIASES);
+  const nameIdx = findColumn(headers, NAME_ALIASES);
+  const titleIdx = findColumn(headers, TITLE_ALIASES);
+  const recipientIdx = findColumn(headers, COUNTERPARTY_ALIASES);
+  const senderIdx = findColumn(headers, SENDER_ALIASES);
   const messageIdx = findColumn(headers, MESSAGE_ALIASES);
   const eventIdx = findColumn(headers, EVENT_ALIASES);
 
@@ -214,12 +245,17 @@ export function parseNordeaCsv(content: string): NordeaParseResult {
     const cells = splitLine(line, delimiter);
     const dateRaw = cells[dateIdx] ?? "";
     const amountRaw = cells[amountIdx] ?? "";
-    const payee = payeeIdx >= 0 ? cells[payeeIdx] ?? "" : "";
+    const name = nameIdx >= 0 ? cells[nameIdx] ?? "" : "";
+    const title = titleIdx >= 0 ? cells[titleIdx] ?? "" : "";
+    const recipient = recipientIdx >= 0 ? cells[recipientIdx] ?? "" : "";
+    const sender = senderIdx >= 0 ? cells[senderIdx] ?? "" : "";
     const message = messageIdx >= 0 ? cells[messageIdx] ?? "" : "";
     const eventType = eventIdx >= 0 ? cells[eventIdx] ?? "" : "";
 
+    const label = resolveNordeaLabel({ name, title, recipient, sender, message, eventType });
+
     // Skip reserved/pending style rows
-    const joined = `${payee} ${message} ${eventType}`.toLowerCase();
+    const joined = `${label} ${message} ${eventType}`.toLowerCase();
     if (joined.includes("reserverat") || joined.includes("varattu")) {
       skippedRows++;
       continue;
@@ -234,8 +270,8 @@ export function parseNordeaCsv(content: string): NordeaParseResult {
 
     const type: "income" | "expense" = signedCents > 0 ? "income" : "expense";
     const amountCents = Math.abs(signedCents);
-    const rawDescription = buildDescription(payee, message, eventType) || "Nordea transaction";
-    const merchantKey = merchantKeyFromParts(payee || eventType, message);
+    const rawDescription = label || "Nordea transaction";
+    const merchantKey = merchantKeyFromParts(rawDescription);
     const fingerprint = importFingerprint(date, signedCents, rawDescription);
 
     transactions.push({
