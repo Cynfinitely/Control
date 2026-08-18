@@ -17,8 +17,10 @@ type Entry = {
   amountCents: number;
   date: Date;
   note: string | null;
-  categoryId?: string;
+  categoryId?: string | null;
   categoryName: string;
+  rawDescription?: string | null;
+  merchantKey?: string | null;
 };
 
 type Props = {
@@ -51,7 +53,7 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-slate-800">
-            {entry.note || entry.categoryName}
+            {entry.rawDescription || entry.note || entry.categoryName}
           </p>
           <p className="text-xs text-slate-400">{entry.categoryName}</p>
         </div>
@@ -136,7 +138,7 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
               className="input"
               required
               defaultValue={
-                filtered.some((c) => c.id === entry.categoryId)
+                entry.categoryId && filtered.some((c) => c.id === entry.categoryId)
                   ? entry.categoryId
                   : filtered[0]?.id
               }

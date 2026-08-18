@@ -6,7 +6,7 @@ import { getDashboardStats, type DomainHealth } from "@/lib/queries/dashboard";
 import { getPlanPreviewBlocks, getPlanDayStats } from "@/lib/queries/plan";
 import { getInspirations } from "@/lib/queries/inspirations";
 import { getPrincipleReviewedToday } from "@/lib/queries/principles";
-import { formatEuro, formatEuroSigned } from "@/lib/budget";
+import { formatEuroSigned } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import DashboardStatCard, { greetingForHour } from "@/components/DashboardStatCard";
@@ -83,13 +83,15 @@ export default async function DashboardHome() {
       progress: stats.calorieTarget > 0 ? (stats.caloriesToday / stats.calorieTarget) * 100 : 0,
     },
     {
-      label: "Balance",
+      label: "Budget",
       value: stats.budgetSetupComplete
-        ? formatEuro(stats.budgetBalanceCents)
-        : "Set up",
+        ? formatEuroSigned(stats.budgetMonthNetCents)
+        : "Import",
       sub: stats.budgetSetupComplete
-        ? `${formatEuroSigned(stats.budgetMonthNetCents)} this month`
-        : "Add starting balance",
+        ? stats.budgetUncategorizedCount > 0
+          ? `${stats.budgetUncategorizedCount} uncategorized`
+          : "this month net"
+        : "Upload Nordea CSV",
       href: "/dashboard/budget",
       icon: "wallet",
       health: stats.health.budget,
@@ -135,7 +137,7 @@ export default async function DashboardHome() {
     { href: "/dashboard/todos?focus=add", label: "Add todo", icon: "check" },
     { href: "/dashboard/work?focus=add", label: "Work focus", icon: "briefcase" },
     { href: "/dashboard/food?focus=log", label: "Log meal", icon: "food" },
-    { href: "/dashboard/budget?focus=log", label: "Log transaction", icon: "wallet" },
+    { href: "/dashboard/budget", label: "Import budget", icon: "wallet" },
     { href: "/dashboard/exercise?focus=log", label: "Log workout", icon: "dumbbell" },
     { href: "/dashboard/religious", label: "Log prayers", icon: "moon" },
     { href: "/dashboard/review", label: "Weekly review", icon: "clipboard" },
@@ -183,7 +185,7 @@ export default async function DashboardHome() {
           },
           {
             id: "budget",
-            label: "Set up your budget",
+            label: "Import your budget transactions",
             href: "/dashboard/budget",
             done: stats.budgetSetupComplete,
           },

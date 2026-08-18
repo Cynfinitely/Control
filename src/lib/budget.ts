@@ -4,7 +4,7 @@ export type BudgetTxRow = {
   type: string;
   amountCents: number;
   date: Date;
-  categoryId?: string;
+  categoryId?: string | null;
   deletedAt?: Date | null;
 };
 

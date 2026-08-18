@@ -3,20 +3,33 @@ import { cacheTag, cachedQuery } from "@/lib/cache";
 import { coerceDate, startOfDay, endOfDay, rangeFor, toDateInputValue } from "@/lib/date";
 import type { LedgerTypeFilter } from "@/lib/budget-range";
 import { ensureBudgetCategories } from "@/lib/budget-categories";
-import type { BudgetCategory, BudgetProfile } from "@prisma/client";
+import type { BudgetCategory } from "@prisma/client";
 import {
-  computeBalance,
   computePeriodTotals,
   computeSavingsRate,
-  expenseBreakdownByCategory,
   type BudgetTxRow,
 } from "@/lib/budget";
+import {
+  computeMonthOverMonth,
+  expenseBreakdownWithUncategorized,
+  monthKeysSpanning,
+  savingsSeriesByMonth,
+  topMerchantsBySpend,
+} from "@/lib/budget/analysis";
+
+type TxWithMeta = BudgetTxRow & {
+  id: string;
+  note: string | null;
+  categoryName: string;
+  merchantKey: string | null;
+  rawDescription: string | null;
+  importBatchId: string | null;
+};
 
 async function loadBudgetContext(userId: string) {
   await ensureBudgetCategories(userId);
 
-  const [profile, categories, transactions] = await Promise.all([
-    prisma.budgetProfile.findUnique({ where: { userId } }),
+  const [categories, transactions, profile] = await Promise.all([
     prisma.budgetCategory.findMany({
       where: { userId, isHidden: false },
       orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
@@ -26,32 +39,24 @@ async function loadBudgetContext(userId: string) {
       include: { category: true },
       orderBy: { date: "asc" },
     }),
+    prisma.budgetProfile.findUnique({ where: { userId } }),
   ]);
 
-  const txRows: (BudgetTxRow & { id: string; note: string | null; categoryName: string })[] =
-    transactions.map((tx) => ({
-      id: tx.id,
-      type: tx.type,
-      amountCents: tx.amountCents,
-      date: tx.date,
-      categoryId: tx.categoryId,
-      deletedAt: tx.deletedAt,
-      note: tx.note,
-      categoryName: tx.category.name,
-    }));
+  const txRows: TxWithMeta[] = transactions.map((tx) => ({
+    id: tx.id,
+    type: tx.type,
+    amountCents: tx.amountCents,
+    date: tx.date,
+    categoryId: tx.categoryId ?? undefined,
+    deletedAt: tx.deletedAt,
+    note: tx.note,
+    categoryName: tx.category?.name ?? "Uncategorized",
+    merchantKey: tx.merchantKey,
+    rawDescription: tx.rawDescription,
+    importBatchId: tx.importBatchId,
+  }));
 
-  return { profile, categories, transactions: txRows };
-}
-
-type CachedTxRow = BudgetTxRow & { id: string; note: string | null; categoryName: string };
-
-type CachedProfile = Omit<BudgetProfile, "startingBalanceDate"> & {
-  startingBalanceDate: Date | string;
-};
-
-function reviveProfile(profile: CachedProfile | null): BudgetProfile | null {
-  if (!profile) return null;
-  return { ...profile, startingBalanceDate: coerceDate(profile.startingBalanceDate) };
+  return { categories, transactions: txRows, profile };
 }
 
 function reviveTxRow<T extends { date: Date | string; deletedAt?: Date | string | null }>(
@@ -62,30 +67,6 @@ function reviveTxRow<T extends { date: Date | string; deletedAt?: Date | string 
     date: coerceDate(tx.date),
     deletedAt: tx.deletedAt ? coerceDate(tx.deletedAt) : null,
   };
-}
-
-function reviveDayBudget(data: {
-  profile: CachedProfile | null;
-  categories: BudgetCategory[];
-  entries: CachedTxRow[];
-  balanceCents: number;
-}) {
-  return {
-    ...data,
-    profile: reviveProfile(data.profile),
-    entries: data.entries.map(reviveTxRow),
-  };
-}
-
-export async function getBudgetProfile(userId: string) {
-  return cachedQuery(
-    ["budget-profile", userId],
-    [cacheTag("budget", userId)],
-    async () => {
-      await ensureBudgetCategories(userId);
-      return prisma.budgetProfile.findUnique({ where: { userId } });
-    }
-  );
 }
 
 export async function getBudgetCategories(userId: string, includeHidden = false) {
@@ -102,31 +83,6 @@ export async function getBudgetCategories(userId: string, includeHidden = false)
   );
 }
 
-export async function getDayBudget(userId: string, dayKey: string) {
-  const data = await cachedQuery(
-    ["budget-day", userId, dayKey],
-    [cacheTag("budget", userId), cacheTag("dashboard", userId)],
-    async () => {
-      const day = new Date(dayKey + "T00:00:00");
-      const { profile, categories, transactions } = await loadBudgetContext(userId);
-
-      const dayEntries = transactions.filter((tx) => {
-        if (tx.deletedAt) return false;
-        const t = startOfDay(tx.date).getTime();
-        return t >= startOfDay(day).getTime() && t <= endOfDay(day).getTime();
-      });
-
-      return {
-        profile,
-        categories,
-        entries: dayEntries,
-        balanceCents: computeBalance(profile, transactions),
-      };
-    }
-  );
-  return reviveDayBudget(data);
-}
-
 export async function getMonthBudget(userId: string, monthStart: Date) {
   const monthKey = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`;
   const data = await cachedQuery(
@@ -134,31 +90,106 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
     [cacheTag("budget", userId), cacheTag("dashboard", userId)],
     async () => {
       const { from, to } = rangeFor("monthly", monthStart);
-      const { profile, categories, transactions } = await loadBudgetContext(userId);
+      const { categories, transactions, profile } = await loadBudgetContext(userId);
       const active = transactions.filter((tx) => !tx.deletedAt);
       const totals = computePeriodTotals(active, from, to);
-      const balanceCents = computeBalance(profile, transactions);
       const savingsRate = computeSavingsRate(totals.incomeCents, totals.expenseCents);
       const expenseCategories = categories.filter((c) => c.kind === "expense");
-      const breakdown = expenseBreakdownByCategory(active, expenseCategories, from, to);
+      const breakdown = expenseBreakdownWithUncategorized(active, expenseCategories, from, to);
+
+      const prevStart = new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1);
+      const prevRange = rangeFor("monthly", prevStart);
+      const prevTotals = computePeriodTotals(active, prevRange.from, prevRange.to);
+      const prevSavings = computeSavingsRate(prevTotals.incomeCents, prevTotals.expenseCents);
+      const mom = computeMonthOverMonth(
+        { ...totals, savingsRate },
+        {
+          ...prevTotals,
+          savingsRate: prevSavings,
+        }
+      );
+
+      const merchants = topMerchantsBySpend(active, from, to);
+      const monthKeys = monthKeysSpanning(active, 12);
+      const savingsSeries = savingsSeriesByMonth(active, monthKeys);
+      const uncategorizedCount = active.filter((tx) => !tx.categoryId).length;
+      const hasTransactions = active.length > 0;
+
+      const recentBatches = await prisma.budgetImportBatch.findMany({
+        where: { userId, deletedAt: null },
+        orderBy: { importedAt: "desc" },
+        take: 5,
+      });
 
       return {
-        profile,
         categories,
         from,
         to,
-        balanceCents,
         ...totals,
         savingsRate,
         breakdown,
+        mom,
+        merchants,
+        savingsSeries,
+        uncategorizedCount,
+        hasTransactions,
+        setupComplete: profile?.setupComplete ?? hasTransactions,
+        recentBatches,
       };
     }
   );
   return {
     ...data,
-    profile: reviveProfile(data.profile),
     from: coerceDate(data.from),
     to: coerceDate(data.to),
+    recentBatches: data.recentBatches.map((b) => ({
+      ...b,
+      importedAt: coerceDate(b.importedAt),
+      dateFrom: b.dateFrom ? coerceDate(b.dateFrom) : null,
+      dateTo: b.dateTo ? coerceDate(b.dateTo) : null,
+      deletedAt: b.deletedAt ? coerceDate(b.deletedAt) : null,
+    })),
+  };
+}
+
+export async function getUncategorizedTransactions(userId: string, limit = 100) {
+  const data = await cachedQuery(
+    ["budget-uncategorized", userId],
+    [cacheTag("budget", userId)],
+    async () => {
+      await ensureBudgetCategories(userId);
+      const [entries, categories] = await Promise.all([
+        prisma.budgetTransaction.findMany({
+          where: { userId, deletedAt: null, categoryId: null },
+          orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+          take: limit,
+        }),
+        prisma.budgetCategory.findMany({
+          where: { userId, isHidden: false },
+          orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+        }),
+      ]);
+
+      return {
+        entries: entries.map((tx) => ({
+          id: tx.id,
+          type: tx.type,
+          amountCents: tx.amountCents,
+          date: tx.date,
+          note: tx.note,
+          merchantKey: tx.merchantKey,
+          rawDescription: tx.rawDescription,
+          categoryId: tx.categoryId,
+          categoryName: "Uncategorized",
+        })),
+        categories,
+        count: entries.length,
+      };
+    }
+  );
+  return {
+    ...data,
+    entries: data.entries.map(reviveTxRow),
   };
 }
 
@@ -167,13 +198,21 @@ export async function getBudgetSummaryForDashboard(userId: string, ref: Date) {
     ["budget-dashboard", userId, ref.toISOString().slice(0, 10)],
     [cacheTag("budget", userId), cacheTag("dashboard", userId)],
     async () => {
-      const { profile, transactions } = await loadBudgetContext(userId);
+      const { transactions, profile } = await loadBudgetContext(userId);
       const { from, to } = rangeFor("monthly", ref);
       const active = transactions.filter((tx) => !tx.deletedAt);
-      const balanceCents = computeBalance(profile, transactions);
-      const { netCents } = computePeriodTotals(active, from, to);
+      const { netCents, incomeCents, expenseCents } = computePeriodTotals(active, from, to);
+      const uncategorizedCount = active.filter((tx) => !tx.categoryId).length;
+      const hasTransactions = active.length > 0;
 
-      return { balanceCents, monthNetCents: netCents, setupComplete: profile?.setupComplete ?? false };
+      return {
+        monthNetCents: netCents,
+        monthIncomeCents: incomeCents,
+        monthExpenseCents: expenseCents,
+        uncategorizedCount,
+        setupComplete: profile?.setupComplete ?? hasTransactions,
+        hasTransactions,
+      };
     }
   );
 }
@@ -191,8 +230,10 @@ export type RangeBudgetEntry = {
   amountCents: number;
   date: Date;
   note: string | null;
-  categoryId: string;
+  categoryId: string | null;
   categoryName: string;
+  merchantKey?: string | null;
+  rawDescription?: string | null;
 };
 
 export async function getRangeBudget(
@@ -217,7 +258,11 @@ export async function getRangeBudget(
         deletedAt: null,
         date: { gte: startOfDay(from), lte: endOfDay(to) },
         ...(filters?.type && filters.type !== "all" ? { type: filters.type } : {}),
-        ...(filters?.categoryId ? { categoryId: filters.categoryId } : {}),
+        ...(filters?.categoryId === "__uncategorized__"
+          ? { categoryId: null }
+          : filters?.categoryId
+            ? { categoryId: filters.categoryId }
+            : {}),
       };
 
       const [entries, categories] = await Promise.all([
@@ -239,12 +284,33 @@ export async function getRangeBudget(
         date: tx.date,
         note: tx.note,
         categoryId: tx.categoryId,
-        categoryName: tx.category.name,
+        categoryName: tx.category?.name ?? "Uncategorized",
+        merchantKey: tx.merchantKey,
+        rawDescription: tx.rawDescription,
       }));
 
-      const totals = computePeriodTotals(txRows, from, to);
+      const totals = computePeriodTotals(
+        txRows.map((tx) => ({
+          type: tx.type,
+          amountCents: tx.amountCents,
+          date: tx.date,
+          categoryId: tx.categoryId ?? undefined,
+        })),
+        from,
+        to
+      );
       const expenseCategories = categories.filter((c) => c.kind === "expense");
-      const breakdown = expenseBreakdownByCategory(txRows, expenseCategories, from, to);
+      const breakdown = expenseBreakdownWithUncategorized(
+        txRows.map((tx) => ({
+          type: tx.type,
+          amountCents: tx.amountCents,
+          date: tx.date,
+          categoryId: tx.categoryId ?? undefined,
+        })),
+        expenseCategories,
+        from,
+        to
+      );
 
       return {
         entries: txRows,
@@ -264,3 +330,5 @@ export async function getRangeBudget(
     to: coerceDate(data.to),
   };
 }
+
+export type { BudgetCategory };

@@ -56,9 +56,11 @@ model User {
   waterLogs          WaterLog[]
   journalEntries     JournalEntry[]
   jobApplications    JobApplication[]
-  budgetProfile      BudgetProfile?
-  budgetCategories   BudgetCategory[]
-  budgetTransactions BudgetTransaction[]
+  budgetProfile        BudgetProfile?
+  budgetCategories     BudgetCategory[]
+  budgetTransactions   BudgetTransaction[]
+  budgetImportBatches  BudgetImportBatch[]
+  budgetCategoryRules  BudgetCategoryRule[]
   planBlocks           PlanBlock[]
   planTemplates        PlanTemplate[]
   planSuggestionDismissals PlanSuggestionDismissal[]
@@ -716,29 +718,69 @@ model BudgetCategory {
   updatedAt DateTime @updatedAt
 
   transactions BudgetTransaction[]
+  rules        BudgetCategoryRule[]
 
   @@unique([userId, slug])
   @@index([userId, kind])
 }
 
+model BudgetImportBatch {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename           String
+  importedAt         DateTime  @default(now())
+  rowCount           Int       @default(0)
+  skippedDuplicates  Int       @default(0)
+  dateFrom           DateTime?
+  dateTo             DateTime?
+  deletedAt          DateTime?
+
+  transactions BudgetTransaction[]
+
+  @@index([userId, importedAt])
+}
+
+model BudgetCategoryRule {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  merchantKey String
+  categoryId String
+  category   BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, merchantKey])
+  @@index([userId])
+}
+
 model BudgetTransaction {
-  id            String    @id @default(cuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type          String    // income | expense
-  amountCents   Int
-  categoryId    String
-  category      BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  date          DateTime
-  note          String?
-  deletedAt     DateTime?
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String    // income | expense
+  amountCents       Int
+  categoryId        String?
+  category          BudgetCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  date              DateTime
+  note              String?
+  merchantKey       String?
+  rawDescription    String?
+  importFingerprint String?
+  importBatchId     String?
+  importBatch       BudgetImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  deletedAt         DateTime?
   // recurringRuleId String?  — v3 recurring bills
   // accountId       String?  — v4 multi-account
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
+  @@unique([userId, importFingerprint])
   @@index([userId, date])
   @@index([userId, categoryId])
+  @@index([userId, importBatchId])
+  @@index([userId, merchantKey])
 }
 
 // ----------------------------------------------------------------------------

@@ -155,9 +155,11 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         budget:
           !budgetSummary.setupComplete
             ? ("warn" as DomainHealth)
-            : budgetSummary.monthNetCents >= 0
-              ? ("good" as DomainHealth)
-              : ("bad" as DomainHealth),
+            : budgetSummary.uncategorizedCount > 0
+              ? ("warn" as DomainHealth)
+              : budgetSummary.monthNetCents >= 0
+                ? ("good" as DomainHealth)
+                : ("bad" as DomainHealth),
       };
 
       return {
@@ -178,8 +180,8 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         learningHoursWeek: learningHoursWeek._sum.hours ?? 0,
         expiringCerts,
         waterGlasses: waterToday._sum.glasses ?? 0,
-        budgetBalanceCents: budgetSummary.balanceCents,
         budgetMonthNetCents: budgetSummary.monthNetCents,
+        budgetUncategorizedCount: budgetSummary.uncategorizedCount,
         budgetSetupComplete: budgetSummary.setupComplete,
         planBlocksToday,
         planBlocksDoneToday,

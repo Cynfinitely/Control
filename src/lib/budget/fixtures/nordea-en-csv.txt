@@ -1,0 +1,7 @@
+Account statement
+Something preamble
+
+Book date,Value date,Amount,Beneficiary/Remitter,Message,Event type
+2026-07-03,2026-07-03,"-18,90",ALEPA KALLIO,GROCERIES,CARD PURCHASE
+2026-07-05,2026-07-05,"1.234,56",ACME LTD,INVOICE 42,TRANSFER
+2026-07-06,2026-07-06,-5.00,HSL,TICKET,CARD PURCHASE

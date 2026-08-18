@@ -2,24 +2,28 @@ import Link from "next/link";
 import { requireUser } from "@/lib/session";
 import {
   toDateInputValue,
-  formatDayLabel,
-  formatDate,
   parseDayParam,
   parseMonthParam,
   toMonthKey,
+  formatDate,
 } from "@/lib/date";
 import { periodLabel } from "@/lib/period";
-import { getDayBudget, getMonthBudget, getRangeBudget } from "@/lib/queries/budget";
-import { formatEuro, formatEuroSigned, centsToEuros } from "@/lib/budget";
+import {
+  getMonthBudget,
+  getRangeBudget,
+  getUncategorizedTransactions,
+} from "@/lib/queries/budget";
+import { formatEuro, formatEuroSigned } from "@/lib/budget";
 import { parseLedgerParams } from "@/lib/budget-range";
 import PageHeader from "@/components/PageHeader";
-import DayNavigator from "@/components/DayNavigator";
 import MonthNavigator from "@/components/MonthNavigator";
+import FormAction from "@/components/FormAction";
 import SubmitButton from "@/components/SubmitButton";
-import BudgetTransactionForm from "./BudgetTransactionForm";
-import BudgetTransactionRow from "./BudgetTransactionRow";
 import SpendingLedger from "./SpendingLedger";
-import { logTransactionForm, saveStartingBalance } from "./actions";
+import ImportUpload from "./ImportUpload";
+import UncategorizedQueue from "./UncategorizedQueue";
+import BudgetAnalysisExtras from "./BudgetAnalysisExtras";
+import { undoImportBatchForm } from "./actions";
 
 export default async function BudgetPage({
   searchParams,
@@ -32,220 +36,192 @@ export default async function BudgetPage({
     to?: string;
     filter?: string;
     category?: string;
+    view?: string;
   };
 }) {
   const user = await requireUser();
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
-  const dayLabel = formatDayLabel(day);
   const monthStart = parseMonthParam(searchParams.month, day);
   const monthKey = toMonthKey(monthStart);
   const monthLabel = periodLabel("monthly", monthKey);
+  const showQueue = searchParams.view === "uncategorized";
 
   const ledger = parseLedgerParams(searchParams);
   const ledgerFromValue = toDateInputValue(ledger.from);
   const ledgerToValue = toDateInputValue(ledger.to);
 
-  const [dayData, monthData, rangeData] = await Promise.all([
-    getDayBudget(user.id, dayValue),
+  const [monthData, rangeData, uncategorized] = await Promise.all([
     getMonthBudget(user.id, monthStart),
     getRangeBudget(user.id, ledger.from, ledger.to, {
       type: ledger.typeFilter,
       categoryId: ledger.categoryId,
     }),
+    getUncategorizedTransactions(user.id),
   ]);
 
-  const { profile, categories, entries, balanceCents } = dayData;
-  const needsSetup = !profile?.setupComplete;
   const maxBreakdown = monthData.breakdown[0]?.totalCents ?? 1;
+  const empty = !monthData.hasTransactions;
 
   return (
     <div>
       <PageHeader
         title="Budget"
-        description="Track income, expenses, and your current balance in euros."
+        description="Import Nordea statements, categorize merchants, and review monthly spending."
         action={
-          <Link href="/dashboard/budget/categories" className="btn-ghost touch-target">
-            Categories →
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {monthData.uncategorizedCount > 0 && (
+              <Link
+                href={`/dashboard/budget?month=${monthKey}&view=uncategorized`}
+                className="btn-ghost touch-target text-amber-700"
+              >
+                Uncategorized ({monthData.uncategorizedCount})
+              </Link>
+            )}
+            <Link href="/dashboard/budget/categories" className="btn-ghost touch-target">
+              Categories →
+            </Link>
+          </div>
         }
       />
 
-      {needsSetup && (
-        <form action={saveStartingBalance} className="card mb-6 border-amber-200 bg-amber-50">
-          <h2 className="font-semibold text-amber-900">Set your starting balance</h2>
-          <p className="mt-1 text-sm text-amber-800">
-            Enter how much money you had on a given date. Your balance will update as you log
-            income and expenses.
-          </p>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div>
-              <label className="label">Starting balance (€)</label>
-              <input
-                name="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                className="input"
-                placeholder="0.00"
-                required
-              />
-            </div>
-            <div>
-              <label className="label">As of date</label>
-              <input
-                name="date"
-                type="date"
-                className="input"
-                defaultValue={dayValue}
-                required
-              />
-            </div>
-            <div className="flex items-end">
-              <SubmitButton className="btn-primary touch-target w-full">Save</SubmitButton>
-            </div>
-          </div>
-        </form>
+      <div className="mb-6">
+        <ImportUpload empty={empty} />
+      </div>
+
+      {monthData.recentBatches.length > 0 && (
+        <div className="card mb-6">
+          <h2 className="section-title mb-3">Recent imports</h2>
+          <ul className="space-y-2 text-sm">
+            {monthData.recentBatches.map((batch) => (
+              <li key={batch.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-slate-700">
+                  <span className="font-medium">{batch.filename}</span>
+                  <span className="text-slate-400">
+                    {" "}
+                    · {batch.rowCount} rows · {formatDate(batch.importedAt)}
+                    {batch.skippedDuplicates > 0
+                      ? ` · ${batch.skippedDuplicates} duplicates skipped`
+                      : ""}
+                  </span>
+                </span>
+                <FormAction action={undoImportBatchForm} successMessage="Import undone">
+                  <input type="hidden" name="batchId" value={batch.id} />
+                  <SubmitButton className="btn-ghost touch-target text-red-600" pendingLabel="Undoing…">
+                    Undo
+                  </SubmitButton>
+                </FormAction>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
-      <section className="mb-8">
-        <div className="card mb-4 flex flex-wrap items-center justify-between gap-3">
-          <MonthNavigator
-            basePath="/dashboard/budget"
-            monthKey={monthKey}
-            monthLabel={monthLabel}
-            dayValue={dayValue}
-          />
-        </div>
+      {showQueue ? (
+        <section className="mb-8">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="section-title">Uncategorized queue</h2>
+            <Link href={`/dashboard/budget?month=${monthKey}`} className="btn-ghost touch-target">
+              ← Back to analysis
+            </Link>
+          </div>
+          <UncategorizedQueue entries={uncategorized.entries} categories={uncategorized.categories} />
+        </section>
+      ) : (
+        <>
+          <section className="mb-8">
+            <div className="card mb-4 flex flex-wrap items-center justify-between gap-3">
+              <MonthNavigator
+                basePath="/dashboard/budget"
+                monthKey={monthKey}
+                monthLabel={monthLabel}
+                dayValue={dayValue}
+              />
+            </div>
 
-        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="card">
-            <p className="text-sm text-slate-500">Current balance</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">{formatEuro(balanceCents)}</p>
-            {profile?.startingBalanceDate && (
-              <p className="text-xs text-slate-400">
-                from {formatDate(profile.startingBalanceDate)}
+            {empty ? (
+              <p className="text-sm text-slate-400">
+                No transactions yet. Import a Nordea file to see analysis for this month.
               </p>
-            )}
-          </div>
-          <div className="card">
-            <p className="text-sm text-slate-500">Income this month</p>
-            <p className="mt-2 text-2xl font-bold text-emerald-600">
-              {formatEuro(monthData.incomeCents)}
-            </p>
-          </div>
-          <div className="card">
-            <p className="text-sm text-slate-500">Expenses this month</p>
-            <p className="mt-2 text-2xl font-bold text-red-600">
-              {formatEuro(monthData.expenseCents)}
-            </p>
-          </div>
-          <div className="card">
-            <p className="text-sm text-slate-500">Net / savings rate</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {formatEuroSigned(monthData.netCents)}
-            </p>
-            <p className="text-xs text-slate-400">
-              {monthData.savingsRate === null
-                ? "No income logged"
-                : `${monthData.savingsRate}% saved`}
-            </p>
-          </div>
-        </div>
-
-        {monthData.breakdown.length > 0 && (
-          <div className="card">
-            <h2 className="section-title mb-3">Spending by category</h2>
-            <div className="space-y-3">
-              {monthData.breakdown.map((row) => (
-                <div key={row.categoryId}>
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span className="font-medium text-slate-700">{row.name}</span>
-                    <span className="text-slate-600">{formatEuro(row.totalCents)}</span>
+            ) : (
+              <>
+                <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="card">
+                    <p className="text-sm text-slate-500">Income</p>
+                    <p className="mt-2 text-2xl font-bold text-emerald-600">
+                      {formatEuro(monthData.incomeCents)}
+                    </p>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full bg-brand-500"
-                      style={{ width: `${Math.round((row.totalCents / maxBreakdown) * 100)}%` }}
-                    />
+                  <div className="card">
+                    <p className="text-sm text-slate-500">Expenses</p>
+                    <p className="mt-2 text-2xl font-bold text-red-600">
+                      {formatEuro(monthData.expenseCents)}
+                    </p>
+                  </div>
+                  <div className="card">
+                    <p className="text-sm text-slate-500">Net</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">
+                      {formatEuroSigned(monthData.netCents)}
+                    </p>
+                  </div>
+                  <div className="card">
+                    <p className="text-sm text-slate-500">Savings rate</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">
+                      {monthData.savingsRate === null ? "—" : `${monthData.savingsRate}%`}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {monthData.savingsRate === null ? "No income this month" : "of income saved"}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
 
-      <SpendingLedger
-        searchParams={searchParams}
-        ledger={ledger}
-        rangeData={rangeData}
-        categories={rangeData.categories}
-        dayValue={dayValue}
-        monthKey={monthKey}
-        refDay={day}
-        fromValue={ledgerFromValue}
-        toValue={ledgerToValue}
-      />
+                <BudgetAnalysisExtras
+                  mom={monthData.mom}
+                  merchants={monthData.merchants}
+                  savingsSeries={monthData.savingsSeries}
+                />
 
-      <section>
-        <div className="card mb-4 flex flex-wrap items-center justify-between gap-3">
-          <DayNavigator
-            basePath="/dashboard/budget"
-            dayValue={dayValue}
-            dayLabel={dayLabel}
-            monthKey={monthKey}
-          />
-        </div>
+                {monthData.breakdown.length > 0 && (
+                  <div className="card mb-4">
+                    <h2 className="section-title mb-3">Spending by category</h2>
+                    <div className="space-y-3">
+                      {monthData.breakdown.map((row) => (
+                        <div key={row.categoryId}>
+                          <div className="mb-1 flex justify-between text-sm">
+                            <span className="font-medium text-slate-700">{row.name}</span>
+                            <span className="text-slate-600">{formatEuro(row.totalCents)}</span>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              className="h-full bg-brand-500"
+                              style={{
+                                width: `${Math.round((row.totalCents / maxBreakdown) * 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
 
-        <BudgetTransactionForm
-          categories={categories}
-          dayValue={dayValue}
-          action={logTransactionForm}
-        />
-
-        <h2 className="section-title mb-3">{dayLabel}&apos;s transactions</h2>
-        <div className="space-y-2">
-          {entries.length === 0 && (
-            <p className="text-sm text-slate-400">No transactions logged for this day.</p>
+          {!empty && (
+            <SpendingLedger
+              searchParams={searchParams}
+              ledger={ledger}
+              rangeData={rangeData}
+              categories={rangeData.categories}
+              dayValue={dayValue}
+              monthKey={monthKey}
+              refDay={day}
+              fromValue={ledgerFromValue}
+              toValue={ledgerToValue}
+            />
           )}
-          {entries.map((e) => (
-            <BudgetTransactionRow key={e.id} entry={e} categories={categories} />
-          ))}
-        </div>
-      </section>
-
-      {!needsSetup && (
-        <details className="card mt-8">
-          <summary className="cursor-pointer font-medium text-slate-700">Starting balance</summary>
-          <form action={saveStartingBalance} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div>
-              <label className="label">Balance (€)</label>
-              <input
-                name="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                className="input"
-                defaultValue={centsToEuros(profile?.startingBalanceCents ?? 0)}
-                required
-              />
-            </div>
-            <div>
-              <label className="label">As of date</label>
-              <input
-                name="date"
-                type="date"
-                className="input"
-                defaultValue={toDateInputValue(profile?.startingBalanceDate ?? new Date())}
-                required
-              />
-            </div>
-            <div className="flex items-end">
-              <SubmitButton className="btn-primary touch-target">Update</SubmitButton>
-            </div>
-          </form>
-        </details>
+        </>
       )}
     </div>
   );

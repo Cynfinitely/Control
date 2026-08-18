@@ -130,11 +130,13 @@ export async function buildReport(userId: string, period: Period) {
   const expenseByCategory = new Map<string, { name: string; total: number }>();
   for (const tx of budgetTransactions) {
     if (tx.type !== "expense") continue;
-    const existing = expenseByCategory.get(tx.categoryId);
+    const key = tx.categoryId ?? "__uncategorized__";
+    const name = tx.category?.name ?? "Uncategorized";
+    const existing = expenseByCategory.get(key);
     if (existing) {
       existing.total += tx.amountCents;
     } else {
-      expenseByCategory.set(tx.categoryId, { name: tx.category.name, total: tx.amountCents });
+      expenseByCategory.set(key, { name, total: tx.amountCents });
     }
   }
   const topExpenseCategory = [...expenseByCategory.values()].sort((a, b) => b.total - a.total)[0];

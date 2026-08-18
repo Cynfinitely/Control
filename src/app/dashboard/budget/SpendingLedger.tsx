@@ -120,6 +120,16 @@ export default function SpendingLedger({
         >
           All categories
         </Link>
+        <Link
+          href={buildBudgetUrl(basePath, searchParams, { category: "__uncategorized__" })}
+          className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+            ledger.categoryId === "__uncategorized__"
+              ? "bg-slate-700 text-white"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          Uncategorized
+        </Link>
         {expenseCategories.map((cat) => (
           <Link
             key={cat.id}
