@@ -114,6 +114,22 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
       const savingsSeries = savingsSeriesByMonth(active, monthKeys);
       const uncategorizedCount = active.filter((tx) => !tx.categoryId).length;
       const hasTransactions = active.length > 0;
+      const fromT = startOfDay(from).getTime();
+      const toT = startOfDay(to).getTime();
+      const monthEntries = active
+        .filter((tx) => {
+          const day = startOfDay(tx.date).getTime();
+          return day >= fromT && day <= toT;
+        })
+        .map((tx) => ({
+          date: tx.date,
+          type: tx.type,
+          amountCents: tx.amountCents,
+          categoryName: tx.categoryName,
+          merchantKey: tx.merchantKey,
+          rawDescription: tx.rawDescription,
+          note: tx.note,
+        }));
 
       const recentBatches = await prisma.budgetImportBatch.findMany({
         where: { userId, deletedAt: null },
@@ -133,6 +149,7 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
         savingsSeries,
         uncategorizedCount,
         hasTransactions,
+        monthEntries,
         setupComplete: profile?.setupComplete ?? hasTransactions,
         recentBatches,
       };
@@ -148,6 +165,10 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
       dateFrom: b.dateFrom ? coerceDate(b.dateFrom) : null,
       dateTo: b.dateTo ? coerceDate(b.dateTo) : null,
       deletedAt: b.deletedAt ? coerceDate(b.deletedAt) : null,
+    })),
+    monthEntries: (data.monthEntries ?? []).map((entry) => ({
+      ...entry,
+      date: coerceDate(entry.date),
     })),
   };
 }

@@ -15,6 +15,7 @@ import {
 } from "@/lib/queries/budget";
 import { formatEuro, formatEuroSigned } from "@/lib/budget";
 import { parseLedgerParams } from "@/lib/budget-range";
+import { buildMonthBudgetPrompt } from "@/lib/budget/prompt";
 import PageHeader from "@/components/PageHeader";
 import MonthNavigator from "@/components/MonthNavigator";
 import FormAction from "@/components/FormAction";
@@ -23,6 +24,7 @@ import SpendingLedger from "./SpendingLedger";
 import ImportUpload from "./ImportUpload";
 import UncategorizedQueue from "./UncategorizedQueue";
 import BudgetAnalysisExtras from "./BudgetAnalysisExtras";
+import BudgetAiPromptButton from "./BudgetAiPromptButton";
 import ResetBudgetPanel from "./ResetBudgetPanel";
 import { undoImportBatchForm } from "./actions";
 
@@ -63,6 +65,25 @@ export default async function BudgetPage({
 
   const maxBreakdown = monthData.breakdown[0]?.totalCents ?? 1;
   const empty = !monthData.hasTransactions;
+  const monthUncategorizedCount = monthData.monthEntries.filter(
+    (entry) => entry.categoryName === "Uncategorized"
+  ).length;
+  const aiPrompt =
+    monthData.monthEntries.length > 0
+      ? buildMonthBudgetPrompt({
+          monthLabel,
+          monthKey,
+          incomeCents: monthData.incomeCents,
+          expenseCents: monthData.expenseCents,
+          netCents: monthData.netCents,
+          savingsRate: monthData.savingsRate,
+          mom: monthData.mom,
+          breakdown: monthData.breakdown,
+          merchants: monthData.merchants,
+          uncategorizedCount: monthUncategorizedCount,
+          entries: monthData.monthEntries,
+        })
+      : "";
 
   return (
     <div>
@@ -138,6 +159,13 @@ export default async function BudgetPage({
                 monthLabel={monthLabel}
                 dayValue={dayValue}
               />
+              {monthData.monthEntries.length > 0 && (
+                <BudgetAiPromptButton
+                  monthLabel={monthLabel}
+                  prompt={aiPrompt}
+                  uncategorizedCount={monthUncategorizedCount}
+                />
+              )}
             </div>
 
             {empty ? (
