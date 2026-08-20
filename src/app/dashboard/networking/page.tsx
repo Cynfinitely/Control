@@ -10,8 +10,10 @@ import {
 } from "@/lib/contacts";
 import PageHeader from "@/components/PageHeader";
 import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
+import Icon from "@/components/Icon";
 import FollowUpCheckbox from "@/components/FollowUpCheckbox";
-import { createContact } from "./actions";
+import { createContact, deleteFollowUp } from "./actions";
 
 export default async function NetworkingPage({
   searchParams,
@@ -92,6 +94,15 @@ export default async function NetworkingPage({
                   </Link>
                 </span>
                 {f.dueDate && <span className="text-xs text-slate-400">{formatDate(f.dueDate)}</span>}
+                <form action={deleteFollowUp}>
+                  <input type="hidden" name="id" value={f.id} />
+                  <input type="hidden" name="contactId" value={f.contactId} />
+                  <SubmitIconButton
+                    className="text-slate-300 hover:text-red-500"
+                    icon={<Icon name="trash" className="h-3 w-3" />}
+                    aria-label={`Delete follow-up for ${f.contact.name}`}
+                  />
+                </form>
               </div>
             ))}
           </div>

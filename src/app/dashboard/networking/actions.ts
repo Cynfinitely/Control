@@ -152,6 +152,20 @@ export async function toggleFollowUp(formData: FormData) {
   invalidateNetworking(userId, contactId || undefined);
 }
 
+export async function deleteFollowUp(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  const contactId = str(formData.get("contactId"));
+  const result = await prisma.followUp.deleteMany({ where: { id, userId } });
+  if (result.count > 0) {
+    await prisma.planBlock.updateMany({
+      where: { userId, linkType: "followup", linkId: id, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+  }
+  invalidateNetworking(userId, contactId || undefined);
+}
+
 export async function deleteInteraction(formData: FormData) {
   const userId = await getUserId();
   const id = str(formData.get("id"));

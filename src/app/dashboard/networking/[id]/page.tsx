@@ -19,6 +19,7 @@ import {
   logCallToday,
   addFollowUp,
   toggleFollowUp,
+  deleteFollowUp,
   deleteContact,
   updateContact,
   deleteInteraction,
@@ -169,20 +170,32 @@ export default async function ContactDetail({
           <div className="space-y-1">
             {contact.followUps.length === 0 && <p className="text-sm text-slate-400">No follow-ups.</p>}
             {contact.followUps.map((f) => (
-              <form key={f.id} action={toggleFollowUp} className="flex items-center gap-3">
-                <input type="hidden" name="id" value={f.id} />
-                <input type="hidden" name="contactId" value={contact.id} />
-                <SubmitIconButton
-                  className={`flex h-4 w-4 items-center justify-center rounded border ${
-                    f.done ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300"
-                  }`}
-                  icon={f.done ? <Icon name="check" className="h-3 w-3" /> : null}
-                />
-                <span className={`flex-1 text-sm ${f.done ? "text-slate-400 line-through" : "text-slate-700"}`}>
-                  {f.note}
-                </span>
-                {f.dueDate && <span className="text-xs text-slate-400">{formatDate(f.dueDate)}</span>}
-              </form>
+              <div key={f.id} className="flex items-center gap-3">
+                <form action={toggleFollowUp} className="flex min-w-0 flex-1 items-center gap-3">
+                  <input type="hidden" name="id" value={f.id} />
+                  <input type="hidden" name="contactId" value={contact.id} />
+                  <SubmitIconButton
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                      f.done ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300"
+                    }`}
+                    icon={f.done ? <Icon name="check" className="h-3 w-3" /> : null}
+                    aria-label={f.done ? "Mark follow-up open" : "Mark follow-up done"}
+                  />
+                  <span className={`flex-1 text-sm ${f.done ? "text-slate-400 line-through" : "text-slate-700"}`}>
+                    {f.note}
+                  </span>
+                  {f.dueDate && <span className="text-xs text-slate-400">{formatDate(f.dueDate)}</span>}
+                </form>
+                <form action={deleteFollowUp}>
+                  <input type="hidden" name="id" value={f.id} />
+                  <input type="hidden" name="contactId" value={contact.id} />
+                  <SubmitIconButton
+                    className="text-slate-300 hover:text-red-500"
+                    icon={<Icon name="trash" className="h-3 w-3" />}
+                    aria-label="Delete follow-up"
+                  />
+                </form>
+              </div>
             ))}
           </div>
         </div>
