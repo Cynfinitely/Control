@@ -8,6 +8,7 @@ import PendingIndicator from "@/components/PendingIndicator";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 import { useToast } from "@/components/Toast";
 import { formatDate } from "@/lib/date";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import { toggleTodo, deleteTodo, moveToBacklog, restoreTodo } from "./actions";
 import type { TodoItem } from "@/lib/queries/todos";
 
@@ -177,31 +178,38 @@ export default function TodoList({ initialTodos }: Props) {
         />
       )}
       <div className="space-y-2">
-        {open.map((t) => (
-          <TodoRow
-            key={t.id}
-            todo={t}
-            showBacklog
-            onToggle={handleToggle}
-            onDelete={handleDelete}
-            onBacklog={handleBacklog}
-            pending={isPending}
-          />
-        ))}
+        {open.length > 0 && (
+          <CollapsibleSection title="Open" count={open.length} defaultOpen>
+            <div className="space-y-2">
+              {open.map((t) => (
+                <TodoRow
+                  key={t.id}
+                  todo={t}
+                  showBacklog
+                  onToggle={handleToggle}
+                  onDelete={handleDelete}
+                  onBacklog={handleBacklog}
+                  pending={isPending}
+                />
+              ))}
+            </div>
+          </CollapsibleSection>
+        )}
         {done.length > 0 && (
-          <>
-            <p className="section-title mt-6 text-sm text-slate-500">Done ({done.length})</p>
-            {done.map((t) => (
-              <TodoRow
-                key={t.id}
-                todo={t}
-                onToggle={handleToggle}
-                onDelete={handleDelete}
-                onBacklog={handleBacklog}
-                pending={isPending}
-              />
-            ))}
-          </>
+          <CollapsibleSection title="Done" count={done.length} className="mt-4">
+            <div className="space-y-2">
+              {done.map((t) => (
+                <TodoRow
+                  key={t.id}
+                  todo={t}
+                  onToggle={handleToggle}
+                  onDelete={handleDelete}
+                  onBacklog={handleBacklog}
+                  pending={isPending}
+                />
+              ))}
+            </div>
+          </CollapsibleSection>
         )}
       </div>
     </div>

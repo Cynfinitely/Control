@@ -6,6 +6,7 @@ import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import {
   addPlanItem,
   deletePlanItem,
@@ -114,10 +115,12 @@ export default async function PlannerPage() {
         })}
       </div>
 
-      <h2 className="section-title mb-3 mt-8">
-        Shopping list <span className="text-sm font-normal text-slate-400">({remaining} to buy)</span>
-      </h2>
-      <div className="card">
+      <CollapsibleSection
+        title="Shopping list"
+        count={remaining}
+        defaultOpen
+        className="card mt-8"
+      >
         {shopping.length === 0 && (
           <p className="text-sm text-slate-400">
             Add ingredients to planned meals and they will appear here.
@@ -141,7 +144,7 @@ export default async function PlannerPage() {
             </form>
           ))}
         </div>
-      </div>
+      </CollapsibleSection>
     </div>
   );
 }

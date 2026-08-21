@@ -87,7 +87,7 @@ export default async function GoalsPage({
 
       <details className="card mb-6">
         <summary className="cursor-pointer font-medium text-brand-700">+ Add goal</summary>
-        <FormAction action={createGoalForm} successMessage="Goal added" className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormAction action={createGoalForm} successMessage="Goal added" resetOnSuccess className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <input type="hidden" name="period" value={period} />
           <input type="hidden" name="periodKey" value={periodKey} />
           <div className="sm:col-span-2">

@@ -8,6 +8,7 @@ import SubmitButton from "@/components/SubmitButton";
 import FormAction from "@/components/FormAction";
 import FocusTarget from "@/components/FocusTarget";
 import StaleBacklogButton from "@/components/StaleBacklogButton";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import TodoList from "./TodoList";
 import BacklogRow from "./BacklogRow";
 import { createTodoForm } from "./actions";
@@ -42,6 +43,7 @@ export default async function TodosPage({
           <FormAction
             action={createTodoForm}
             successMessage="Todo added"
+            resetOnSuccess
             className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
           >
             <input type="hidden" name="dayDate" value={dayValue} />
@@ -90,11 +92,12 @@ export default async function TodosPage({
       <TodoList initialTodos={dayTodos} />
 
       {backlog.length > 0 && (
-        <details className="card mt-8">
-          <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
-            Backlog ({backlog.length})
-          </summary>
-          <p className="mt-2 text-xs text-slate-400">
+        <CollapsibleSection
+          title="Backlog"
+          count={backlog.length}
+          className="card mt-8"
+        >
+          <p className="text-xs text-slate-400">
             Unfinished items saved for later. Pull into today&apos;s list when ready.
           </p>
           <div className="mt-4 space-y-2">
@@ -102,7 +105,7 @@ export default async function TodosPage({
               <BacklogRow key={t.id} id={t.id} title={t.title} dayValue={dayValue} />
             ))}
           </div>
-        </details>
+        </CollapsibleSection>
       )}
     </div>
   );

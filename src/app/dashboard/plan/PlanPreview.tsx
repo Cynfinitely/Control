@@ -26,7 +26,7 @@ export default function PlanPreview({
 }: Props) {
   const todoTotal = todoOpen + todoDone;
   return (
-    <section className="card mb-6">
+    <section className="card h-full">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="section-title">Today&apos;s plan</h2>

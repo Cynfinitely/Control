@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import { useFormState } from "react-dom";
 import { useToast } from "@/components/Toast";
 import type { FormAction, ActionResult } from "@/lib/action-result";
@@ -8,6 +8,7 @@ import type { FormAction, ActionResult } from "@/lib/action-result";
 type Props = {
   action: FormAction;
   successMessage?: string;
+  resetOnSuccess?: boolean;
   className?: string;
   children: React.ReactNode;
 };
@@ -15,24 +16,34 @@ type Props = {
 export default function FormAction({
   action,
   successMessage = "Saved",
+  resetOnSuccess = false,
   className,
   children,
 }: Props) {
   const { success, error } = useToast();
   const [state, formAction] = useFormState(action, null);
   const [, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (!state) return;
     if (state.ok) {
       success(state.message ?? successMessage);
+      if (resetOnSuccess && formRef.current) {
+        formRef.current.reset();
+        const first = formRef.current.querySelector<HTMLElement>(
+          "input:not([type=hidden]):not([type=submit]), textarea"
+        );
+        first?.focus();
+      }
     } else {
       error(state.error);
     }
-  }, [state, success, error, successMessage]);
+  }, [state, success, error, successMessage, resetOnSuccess]);
 
   return (
     <form
+      ref={formRef}
       action={(fd) => startTransition(() => formAction(fd))}
       className={className}
     >

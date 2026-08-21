@@ -7,6 +7,7 @@ import type { InspirationItem } from "@/lib/queries/inspirations";
 
 type Props = {
   items: InspirationItem[];
+  compact?: boolean;
 };
 
 function pickRandom(items: InspirationItem[], excludeId?: string): InspirationItem {
@@ -14,7 +15,7 @@ function pickRandom(items: InspirationItem[], excludeId?: string): InspirationIt
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-export default function InspirationSpotlight({ items }: Props) {
+export default function InspirationSpotlight({ items, compact = false }: Props) {
   const [current, setCurrent] = useState<InspirationItem | null>(null);
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export default function InspirationSpotlight({ items }: Props) {
 
   if (items.length === 0) {
     return (
-      <div className="card mb-6 border-l-4 border-l-brand-400">
+      <div className={`card border-l-4 border-l-brand-400 ${compact ? "" : "mb-6"}`}>
         <div className="flex items-start gap-3">
           <Icon name="sparkles" className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
           <div>
@@ -47,6 +48,30 @@ export default function InspirationSpotlight({ items }: Props) {
   }
 
   if (!current) return null;
+
+  if (compact) {
+    return (
+      <div className="card flex items-start gap-3 py-4">
+        <Icon name="sparkles" className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+            &ldquo;{current.text}&rdquo;
+          </p>
+          {current.author && <p className="mt-1 text-xs text-slate-500">— {current.author}</p>}
+          <div className="mt-2 flex flex-wrap gap-2">
+            {items.length > 1 && (
+              <button type="button" onClick={shuffle} className="text-xs text-brand-600 hover:underline">
+                Another
+              </button>
+            )}
+            <Link href="/dashboard/inspirations" className="text-xs text-slate-400 hover:text-slate-600">
+              Manage
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card mb-6 border-l-4 border-l-brand-400">

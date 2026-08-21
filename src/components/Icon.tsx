@@ -99,6 +99,14 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M12 7v5l3 2" />
     </>
   ),
+  flag: (
+    <>
+      <path d="M4 21V4" />
+      <path d="M4 4h12l-2 4 2 4H4" />
+    </>
+  ),
+  chevronUp: <path d="M6 15l6-6 6 6" />,
+  chevronDown: <path d="M6 9l6 6 6-6" />,
 };
 
 export default function Icon({ name, className }: Props) {
