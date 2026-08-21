@@ -6,6 +6,7 @@ import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
 import CareerTabs from "@/components/CareerTabs";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import {
   createCareerGoal,
   setCareerGoalStatus,
@@ -62,7 +63,7 @@ export default async function CareerPage() {
         panels={{
           goals: (
       <section className="mb-8">
-        <h2 className="section-title mb-3">Career goals</h2>
+        <CollapsibleSection title="Career goals" count={goals.length} defaultOpen>
         <details className="card mb-3">
           <summary className="cursor-pointer font-medium text-brand-700">+ Add goal</summary>
           <form action={createCareerGoal} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -114,12 +115,13 @@ export default async function CareerPage() {
             </div>
           ))}
         </div>
+        </CollapsibleSection>
       </section>
           ),
           skills: (
       <>
       <section className="mb-8">
-        <h2 className="section-title mb-3">Skills</h2>
+        <CollapsibleSection title="Skills" count={skills.length} defaultOpen>
         <details className="card mb-3">
           <summary className="cursor-pointer font-medium text-brand-700">+ Add skill</summary>
           <form action={createSkill} className="mt-4 flex flex-wrap items-end gap-3">
@@ -169,11 +171,12 @@ export default async function CareerPage() {
             </div>
           ))}
         </div>
+        </CollapsibleSection>
       </section>
 
       {/* Certifications */}
       <section className="mb-8">
-        <h2 className="section-title mb-3">Certifications</h2>
+        <CollapsibleSection title="Certifications" count={certs.length} defaultOpen>
         <details className="card mb-3">
           <summary className="cursor-pointer font-medium text-brand-700">+ Add certification</summary>
           <form action={createCertification} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -234,12 +237,13 @@ export default async function CareerPage() {
             );
           })}
         </div>
+        </CollapsibleSection>
       </section>
       </>
           ),
           work: (
       <section className="mb-8">
-        <h2 className="section-title mb-3">Work history</h2>
+        <CollapsibleSection title="Work history" count={experiences.length} defaultOpen>
         <details className="card mb-3">
           <summary className="cursor-pointer font-medium text-brand-700">+ Add experience</summary>
           <form action={createWorkExperience} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -294,11 +298,12 @@ export default async function CareerPage() {
             </div>
           ))}
         </div>
+        </CollapsibleSection>
       </section>
           ),
           learning: (
       <section>
-        <h2 className="section-title mb-3">Learning log</h2>
+        <CollapsibleSection title="Learning log" count={learning.length} defaultOpen>
         <details className="card mb-3">
           <summary className="cursor-pointer font-medium text-brand-700">+ Add learning entry</summary>
           <form action={createLearning} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -369,11 +374,12 @@ export default async function CareerPage() {
             </div>
           ))}
         </div>
+        </CollapsibleSection>
       </section>
           ),
           applications: (
       <section className="mt-8">
-        <h2 className="section-title mb-3">Job applications</h2>
+        <CollapsibleSection title="Job applications" count={jobApps.length} defaultOpen>
         <details className="card mb-3">
           <summary className="cursor-pointer font-medium text-brand-700">+ Add application</summary>
           <form action={createJobApplication} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -456,6 +462,7 @@ export default async function CareerPage() {
             </div>
           ))}
         </div>
+        </CollapsibleSection>
       </section>
           ),
         }}

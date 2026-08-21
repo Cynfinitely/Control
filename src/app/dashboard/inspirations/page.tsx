@@ -21,6 +21,7 @@ export default async function InspirationsPage() {
       <FormAction
         action={createInspirationForm}
         successMessage="Inspiration added"
+        resetOnSuccess
         className="card mb-6 space-y-3"
       >
         <div>

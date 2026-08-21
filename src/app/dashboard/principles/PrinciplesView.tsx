@@ -141,6 +141,7 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
           <FormAction
             action={createPrincipleForm}
             successMessage="Principle added"
+            resetOnSuccess
             className="card space-y-3"
           >
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200">

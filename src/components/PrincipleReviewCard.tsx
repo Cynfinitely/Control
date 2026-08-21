@@ -11,9 +11,10 @@ import { markPrinciplesReviewedForm } from "@/app/dashboard/principles/actions";
 
 type Props = {
   reviewedToday: boolean;
+  compact?: boolean;
 };
 
-export default function PrincipleReviewCard({ reviewedToday }: Props) {
+export default function PrincipleReviewCard({ reviewedToday, compact = false }: Props) {
   const router = useRouter();
   const { success, error } = useToast();
   const [state, formAction] = useFormState(markPrinciplesReviewedForm, null);
@@ -28,16 +29,18 @@ export default function PrincipleReviewCard({ reviewedToday }: Props) {
     }
   }, [state, success, error, router]);
 
+  const wrap = compact ? "card py-4" : "card mb-6";
+
   if (reviewedToday) {
     return (
-      <div className="card mb-6 border-l-4 border-l-green-500">
+      <div className={`${wrap} border-l-4 border-l-green-500`}>
         <div className="flex items-start gap-3">
           <Icon name="shield" className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
-              Principles reviewed ✓
+              Principles reviewed
             </p>
-            <Link href="/dashboard/principles" className="btn-ghost mt-2 inline-flex text-xs">
+            <Link href="/dashboard/principles" className="mt-1 inline-flex text-xs text-brand-600 hover:underline">
               Open principles
             </Link>
           </div>
@@ -47,7 +50,7 @@ export default function PrincipleReviewCard({ reviewedToday }: Props) {
   }
 
   return (
-    <div className="card mb-6 border-l-4 border-l-slate-400">
+    <div className={`${wrap} border-l-4 border-l-slate-400`}>
       <div className="flex items-start gap-3">
         <Icon name="shield" className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
         <div className="min-w-0 flex-1">

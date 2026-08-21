@@ -67,6 +67,7 @@ model User {
   inspirations         Inspiration[]
   principles           Principle[]
   principleReviews     PrincipleReview[]
+  lifePriorities       LifePriority[]
   workDays             WorkDay[]
   workFocusItems       WorkFocusItem[]
   calendarEvents       CalendarEvent[]
@@ -209,6 +210,23 @@ model PrincipleReview {
   reviewedAt DateTime @default(now())
 
   @@unique([userId, date])
+}
+
+// ----------------------------------------------------------------------------
+// 1d. Life priorities — ranked order of what matters most
+// ----------------------------------------------------------------------------
+
+model LifePriority {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  note      String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, sortOrder])
 }
 
 // ----------------------------------------------------------------------------

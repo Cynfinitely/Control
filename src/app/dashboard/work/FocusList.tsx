@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import PendingIndicator from "@/components/PendingIndicator";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 import { useToast } from "@/components/Toast";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import { toggleFocusItem, skipFocusItem, deleteFocusItem, restoreFocusItem } from "./actions";
 import type { WorkFocusItemRow } from "@/lib/queries/work";
 
@@ -176,30 +177,37 @@ export default function FocusList({ initialItems }: Props) {
         />
       )}
       <div className="space-y-2">
-        {open.map((item) => (
-          <FocusRow
-            key={item.id}
-            item={item}
-            onToggle={handleToggle}
-            onSkip={handleSkip}
-            onDelete={handleDelete}
-            pending={isPending}
-          />
-        ))}
+        {open.length > 0 && (
+          <CollapsibleSection title="Open" count={open.length} defaultOpen>
+            <div className="space-y-2">
+              {open.map((item) => (
+                <FocusRow
+                  key={item.id}
+                  item={item}
+                  onToggle={handleToggle}
+                  onSkip={handleSkip}
+                  onDelete={handleDelete}
+                  pending={isPending}
+                />
+              ))}
+            </div>
+          </CollapsibleSection>
+        )}
         {closed.length > 0 && (
-          <>
-            <p className="section-title mt-6 text-sm text-slate-500">Closed ({closed.length})</p>
-            {closed.map((item) => (
-              <FocusRow
-                key={item.id}
-                item={item}
-                onToggle={handleToggle}
-                onSkip={handleSkip}
-                onDelete={handleDelete}
-                pending={isPending}
-              />
-            ))}
-          </>
+          <CollapsibleSection title="Closed" count={closed.length} className="mt-4">
+            <div className="space-y-2">
+              {closed.map((item) => (
+                <FocusRow
+                  key={item.id}
+                  item={item}
+                  onToggle={handleToggle}
+                  onSkip={handleSkip}
+                  onDelete={handleDelete}
+                  pending={isPending}
+                />
+              ))}
+            </div>
+          </CollapsibleSection>
         )}
       </div>
     </div>

@@ -95,7 +95,7 @@ export default async function FoodPage({
         </div>
       </div>
 
-      <FormAction action={logFoodForm} successMessage="Meal logged" className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <FormAction action={logFoodForm} successMessage="Meal logged" resetOnSuccess className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="sm:col-span-2">
           <label htmlFor="food-name" className="label">Food</label>
           <input id="food-name" name="name" className="input" placeholder="e.g. Chicken salad" required />

@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import PendingIndicator from "@/components/PendingIndicator";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 import { useToast } from "@/components/Toast";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import {
   toggleGoalComplete,
   incrementGoal,
@@ -98,9 +99,12 @@ function GoalMilestones({ goal, pending }: { goal: GoalItem; pending: boolean })
 function GoalCheckIns({ goal }: { goal: GoalItem }) {
   if (goal.checkIns.length === 0) return null;
   return (
-    <div className="mt-2 border-t border-slate-100 pt-2 dark:border-slate-700">
-      <p className="text-xs text-slate-400">Recent check-ins</p>
-      <ul className="mt-1 space-y-0.5">
+    <CollapsibleSection
+      title="Recent check-ins"
+      count={goal.checkIns.length}
+      className="mt-2 border-t border-slate-100 pt-2 dark:border-slate-700"
+    >
+      <ul className="space-y-0.5">
         {goal.checkIns.map((c) => (
           <li key={c.id} className="text-xs text-slate-500">
             +{c.value} · {formatDate(c.date)}
@@ -108,7 +112,7 @@ function GoalCheckIns({ goal }: { goal: GoalItem }) {
           </li>
         ))}
       </ul>
-    </div>
+    </CollapsibleSection>
   );
 }
 
@@ -267,30 +271,37 @@ export default function GoalList({ initialGoals }: Props) {
         />
       )}
       <div className="space-y-2">
-        {active.map((g) => (
-          <GoalRow
-            key={g.id}
-            goal={g}
-            onToggle={handleToggle}
-            onIncrement={handleIncrement}
-            onDelete={handleDelete}
-            pending={isPending}
-          />
-        ))}
+        {active.length > 0 && (
+          <CollapsibleSection title="Active" count={active.length} defaultOpen>
+            <div className="space-y-2">
+              {active.map((g) => (
+                <GoalRow
+                  key={g.id}
+                  goal={g}
+                  onToggle={handleToggle}
+                  onIncrement={handleIncrement}
+                  onDelete={handleDelete}
+                  pending={isPending}
+                />
+              ))}
+            </div>
+          </CollapsibleSection>
+        )}
         {completed.length > 0 && (
-          <>
-            <p className="section-title mt-6 text-sm text-slate-500">Completed ({completed.length})</p>
-            {completed.map((g) => (
-              <GoalRow
-                key={g.id}
-                goal={g}
-                onToggle={handleToggle}
-                onIncrement={handleIncrement}
-                onDelete={handleDelete}
-                pending={isPending}
-              />
-            ))}
-          </>
+          <CollapsibleSection title="Completed" count={completed.length} className="mt-4">
+            <div className="space-y-2">
+              {completed.map((g) => (
+                <GoalRow
+                  key={g.id}
+                  goal={g}
+                  onToggle={handleToggle}
+                  onIncrement={handleIncrement}
+                  onDelete={handleDelete}
+                  pending={isPending}
+                />
+              ))}
+            </div>
+          </CollapsibleSection>
         )}
       </div>
     </div>

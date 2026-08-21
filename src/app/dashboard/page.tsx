@@ -6,6 +6,7 @@ import { getDashboardStats, type DomainHealth } from "@/lib/queries/dashboard";
 import { getPlanPreviewBlocks, getPlanDayStats } from "@/lib/queries/plan";
 import { getInspirations } from "@/lib/queries/inspirations";
 import { getPrincipleReviewedToday } from "@/lib/queries/principles";
+import { getLifePriorities } from "@/lib/queries/priorities";
 import { formatEuroSigned } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
@@ -13,6 +14,7 @@ import DashboardStatCard, { greetingForHour } from "@/components/DashboardStatCa
 import OnboardingChecklist from "@/components/OnboardingChecklist";
 import InspirationSpotlight from "@/components/InspirationSpotlight";
 import PrincipleReviewCard from "@/components/PrincipleReviewCard";
+import LifePrioritiesCard from "@/components/LifePrioritiesCard";
 import PlanPreview from "./plan/PlanPreview";
 
 const PRAYERS = 5;
@@ -33,11 +35,12 @@ export default async function DashboardHome() {
   const todayKey = toDateInputValue(now);
 
   const stats = await getDashboardStats(sessionUser.id, todayKey);
-  const [planPreview, planStats, inspirations, principlesReviewed] = await Promise.all([
+  const [planPreview, planStats, inspirations, principlesReviewed, priorities] = await Promise.all([
     getPlanPreviewBlocks(sessionUser.id, todayKey),
     getPlanDayStats(sessionUser.id, todayKey, now),
     getInspirations(sessionUser.id),
     getPrincipleReviewedToday(sessionUser.id, now),
+    getLifePriorities(sessionUser.id),
   ]);
 
   const todoTotal = stats.todayOpenTodos + stats.todayDoneTodos;
@@ -158,10 +161,6 @@ export default async function DashboardHome() {
         })}
       />
 
-      <InspirationSpotlight items={inspirations} />
-
-      <PrincipleReviewCard reviewedToday={principlesReviewed} />
-
       <OnboardingChecklist
         userCreatedAt={user.createdAt.toISOString()}
         items={[
@@ -198,40 +197,54 @@ export default async function DashboardHome() {
         ]}
       />
 
-      <PlanPreview
-        blocks={planPreview.blocks}
-        stats={planStats}
-        currentBlockId={planPreview.currentBlockId}
-        dayValue={todayKey}
-        isToday
-        todoOpen={stats.todayOpenTodos}
-        todoDone={stats.todayDoneTodos}
-      />
+      <LifePrioritiesCard items={priorities} />
 
-      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {cards.map((c) => (
-          <DashboardStatCard
-            key={c.label}
-            label={c.label}
-            value={c.value}
-            sub={c.sub}
-            href={c.href}
-            icon={c.icon}
-            healthClass={HEALTH_STYLE[c.health]}
-            progress={c.progress}
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <PlanPreview
+            blocks={planPreview.blocks}
+            stats={planStats}
+            currentBlockId={planPreview.currentBlockId}
+            dayValue={todayKey}
+            isToday
+            todoOpen={stats.todayOpenTodos}
+            todoDone={stats.todayDoneTodos}
           />
-        ))}
+        </div>
+        <aside>
+          <h2 className="section-title mb-3">Today at a glance</h2>
+          <div className="grid grid-cols-2 gap-2">
+            {cards.map((c) => (
+              <DashboardStatCard
+                key={c.label}
+                label={c.label}
+                value={c.value}
+                sub={c.sub}
+                href={c.href}
+                icon={c.icon}
+                healthClass={HEALTH_STYLE[c.health]}
+                progress={c.progress}
+                compact
+              />
+            ))}
+          </div>
+        </aside>
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <InspirationSpotlight items={inspirations} compact />
+        <PrincipleReviewCard reviewedToday={principlesReviewed} compact />
       </div>
 
       <h2 className="section-title mb-3">Quick actions</h2>
       <div className="flex flex-wrap gap-2">
         {quickLinks.map((q) => (
-          <Link key={q.href} href={q.href} className="btn-ghost touch-target gap-2">
+          <Link key={q.href} href={q.href} className="btn-ghost touch-target gap-2 text-sm">
             <Icon name={q.icon} className="h-4 w-4" />
             {q.label}
           </Link>
         ))}
-        <Link href="/dashboard/reports" className="btn-ghost touch-target gap-2">
+        <Link href="/dashboard/reports" className="btn-ghost touch-target gap-2 text-sm">
           <Icon name="chart" className="h-4 w-4" />
           View reports
         </Link>
