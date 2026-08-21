@@ -7,6 +7,7 @@ import { getPlanPreviewBlocks, getPlanDayStats } from "@/lib/queries/plan";
 import { getInspirations } from "@/lib/queries/inspirations";
 import { getPrincipleReviewedToday } from "@/lib/queries/principles";
 import { getLifePriorities } from "@/lib/queries/priorities";
+import { getDayTodos } from "@/lib/queries/todos";
 import { formatEuroSigned } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
@@ -15,6 +16,7 @@ import OnboardingChecklist from "@/components/OnboardingChecklist";
 import InspirationSpotlight from "@/components/InspirationSpotlight";
 import PrincipleReviewCard from "@/components/PrincipleReviewCard";
 import LifePrioritiesCard from "@/components/LifePrioritiesCard";
+import HomeTodosCard from "@/components/HomeTodosCard";
 import PlanPreview from "./plan/PlanPreview";
 
 const PRAYERS = 5;
@@ -35,12 +37,13 @@ export default async function DashboardHome() {
   const todayKey = toDateInputValue(now);
 
   const stats = await getDashboardStats(sessionUser.id, todayKey);
-  const [planPreview, planStats, inspirations, principlesReviewed, priorities] = await Promise.all([
+  const [planPreview, planStats, inspirations, principlesReviewed, priorities, todayTodos] = await Promise.all([
     getPlanPreviewBlocks(sessionUser.id, todayKey),
     getPlanDayStats(sessionUser.id, todayKey, now),
     getInspirations(sessionUser.id),
     getPrincipleReviewedToday(sessionUser.id, now),
     getLifePriorities(sessionUser.id),
+    getDayTodos(sessionUser.id, todayKey),
   ]);
 
   const todoTotal = stats.todayOpenTodos + stats.todayDoneTodos;
@@ -111,7 +114,16 @@ export default async function DashboardHome() {
     {
       label: "Prayers today",
       value: `${stats.prayersOnTime}/${PRAYERS}`,
-      sub: `${stats.weeklyPrayerRate}% on-time this week${stats.pendingQaza > 0 ? ` · ${stats.pendingQaza} qaza` : ""}`,
+      sub: [
+        stats.prayersMissed > 0 ? `${stats.prayersMissed} missed` : null,
+        stats.prayersUnlogged > 0 ? `${stats.prayersUnlogged} not logged` : null,
+        stats.prayersMissed === 0 && stats.prayersUnlogged === 0
+          ? `${stats.weeklyPrayerRate}% on-time this week`
+          : null,
+        stats.pendingQaza > 0 ? `${stats.pendingQaza} qaza` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "not logged yet",
       href: "/dashboard/religious",
       icon: "moon",
       health: stats.health.religious,
@@ -201,6 +213,7 @@ export default async function DashboardHome() {
 
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
+          <HomeTodosCard todos={todayTodos} dayValue={todayKey} />
           <PlanPreview
             blocks={planPreview.blocks}
             stats={planStats}

@@ -14,6 +14,7 @@ import type { TodoItem } from "@/lib/queries/todos";
 
 type Props = {
   initialTodos: TodoItem[];
+  compact?: boolean;
 };
 
 type OptimisticAction =
@@ -42,6 +43,7 @@ function applyOptimistic(todos: TodoItem[], action: OptimisticAction): TodoItem[
 function TodoRow({
   todo,
   showBacklog,
+  compact,
   onToggle,
   onDelete,
   onBacklog,
@@ -49,6 +51,7 @@ function TodoRow({
 }: {
   todo: TodoItem;
   showBacklog?: boolean;
+  compact?: boolean;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
   onBacklog: (id: string) => void;
@@ -59,7 +62,7 @@ function TodoRow({
     !isDone && todo.dueDate && new Date(todo.dueDate) < new Date(new Date().toDateString());
 
   return (
-    <div className={`card flex items-center gap-3 py-3 ${isDone ? "opacity-70" : ""}`}>
+    <div className={`card flex items-center gap-3 ${compact ? "px-3 py-2" : "py-3"} ${isDone ? "opacity-70" : ""}`}>
       <button
         type="button"
         disabled={pending}
@@ -74,23 +77,29 @@ function TodoRow({
         {isDone ? <Icon name="check" className="h-3.5 w-3.5" /> : null}
       </button>
       <div className="min-w-0 flex-1">
-        <p className={`${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800 dark:text-slate-100"}`}>
+        <p
+          className={`${compact ? "text-sm" : ""} ${
+            isDone ? "text-slate-500 line-through" : "font-medium text-slate-800 dark:text-slate-100"
+          }`}
+        >
           {todo.title}
         </p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-          <span className={`badge text-xs ${PRIORITY_STYLE[todo.priority] ?? PRIORITY_STYLE.medium}`}>
-            {todo.priority}
-          </span>
-          {todo.category && (
-            <span className="badge bg-violet-50 text-xs text-violet-600">{todo.category}</span>
-          )}
-          {todo.dueDate && (
-            <span className={`text-xs ${isOverdue ? "font-medium text-red-600" : "text-slate-400"}`}>
-              due {formatDate(todo.dueDate)}
-              {isOverdue ? " · overdue" : ""}
+        {!compact && (
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+            <span className={`badge text-xs ${PRIORITY_STYLE[todo.priority] ?? PRIORITY_STYLE.medium}`}>
+              {todo.priority}
             </span>
-          )}
-        </div>
+            {todo.category && (
+              <span className="badge bg-violet-50 text-xs text-violet-600">{todo.category}</span>
+            )}
+            {todo.dueDate && (
+              <span className={`text-xs ${isOverdue ? "font-medium text-red-600" : "text-slate-400"}`}>
+                due {formatDate(todo.dueDate)}
+                {isOverdue ? " · overdue" : ""}
+              </span>
+            )}
+          </div>
+        )}
       </div>
       {showBacklog && !isDone && (
         <button
@@ -102,17 +111,19 @@ function TodoRow({
           Backlog
         </button>
       )}
-      <DeleteConfirmButton
-        disabled={pending}
-        title="Delete todo?"
-        message={`Remove "${todo.title}"? This cannot be undone.`}
-        onConfirm={() => onDelete(todo.id)}
-      />
+      {!compact && (
+        <DeleteConfirmButton
+          disabled={pending}
+          title="Delete todo?"
+          message={`Remove "${todo.title}"? This cannot be undone.`}
+          onConfirm={() => onDelete(todo.id)}
+        />
+      )}
     </div>
   );
 }
 
-export default function TodoList({ initialTodos }: Props) {
+export default function TodoList({ initialTodos, compact = false }: Props) {
   const [isPending, startTransition] = useTransition();
   const [optimisticTodos, updateOptimistic] = useOptimistic(initialTodos, applyOptimistic);
   const router = useRouter();
@@ -170,12 +181,16 @@ export default function TodoList({ initialTodos }: Props) {
     <div className={isPending ? "opacity-80" : ""}>
       <PendingIndicator pending={isPending} />
       {optimisticTodos.length === 0 && (
-        <EmptyState
-          icon="check"
-          title="Your day is clear"
-          description="No todos scheduled for this day. Add one above to get started."
-          tip="Use priority and category tags to stay organized."
-        />
+        compact ? (
+          <p className="text-sm text-slate-400">No todos for today yet.</p>
+        ) : (
+          <EmptyState
+            icon="check"
+            title="Your day is clear"
+            description="No todos scheduled for this day. Add one above to get started."
+            tip="Use priority and category tags to stay organized."
+          />
+        )
       )}
       <div className="space-y-2">
         {open.length > 0 && (
@@ -185,7 +200,8 @@ export default function TodoList({ initialTodos }: Props) {
                 <TodoRow
                   key={t.id}
                   todo={t}
-                  showBacklog
+                  showBacklog={!compact}
+                  compact={compact}
                   onToggle={handleToggle}
                   onDelete={handleDelete}
                   onBacklog={handleBacklog}
@@ -196,12 +212,13 @@ export default function TodoList({ initialTodos }: Props) {
           </CollapsibleSection>
         )}
         {done.length > 0 && (
-          <CollapsibleSection title="Done" count={done.length} className="mt-4">
+          <CollapsibleSection title="Done" count={done.length} className={open.length > 0 ? "mt-3" : undefined}>
             <div className="space-y-2">
               {done.map((t) => (
                 <TodoRow
                   key={t.id}
                   todo={t}
+                  compact={compact}
                   onToggle={handleToggle}
                   onDelete={handleDelete}
                   onBacklog={handleBacklog}

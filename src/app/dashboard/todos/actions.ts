@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
@@ -8,6 +9,8 @@ import { success, failure, wrapFormAction, type ActionResult } from "@/lib/actio
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "todos", "dashboard", "plan");
+  revalidatePath("/dashboard/todos");
+  revalidatePath("/dashboard");
 }
 
 export async function createTodo(formData: FormData): Promise<ActionResult> {

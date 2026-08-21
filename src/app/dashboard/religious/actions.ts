@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
@@ -8,6 +9,8 @@ import { incrementLinkedGoals } from "@/lib/goal-links";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "religious", "dashboard");
+  revalidatePath("/dashboard/religious");
+  revalidatePath("/dashboard");
 }
 
 export async function setPrayer(formData: FormData) {

@@ -4,21 +4,22 @@ import { startOfDay, endOfDay, startOfWeek, addDays } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
 import { getBudgetSummaryForDashboard } from "@/lib/queries/budget";
+import { summarizeDayPrayers } from "@/lib/religious/day-prayers";
 
 export type DomainHealth = "good" | "warn" | "bad";
 
 export async function getDashboardStats(userId: string, todayKey: string) {
-  const now = new Date(todayKey + "T12:00:00");
-  const from = startOfDay(now);
-  const to = endOfDay(now);
-  const weekStart = startOfWeek(now);
+  const day = new Date(todayKey + "T00:00:00");
+  const from = startOfDay(day);
+  const to = endOfDay(day);
+  const weekStart = startOfWeek(day);
   const weekEnd = endOfDay(addDays(weekStart, 6));
-  const weekKey = getPeriodKey("weekly", now);
-  const certExpirySoon = addDays(now, 30);
+  const weekKey = getPeriodKey("weekly", day);
+  const certExpirySoon = addDays(day, 30);
 
   return cachedQuery(
-    ["dashboard-stats", userId, todayKey],
-    [cacheTag("dashboard", userId), cacheTag("plan", userId)],
+    ["dashboard-stats", "v2", userId, todayKey],
+    [cacheTag("dashboard", userId), cacheTag("plan", userId), cacheTag("religious", userId), cacheTag("todos", userId)],
     async () => {
       const [
         todayOpenTodos,
@@ -88,11 +89,11 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         }),
         prisma.prayerLog.findMany({
           where: { userId, date: { gte: from, lte: to } },
-          select: { status: true },
+          select: { prayer: true, status: true },
         }),
         prisma.prayerLog.findMany({
           where: { userId, date: { gte: weekStart, lte: weekEnd } },
-          select: { status: true },
+          select: { prayer: true, status: true },
         }),
         prisma.qazaPrayer.count({ where: { userId, fulfilledAt: null } }),
         prisma.prayerDebt.findMany({ where: { userId } }),
@@ -113,7 +114,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
           where: { userId, date: { gte: from, lte: to } },
           _sum: { glasses: true },
         }),
-        getBudgetSummaryForDashboard(userId, now),
+        getBudgetSummaryForDashboard(userId, day),
         prisma.planBlock.count({
           where: { userId, deletedAt: null, planDate: { gte: from, lte: to } },
         }),
@@ -124,7 +125,8 @@ export async function getDashboardStats(userId: string, todayKey: string) {
 
       const calorieTarget = target?.calories ?? 2000;
       const caloriesToday = caloriesAgg._sum.calories ?? 0;
-      const prayersOnTimeToday = prayersToday.filter((p) => p.status === "ontime").length;
+      const todayPrayers = summarizeDayPrayers(prayersToday);
+      const prayersOnTimeToday = todayPrayers.onTime;
       const prayersOnTimeWeek = prayersThisWeek.filter((p) => p.status === "ontime").length;
       const prayersLoggedWeek = prayersThisWeek.length;
       const weeklyPrayerRate =
@@ -147,9 +149,11 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         religious:
           pendingQaza > 5
             ? ("bad" as DomainHealth)
-            : prayersOnTimeToday >= 4
-              ? ("good" as DomainHealth)
-              : ("warn" as DomainHealth),
+            : todayPrayers.missed > 0
+              ? ("warn" as DomainHealth)
+              : prayersOnTimeToday >= 4
+                ? ("good" as DomainHealth)
+                : ("warn" as DomainHealth),
         career: (learningHoursWeek._sum.hours ?? 0) >= 2 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
         networking: pendingFollowUps > 5 ? ("bad" as DomainHealth) : pendingFollowUps === 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
         budget:
@@ -173,6 +177,8 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         workoutsToday,
         workoutsThisWeek,
         prayersOnTime: prayersOnTimeToday,
+        prayersMissed: todayPrayers.missed,
+        prayersUnlogged: todayPrayers.unlogged,
         weeklyPrayerRate,
         pendingQaza,
         pendingFollowUps,
