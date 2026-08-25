@@ -38,7 +38,7 @@ export async function buildReport(userId: string, period: Period) {
     careerGoalsCompleted,
     skillsCount,
     interactions,
-    followUpsDone,
+    calls,
     waterGlasses,
     budgetTransactions,
   ] = await Promise.all([
@@ -76,9 +76,7 @@ export async function buildReport(userId: string, period: Period) {
     }),
     prisma.skill.count({ where: { userId, deletedAt: null, createdAt: { gte: from, lte: to } } }),
     prisma.interaction.count({ where: { userId, date: { gte: from, lte: to } } }),
-    prisma.followUp.count({
-      where: { userId, done: true, dueDate: { gte: from, lte: to } },
-    }),
+    prisma.interaction.count({ where: { userId, type: "call", date: { gte: from, lte: to } } }),
     prisma.waterLog.aggregate({
       where: { userId, date: { gte: from, lte: to } },
       _sum: { glasses: true },
@@ -213,7 +211,7 @@ export async function buildReport(userId: string, period: Period) {
         title: "Networking",
         stats: [
           { label: "Interactions", value: interactions, href: "/dashboard/networking" },
-          { label: "Follow-ups done", value: followUpsDone, href: "/dashboard/networking" },
+          { label: "Calls", value: calls, href: "/dashboard/networking" },
         ],
       },
       {

@@ -7,6 +7,7 @@ import { historicalDebtRemaining } from "@/lib/prayer-debt";
 import { getBacklogTodos, getStaleOpenTodoCount } from "@/lib/queries/todos";
 import { getGoalsForPeriod } from "@/lib/queries/goals";
 import { getWeekExpenseTotal } from "@/lib/queries/budget";
+import { getOverduePeople } from "@/lib/queries/networking";
 import { formatEuro } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import StaleBacklogButton from "@/components/StaleBacklogButton";
@@ -18,19 +19,14 @@ export default async function WeeklyReviewPage() {
   const weekStart = startOfWeek(now);
   const weekEnd = endOfDay(addDays(weekStart, 6));
 
-  const [backlog, staleCount, goals, pendingQazaDaily, prayerDebts, pendingFollowUps, shoppingRemaining, incompleteGoals, weekExpensesCents] =
+  const [backlog, staleCount, goals, pendingQazaDaily, prayerDebts, overduePeople, shoppingRemaining, incompleteGoals, weekExpensesCents] =
     await Promise.all([
       getBacklogTodos(user.id),
       getStaleOpenTodoCount(user.id),
       getGoalsForPeriod(user.id, "weekly", weekKey),
       prisma.qazaPrayer.count({ where: { userId: user.id, fulfilledAt: null } }),
       prisma.prayerDebt.findMany({ where: { userId: user.id } }),
-      prisma.followUp.findMany({
-        where: { userId: user.id, done: false },
-        include: { contact: true },
-        orderBy: { dueDate: "asc" },
-        take: 10,
-      }),
+      getOverduePeople(user.id, now, 10),
       prisma.shoppingItem.count({
         where: {
           checked: false,
@@ -84,8 +80,8 @@ export default async function WeeklyReviewPage() {
           <p className="text-2xl font-bold">{pendingQaza}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Follow-ups</p>
-          <p className="text-2xl font-bold">{pendingFollowUps.length}</p>
+          <p className="text-sm text-slate-500">Overdue people</p>
+          <p className="text-2xl font-bold">{overduePeople.length}</p>
         </div>
       </div>
 
@@ -143,24 +139,24 @@ export default async function WeeklyReviewPage() {
       <section className="card mb-6">
         <h2 className="section-title mb-2">5. Relationships</h2>
         <p className="mb-2 text-sm text-slate-500">
-          Stay in touch with family, friends, and professional contacts — log calls and follow-ups.
+          Stay in touch with family, friends, and professional contacts — log calls when you talk.
         </p>
-        {pendingFollowUps.length === 0 ? (
-          <p className="text-sm text-slate-400">No pending follow-ups.</p>
+        {overduePeople.length === 0 ? (
+          <p className="text-sm text-slate-400">Everyone is within cadence.</p>
         ) : (
           <ul className="space-y-1 text-sm">
-            {pendingFollowUps.map((f) => (
-              <li key={f.id}>
-                · {f.note}{" "}
-                <Link href={`/dashboard/networking/${f.contactId}`} className="text-brand-600">
-                  {f.contact.name}
+            {overduePeople.map((p) => (
+              <li key={p.id}>
+                ·{" "}
+                <Link href={`/dashboard/networking/${p.id}`} className="text-brand-600">
+                  {p.name}
                 </Link>
-                {f.dueDate && <span className="text-slate-400"> · {formatDate(f.dueDate)}</span>}
+                {p.lastTouch && <span className="text-slate-400"> · last {formatDate(p.lastTouch)}</span>}
               </li>
             ))}
           </ul>
         )}
-        <Link href="/dashboard/networking" className="btn-ghost mt-3 inline-block text-sm">
+        <Link href="/dashboard/networking?tab=insights" className="btn-ghost mt-3 inline-block text-sm">
           Open networking →
         </Link>
       </section>
@@ -168,7 +164,7 @@ export default async function WeeklyReviewPage() {
       <section className="card mb-6">
         <h2 className="section-title mb-2">6. Plan next week</h2>
         <p className="mb-3 text-sm text-slate-500">
-          Schedule tomorrow and the week ahead with time blocks — todos, meals, prayers, and follow-ups.
+          Schedule tomorrow and the week ahead with time blocks — todos, meals, and prayers.
         </p>
         <Link
           href={`/dashboard/plan?day=${toDateInputValue(addDays(now, 1))}`}

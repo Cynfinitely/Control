@@ -684,6 +684,7 @@ model Interaction {
   contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   type      String   @default("message")
   summary   String?
+  topics    String?
   date      DateTime
   createdAt DateTime @default(now())
 

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
+import { parseTopics, serializeTopics, INTERACTION_TYPES } from "@/lib/networking";
+import { failure, success, wrapFormAction } from "@/lib/action-result";
 
 function invalidateNetworking(userId: string, contactId?: string) {
   revalidateUserCache(userId, "dashboard", "networking", "plan");
@@ -17,6 +19,11 @@ function parseRelationship(value: FormDataEntryValue | null): string | null {
   return v || null;
 }
 
+function parseInteractionType(value: FormDataEntryValue | null): string {
+  const type = str(value) || "call";
+  return INTERACTION_TYPES.includes(type as (typeof INTERACTION_TYPES)[number]) ? type : "call";
+}
+
 export async function createContact(formData: FormData) {
   const userId = await getUserId();
   const name = str(formData.get("name"));
@@ -25,7 +32,7 @@ export async function createContact(formData: FormData) {
     data: {
       userId,
       name,
-      relationship: parseRelationship(formData.get("relationship")),
+      relationship: parseRelationship(formData.get("relationship")) || "other",
       org: optStr(formData.get("org")),
       role: optStr(formData.get("role")),
       email: optStr(formData.get("email")),
@@ -72,99 +79,44 @@ export async function deleteContact(formData: FormData) {
     data: { deletedAt: new Date() },
   });
   invalidateNetworking(userId);
-  redirect("/dashboard/networking");
+  redirect("/dashboard/networking?tab=people");
 }
 
-export async function logInteraction(formData: FormData) {
+async function logTouch(formData: FormData) {
   const userId = await getUserId();
-  const contactId = str(formData.get("contactId"));
-  const owns = await prisma.contact.findFirst({ where: { id: contactId, userId } });
-  if (!owns) return;
+  let contactId = str(formData.get("contactId"));
+  const name = str(formData.get("name"));
+
+  if (!contactId && name) {
+    const created = await prisma.contact.create({
+      data: { userId, name, relationship: "other" },
+    });
+    contactId = created.id;
+  }
+
+  if (!contactId) return failure("Pick a person");
+
+  const owns = await prisma.contact.findFirst({
+    where: { id: contactId, userId, deletedAt: null },
+  });
+  if (!owns) return failure("Person not found");
+
   await prisma.interaction.create({
     data: {
       userId,
       contactId,
-      type: str(formData.get("type")) || "message",
+      type: parseInteractionType(formData.get("type")),
       summary: optStr(formData.get("summary")),
+      topics: serializeTopics(parseTopics(str(formData.get("topics")))),
       date: parseDate(formData.get("date")),
     },
   });
 
-  if (str(formData.get("scheduleFollowUp")) === "on") {
-    const due = parseOptionalDate(formData.get("followUpDueDate"));
-    await prisma.followUp.create({
-      data: {
-        userId,
-        contactId,
-        note: optStr(formData.get("followUpNote")) || "Follow up after interaction",
-        dueDate: due,
-      },
-    });
-  }
-
   invalidateNetworking(userId, contactId);
+  return success("Logged");
 }
 
-export async function logCallToday(formData: FormData) {
-  const userId = await getUserId();
-  const contactId = str(formData.get("contactId"));
-  const owns = await prisma.contact.findFirst({ where: { id: contactId, userId } });
-  if (!owns) return;
-  await prisma.interaction.create({
-    data: {
-      userId,
-      contactId,
-      type: "call",
-      summary: optStr(formData.get("summary")),
-      date: new Date(),
-    },
-  });
-  invalidateNetworking(userId, contactId);
-}
-
-export async function addFollowUp(formData: FormData) {
-  const userId = await getUserId();
-  const contactId = str(formData.get("contactId"));
-  const note = str(formData.get("note"));
-  if (!note) return;
-  const owns = await prisma.contact.findFirst({ where: { id: contactId, userId } });
-  if (!owns) return;
-  await prisma.followUp.create({
-    data: { userId, contactId, note, dueDate: parseOptionalDate(formData.get("dueDate")) },
-  });
-  invalidateNetworking(userId, contactId);
-}
-
-export async function toggleFollowUp(formData: FormData) {
-  const userId = await getUserId();
-  const id = str(formData.get("id"));
-  const contactId = str(formData.get("contactId"));
-  const toDone = await prisma.followUp.updateMany({
-    where: { id, userId, done: false },
-    data: { done: true },
-  });
-  if (toDone.count === 0) {
-    await prisma.followUp.updateMany({
-      where: { id, userId, done: true },
-      data: { done: false },
-    });
-  }
-  invalidateNetworking(userId, contactId || undefined);
-}
-
-export async function deleteFollowUp(formData: FormData) {
-  const userId = await getUserId();
-  const id = str(formData.get("id"));
-  const contactId = str(formData.get("contactId"));
-  const result = await prisma.followUp.deleteMany({ where: { id, userId } });
-  if (result.count > 0) {
-    await prisma.planBlock.updateMany({
-      where: { userId, linkType: "followup", linkId: id, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
-  }
-  invalidateNetworking(userId, contactId || undefined);
-}
+export const logTouchForm = wrapFormAction(logTouch, "Logged");
 
 export async function deleteInteraction(formData: FormData) {
   const userId = await getUserId();

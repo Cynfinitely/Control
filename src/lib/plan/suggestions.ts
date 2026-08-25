@@ -83,7 +83,7 @@ export async function getPlanSuggestions(
   const weekStart = startOfWeek(day);
   const weekEnd = endOfDay(addDays(weekStart, 6));
 
-  const [todos, meals, followUps, workoutsThisWeek, existingBlocks] = await Promise.all([
+  const [todos, meals, workoutsThisWeek, existingBlocks] = await Promise.all([
     prisma.todo.findMany({
       where: {
         userId,
@@ -98,14 +98,6 @@ export async function getPlanSuggestions(
     prisma.mealPlanItem.findMany({
       where: { userId, deletedAt: null, date: { gte: from, lte: to } },
       select: { id: true, name: true, meal: true },
-    }),
-    prisma.followUp.findMany({
-      where: {
-        userId,
-        done: false,
-        dueDate: { gte: from, lte: to },
-      },
-      select: { id: true, note: true },
     }),
     prisma.workout.count({
       where: { userId, deletedAt: null, date: { gte: weekStart, lte: weekEnd } },
@@ -174,23 +166,6 @@ export async function getPlanSuggestions(
       endTime: slot.endTime,
       kind: "prayer",
       reason: "Daily prayer",
-    });
-    occupied.push(slot);
-  }
-
-  for (const followUp of followUps) {
-    const key = `followup:${followUp.id}`;
-    if (dismissedKeys.includes(key) || alreadyLinked(existingBlocks, "followup", followUp.id)) continue;
-    const slot = nextFreeSlot(occupied, "10:00", 30);
-    suggestions.push({
-      key,
-      title: followUp.note,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-      kind: "followup",
-      linkType: "followup",
-      linkId: followUp.id,
-      reason: "Follow-up due today",
     });
     occupied.push(slot);
   }

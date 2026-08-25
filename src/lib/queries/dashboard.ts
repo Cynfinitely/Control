@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { startOfDay, endOfDay, startOfWeek, addDays } from "@/lib/date";
+import { startOfDay, endOfDay, startOfWeek, addDays, coerceDate } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
 import { getBudgetSummaryForDashboard } from "@/lib/queries/budget";
 import { summarizeDayPrayers } from "@/lib/religious/day-prayers";
+import { countOverdueContacts, networkingHealth } from "@/lib/networking";
 
 export type DomainHealth = "good" | "warn" | "bad";
 
@@ -18,8 +19,8 @@ export async function getDashboardStats(userId: string, todayKey: string) {
   const certExpirySoon = addDays(day, 30);
 
   return cachedQuery(
-    ["dashboard-stats", "v2", userId, todayKey],
-    [cacheTag("dashboard", userId), cacheTag("plan", userId), cacheTag("religious", userId), cacheTag("todos", userId)],
+    ["dashboard-stats", "v3", userId, todayKey],
+    [cacheTag("dashboard", userId), cacheTag("plan", userId), cacheTag("religious", userId), cacheTag("todos", userId), cacheTag("networking", userId)],
     async () => {
       const [
         todayOpenTodos,
@@ -35,7 +36,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         prayersThisWeek,
         pendingQazaDaily,
         prayerDebts,
-        pendingFollowUps,
+        contactTouches,
         careerGoalsActive,
         learningHoursWeek,
         expiringCerts,
@@ -97,7 +98,13 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         }),
         prisma.qazaPrayer.count({ where: { userId, fulfilledAt: null } }),
         prisma.prayerDebt.findMany({ where: { userId } }),
-        prisma.followUp.count({ where: { userId, done: false } }),
+        prisma.contact.findMany({
+          where: { userId, deletedAt: null },
+          select: {
+            touchCadenceDays: true,
+            interactions: { orderBy: { date: "desc" }, take: 1, select: { date: true } },
+          },
+        }),
         prisma.careerGoal.count({ where: { userId, status: "active", deletedAt: null } }),
         prisma.learningEntry.aggregate({
           where: { userId, deletedAt: null, date: { gte: weekStart, lte: weekEnd } },
@@ -135,6 +142,14 @@ export async function getDashboardStats(userId: string, todayKey: string) {
       const historicalRemaining = historicalDebtRemaining(prayerDebts);
       const pendingQaza = pendingQazaDaily + historicalRemaining;
 
+      const overdueContacts = countOverdueContacts(
+        contactTouches.map((c) => ({
+          lastTouch: c.interactions[0] ? coerceDate(c.interactions[0].date) : null,
+          touchCadenceDays: c.touchCadenceDays,
+        })),
+        day
+      );
+
       const health = {
         todos:
           overdueTodos > 0 ? ("bad" as DomainHealth) : todayOpenTodos === 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
@@ -155,7 +170,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
                 ? ("good" as DomainHealth)
                 : ("warn" as DomainHealth),
         career: (learningHoursWeek._sum.hours ?? 0) >= 2 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
-        networking: pendingFollowUps > 5 ? ("bad" as DomainHealth) : pendingFollowUps === 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
+        networking: networkingHealth(overdueContacts),
         budget:
           !budgetSummary.setupComplete
             ? ("warn" as DomainHealth)
@@ -181,7 +196,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         prayersUnlogged: todayPrayers.unlogged,
         weeklyPrayerRate,
         pendingQaza,
-        pendingFollowUps,
+        overdueContacts,
         careerGoalsActive,
         learningHoursWeek: learningHoursWeek._sum.hours ?? 0,
         expiringCerts,
