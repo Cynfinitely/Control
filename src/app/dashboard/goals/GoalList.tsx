@@ -135,8 +135,8 @@ function GoalRow({
     const target = goal.targetValue ?? 1;
     return (
       <div className={`card py-3 ${isDone ? "opacity-70" : ""}`}>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex-1">
+        <div className="flex flex-wrap items-start gap-3">
+          <div className="min-w-0 flex-1">
             <p className={`font-medium ${isDone ? "text-slate-500 line-through" : "text-slate-800 dark:text-slate-100"}`}>
               {goal.title}
             </p>
@@ -173,12 +173,12 @@ function GoalRow({
 
   return (
     <div className={`card py-3 ${isDone ? "opacity-70" : ""}`}>
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <button
           type="button"
           disabled={pending}
           onClick={() => onToggle(goal.id)}
-          className={`touch-target flex h-6 w-6 items-center justify-center rounded border disabled:opacity-50 ${
+          className={`touch-target flex h-6 w-6 shrink-0 items-center justify-center rounded border disabled:opacity-50 ${
             isDone
               ? "border-brand-600 bg-brand-600 text-white"
               : "border-slate-300 hover:border-brand-500 dark:border-slate-600"
@@ -187,7 +187,7 @@ function GoalRow({
         >
           {isDone ? <Icon name="check" className="h-3.5 w-3.5" /> : null}
         </button>
-        <p className={`flex-1 ${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800 dark:text-slate-100"}`}>
+        <p className={`min-w-0 flex-1 ${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800 dark:text-slate-100"}`}>
           {goal.title}
         </p>
         <DeleteConfirmButton

@@ -218,7 +218,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
           ))}
           <input
             type="date"
-            className="input w-auto"
+            className="input w-full sm:w-auto"
             value={dateChip === "custom" ? customDate : dateValue}
             onChange={(e) => {
               setDateChip("custom");

@@ -62,7 +62,7 @@ function TodoRow({
     !isDone && todo.dueDate && new Date(todo.dueDate) < new Date(new Date().toDateString());
 
   return (
-    <div className={`card flex items-center gap-3 ${compact ? "px-3 py-2" : "py-3"} ${isDone ? "opacity-70" : ""}`}>
+    <div className={`card flex items-start gap-3 ${compact ? "px-3 py-2" : "py-3"} ${isDone ? "opacity-70" : ""}`}>
       <button
         type="button"
         disabled={pending}
@@ -101,6 +101,7 @@ function TodoRow({
           </div>
         )}
       </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-1">
       {showBacklog && !isDone && (
         <button
           type="button"
@@ -119,6 +120,7 @@ function TodoRow({
           onConfirm={() => onDelete(todo.id)}
         />
       )}
+      </div>
     </div>
   );
 }

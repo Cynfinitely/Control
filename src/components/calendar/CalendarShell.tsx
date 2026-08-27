@@ -280,7 +280,7 @@ export default function CalendarShell({
           />
         )}
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
           <button type="button" className="btn-primary touch-target text-sm" onClick={() => openCreate()}>
             New event
           </button>
@@ -297,28 +297,15 @@ export default function CalendarShell({
             type="button"
             onClick={() => setViewAndUrl(v.id)}
             className={clsx(
-              "touch-target flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition",
+              "touch-target shrink-0 flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition",
               view === v.id
                 ? "bg-brand-600 text-white"
-                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
-              v.id === "month" && "hidden sm:block",
-              v.id === "agenda" && "sm:flex-none"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             )}
           >
             {v.label}
           </button>
         ))}
-        {/* Mobile prefers agenda; show month toggle separately on small screens via agenda default */}
-        <button
-          type="button"
-          onClick={() => setViewAndUrl("month")}
-          className={clsx(
-            "touch-target flex-1 rounded-md px-3 py-1.5 text-sm font-medium sm:hidden",
-            view === "month" ? "bg-brand-600 text-white" : "text-slate-600"
-          )}
-        >
-          Month
-        </button>
       </div>
 
       {view === "month" && (

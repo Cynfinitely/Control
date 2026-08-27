@@ -33,6 +33,7 @@ export async function buildReport(userId: string, period: Period) {
     prayerDebts,
     dhikr,
     quran,
+    quranState,
     fasts,
     learning,
     careerGoalsCompleted,
@@ -69,6 +70,7 @@ export async function buildReport(userId: string, period: Period) {
     prisma.prayerDebt.findMany({ where: { userId } }),
     prisma.dhikrLog.findMany({ where: { userId, date: { gte: from, lte: to } } }),
     prisma.quranProgress.findMany({ where: { userId, date: { gte: from, lte: to } } }),
+    prisma.quranState.findUnique({ where: { userId } }),
     prisma.fastingLog.count({ where: { userId, date: { gte: from, lte: to } } }),
     prisma.learningEntry.findMany({ where: { userId, deletedAt: null, date: { gte: from, lte: to } } }),
     prisma.careerGoal.count({
@@ -195,6 +197,12 @@ export async function buildReport(userId: string, period: Period) {
           { label: "Qaza pending", value: qazaPending, href: "/dashboard/religious" },
           { label: "Dhikr total", value: dhikrTotal, href: "/dashboard/religious" },
           { label: "Quran pages", value: quranPages, href: "/dashboard/religious" },
+          {
+            label: "Quran page",
+            value: `${quranState?.currentPage ?? 1}/604`,
+            href: "/dashboard/religious",
+          },
+          { label: "Khatms", value: quranState?.khatmsCompleted ?? 0, href: "/dashboard/religious" },
           { label: "Fasting days", value: fasts, href: "/dashboard/religious" },
         ],
       },

@@ -60,7 +60,7 @@ export default async function WeeklyReviewPage() {
         description={`Week of ${formatDate(weekStart)} — your command center for the week ahead.`}
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <div className="card">
           <p className="text-sm text-slate-500">Backlog</p>
           <p className="text-2xl font-bold">{backlog.length}</p>

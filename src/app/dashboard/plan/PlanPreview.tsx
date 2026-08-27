@@ -88,7 +88,7 @@ export default function PlanPreview({
             return (
               <div
                 key={block.id}
-                className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${kindColor(block.kind as PlanKind, block.color)} ${active ? "ring-2 ring-brand-400" : ""}`}
+                className={`flex items-start gap-3 rounded-lg border px-3 py-2 ${kindColor(block.kind as PlanKind, block.color)} ${active ? "ring-2 ring-brand-400" : ""}`}
               >
                 <span className="shrink-0 text-xs font-medium text-slate-500">
                   {block.startTime}

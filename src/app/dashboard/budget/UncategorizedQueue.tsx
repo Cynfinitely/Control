@@ -63,12 +63,12 @@ export default function UncategorizedQueue({ entries, categories }: Props) {
         <FormAction
           action={categorizeTransactionsBulkForm}
           successMessage="Categories saved"
-          className="card flex flex-wrap items-end gap-3 border-brand-200 bg-brand-50/50"
+          className="card flex flex-col items-stretch gap-3 border-brand-200 bg-brand-50/50 sm:flex-row sm:flex-wrap sm:items-end"
         >
           {[...selected].map((id) => (
             <input key={id} type="hidden" name="ids" value={id} />
           ))}
-          <div className="min-w-[12rem] flex-1">
+          <div className="min-w-0 flex-1 sm:min-w-[12rem]">
             <label className="label">
               Apply to {selected.size} selected ({bulkKind})
             </label>
@@ -118,10 +118,10 @@ export default function UncategorizedQueue({ entries, categories }: Props) {
               <FormAction
                 action={categorizeTransactionForm}
                 successMessage="Category saved"
-                className="mt-3 flex flex-wrap items-end gap-2 border-t border-slate-100 pt-3"
+                className="mt-3 flex flex-col items-stretch gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-end"
               >
                 <input type="hidden" name="id" value={entry.id} />
-                <div className="min-w-[10rem] flex-1">
+                <div className="min-w-0 flex-1 sm:min-w-[10rem]">
                   <label className="label">Category</label>
                   <select
                     name="categoryId"

@@ -41,9 +41,9 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
 
   return (
     <div className="card py-3">
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <span
-          className={`badge capitalize ${
+          className={`badge mt-0.5 capitalize ${
             entry.type === "income"
               ? "bg-emerald-100 text-emerald-700"
               : "bg-red-100 text-red-700"
@@ -52,13 +52,14 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
           {entry.type}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-slate-800">
+          <p className="break-words font-medium text-slate-800">
             {entry.rawDescription || entry.note || entry.categoryName}
           </p>
           <p className="text-xs text-slate-400">{entry.categoryName}</p>
         </div>
+        <div className="flex shrink-0 items-center gap-1">
         <p
-          className={`shrink-0 font-semibold ${
+          className={`font-semibold ${
             entry.type === "income" ? "text-emerald-600" : "text-red-600"
           }`}
         >
@@ -81,6 +82,7 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
             icon={<Icon name="trash" className="h-4 w-4" />}
           />
         </form>
+        </div>
       </div>
 
       {editing && (

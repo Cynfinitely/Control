@@ -82,8 +82,8 @@ export default function PlanTextImport({ dayValue }: Props) {
             <p className="text-sm text-slate-400">No valid blocks found in pasted text.</p>
           ) : (
             <>
-              <div className="max-h-64 overflow-auto rounded-lg border border-slate-100">
-                <table className="w-full text-left text-sm">
+              <div className="table-wrap max-h-64 overflow-auto rounded-lg border border-slate-100">
+                <table className="w-full min-w-[22rem] text-left text-sm">
                   <thead className="sticky top-0 bg-slate-50 text-xs text-slate-500">
                     <tr>
                       <th className="px-3 py-2">Time</th>

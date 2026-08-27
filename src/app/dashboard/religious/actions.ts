@@ -6,6 +6,8 @@ import { getUserId, str, optStr, num, parseDate, parseOptionalDate } from "@/lib
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay } from "@/lib/date";
 import { incrementLinkedGoals } from "@/lib/goal-links";
+import { SUGGESTED_DAILY_READINGS } from "@/lib/daily-readings";
+import { advanceBookmark, clampPage } from "@/lib/quran";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "religious", "dashboard");
@@ -145,21 +147,173 @@ export async function logDhikr(formData: FormData) {
   invalidate(userId);
 }
 
+async function applyQuranReading(
+  userId: string,
+  pagesRead: number,
+  date: Date,
+  note: string | null
+) {
+  if (pagesRead <= 0) return;
+
+  await prisma.$transaction(async (tx) => {
+    const state = await tx.quranState.findUnique({ where: { userId } });
+    const next = advanceBookmark({
+      currentPage: state?.currentPage ?? 1,
+      khatmsCompleted: state?.khatmsCompleted ?? 0,
+      pagesRead,
+    });
+
+    await tx.quranProgress.create({
+      data: {
+        userId,
+        pagesRead,
+        fromPage: next.fromPage,
+        toPage: next.toPage,
+        note,
+        date,
+      },
+    });
+
+    await tx.quranState.upsert({
+      where: { userId },
+      create: {
+        userId,
+        currentPage: next.currentPage,
+        khatmsCompleted: next.khatmsCompleted,
+      },
+      update: {
+        currentPage: next.currentPage,
+        khatmsCompleted: next.khatmsCompleted,
+      },
+    });
+  });
+
+  await incrementLinkedGoals(userId, "quran", date, pagesRead);
+}
+
+async function addLinkedQuranDailyEntry(userId: string, pagesRead: number, date: Date) {
+  if (pagesRead <= 0) return;
+  const quranItem = await prisma.dailyReadingItem.findFirst({
+    where: { userId, linkKind: "quran" },
+    select: { id: true },
+  });
+  if (!quranItem) return;
+  await prisma.dailyReadingEntry.create({
+    data: { userId, itemId: quranItem.id, amount: pagesRead, date },
+  });
+}
+
 export async function logQuran(formData: FormData) {
   const userId = await getUserId();
   const date = startOfDay(parseDate(formData.get("date")));
-  const pagesRead = num(formData.get("pagesRead"));
-  await prisma.quranProgress.create({
-    data: {
-      userId,
-      pagesRead,
-      note: optStr(formData.get("note")),
-      date,
-    },
+  const pagesRead = Math.max(0, num(formData.get("pagesRead")));
+  await applyQuranReading(userId, pagesRead, date, optStr(formData.get("note")));
+  await addLinkedQuranDailyEntry(userId, pagesRead, date);
+  invalidate(userId);
+}
+
+export async function setQuranPosition(formData: FormData) {
+  const userId = await getUserId();
+  const currentPage = clampPage(num(formData.get("currentPage"), 1));
+  const existing = await prisma.quranState.findUnique({ where: { userId } });
+  const khatmsInput = optStr(formData.get("khatmsCompleted"));
+  const khatmsCompleted =
+    khatmsInput === null
+      ? existing?.khatmsCompleted ?? 0
+      : Math.max(0, Math.floor(num(formData.get("khatmsCompleted"), 0)));
+
+  await prisma.quranState.upsert({
+    where: { userId },
+    create: { userId, currentPage, khatmsCompleted },
+    update: { currentPage, khatmsCompleted },
   });
-  if (pagesRead > 0) {
-    await incrementLinkedGoals(userId, "quran", date, pagesRead);
+  invalidate(userId);
+}
+
+export async function logDailyReading(formData: FormData) {
+  const userId = await getUserId();
+  const itemId = str(formData.get("itemId"));
+  const amount = Math.max(0, num(formData.get("amount")));
+  const date = startOfDay(parseDate(formData.get("date")));
+  if (!itemId || amount <= 0) return;
+
+  const item = await prisma.dailyReadingItem.findFirst({
+    where: { id: itemId, userId },
+    select: { id: true, linkKind: true },
+  });
+  if (!item) return;
+
+  if (item.linkKind === "quran") {
+    await applyQuranReading(userId, amount, date, null);
   }
+
+  await prisma.dailyReadingEntry.create({
+    data: { userId, itemId, amount, date },
+  });
+  invalidate(userId);
+}
+
+export async function saveDailyReadingItem(formData: FormData) {
+  const userId = await getUserId();
+  const id = optStr(formData.get("id"));
+  const name = str(formData.get("name"));
+  const unit = str(formData.get("unit")) === "times" ? "times" : "pages";
+  const dailyTarget = Math.max(1, Math.floor(num(formData.get("dailyTarget"), 1)));
+  if (!name) return;
+
+  if (id) {
+    const existing = await prisma.dailyReadingItem.findFirst({
+      where: { id, userId },
+    });
+    if (!existing) return;
+    await prisma.dailyReadingItem.update({
+      where: { id },
+      data: {
+        name,
+        unit: existing.linkKind === "quran" ? "pages" : unit,
+        dailyTarget,
+      },
+    });
+  } else {
+    const maxOrder = await prisma.dailyReadingItem.aggregate({
+      where: { userId },
+      _max: { sortOrder: true },
+    });
+    await prisma.dailyReadingItem.create({
+      data: {
+        userId,
+        name,
+        unit,
+        dailyTarget,
+        sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+      },
+    });
+  }
+  invalidate(userId);
+}
+
+export async function deleteDailyReadingItem(formData: FormData) {
+  const userId = await getUserId();
+  const id = str(formData.get("id"));
+  if (!id) return;
+  await prisma.dailyReadingItem.deleteMany({ where: { id, userId } });
+  invalidate(userId);
+}
+
+export async function seedSuggestedReadings(_formData?: FormData) {
+  const userId = await getUserId();
+  const count = await prisma.dailyReadingItem.count({ where: { userId } });
+  if (count > 0) return;
+  await prisma.dailyReadingItem.createMany({
+    data: SUGGESTED_DAILY_READINGS.map((item, index) => ({
+      userId,
+      name: item.name,
+      unit: item.unit,
+      dailyTarget: item.dailyTarget,
+      linkKind: item.linkKind,
+      sortOrder: index,
+    })),
+  });
   invalidate(userId);
 }
 

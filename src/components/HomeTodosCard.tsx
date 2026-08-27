@@ -33,7 +33,7 @@ export default function HomeTodosCard({ todos, dayValue }: Props) {
           action={createTodoForm}
           successMessage="Todo added"
           resetOnSuccess
-          className="mb-4 flex gap-2"
+          className="mb-4 flex flex-col gap-2 sm:flex-row"
         >
           <input type="hidden" name="dayDate" value={dayValue} />
           <input type="hidden" name="priority" value="medium" />

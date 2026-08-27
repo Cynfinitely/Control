@@ -50,8 +50,8 @@ export default async function AdminPage() {
           const exhausted = inv.uses >= inv.maxUses;
           const expired = inv.expiresAt && inv.expiresAt < new Date();
           return (
-            <div key={inv.id} className="card flex items-center justify-between py-3">
-              <div>
+            <div key={inv.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <p className="font-mono font-medium text-slate-800">{inv.code}</p>
                 <p className="text-xs text-slate-400">
                   {inv.uses}/{inv.maxUses} used
@@ -82,8 +82,8 @@ export default async function AdminPage() {
       <h2 className="section-title mb-3">Users ({users.length})</h2>
       <div className="space-y-2">
         {users.map((u) => (
-          <div key={u.id} className="card flex items-center justify-between py-3">
-            <div>
+          <div key={u.id} className="card flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <p className="font-medium text-slate-800">
                 {u.name ?? "(no name)"}
                 {u.role === "admin" && <span className="ml-2 badge bg-brand-100 text-brand-700">admin</span>}

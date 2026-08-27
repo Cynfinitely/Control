@@ -29,13 +29,13 @@ export default async function ReportsPage({
         description={`${formatDate(report.from)} - ${formatDate(report.to)}`}
       />
 
-      <div className="mb-6 inline-flex rounded-lg border border-slate-200 bg-white p-1">
+      <div className="mb-6 flex overflow-x-auto rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-800">
         {PERIODS.map((p) => (
           <Link
             key={p.value}
             href={`/dashboard/reports?period=${p.value}`}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
-              p.value === period ? "bg-brand-600 text-white" : "text-slate-600 hover:bg-slate-50"
+            className={`touch-target shrink-0 flex-1 rounded-md px-4 py-1.5 text-center text-sm font-medium transition ${
+              p.value === period ? "bg-brand-600 text-white" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700"
             }`}
           >
             {p.label}

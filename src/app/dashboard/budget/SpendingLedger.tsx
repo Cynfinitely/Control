@@ -93,12 +93,12 @@ export default function SpendingLedger({
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap">
         {TYPE_FILTERS.map((f) => (
           <Link
             key={f.value}
             href={buildBudgetUrl(basePath, searchParams, { filter: f.value })}
-            className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+            className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium transition ${
               ledger.typeFilter === f.value
                 ? "bg-brand-600 text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"

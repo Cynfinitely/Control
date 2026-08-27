@@ -207,7 +207,7 @@ export default async function ExercisePage() {
       <div className="space-y-2">
         {workouts.length === 0 && <p className="text-sm text-slate-400">No workouts logged yet.</p>}
         {workouts.map((w) => (
-          <div key={w.id} className="card flex items-center gap-3 py-3">
+          <div key={w.id} className="card flex items-start gap-3 py-3">
             <Icon name="dumbbell" className="h-5 w-5 shrink-0 text-brand-500" />
             {w.activityType === "gym" ? (
               <Link href={`/dashboard/exercise/${w.id}`} className="min-w-0 flex-1">
@@ -253,10 +253,10 @@ export default async function ExercisePage() {
               </span>
             )}
           </div>
-          <form action={logWeight} className="mt-3 flex flex-wrap items-end gap-2">
-            <div>
+          <form action={logWeight} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="min-w-0 flex-1 sm:flex-none">
               <label className="label">Weight (kg)</label>
-              <input name="weightKg" type="number" step="any" className="input w-28" required />
+              <input name="weightKg" type="number" step="any" className="input sm:w-28" required />
             </div>
             <div>
               <label className="label">Date</label>
@@ -285,14 +285,14 @@ export default async function ExercisePage() {
 
         <div className="card">
           <h2 className="section-title">Body measurements</h2>
-          <form action={logMeasurement} className="mt-3 flex flex-wrap items-end gap-2">
-            <div>
+          <form action={logMeasurement} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="min-w-0 flex-1 sm:flex-none">
               <label className="label">Label</label>
-              <input name="label" className="input w-28" placeholder="waist" required />
+              <input name="label" className="input sm:w-28" placeholder="waist" required />
             </div>
             <div>
               <label className="label">cm</label>
-              <input name="valueCm" type="number" step="any" className="input w-24" required />
+              <input name="valueCm" type="number" step="any" className="input sm:w-24" required />
             </div>
             <div>
               <label className="label">Date</label>

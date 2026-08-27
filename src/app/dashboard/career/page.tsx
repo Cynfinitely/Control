@@ -87,8 +87,8 @@ export default async function CareerPage() {
         <div className="space-y-2">
           {goals.length === 0 && <p className="text-sm text-slate-400">No career goals yet.</p>}
           {goals.map((g) => (
-            <div key={g.id} className="card flex items-start justify-between gap-3">
-              <div>
+            <div key={g.id} className="card flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <p className="font-medium text-slate-800">
                   {g.title}
                   <span className="ml-2 badge bg-slate-100 text-slate-500">{g.status}</span>
@@ -124,16 +124,16 @@ export default async function CareerPage() {
         <CollapsibleSection title="Skills" count={skills.length} defaultOpen>
         <details className="card mb-3">
           <summary className="cursor-pointer font-medium text-brand-700">+ Add skill</summary>
-          <form action={createSkill} className="mt-4 flex flex-wrap items-end gap-3">
-            <div>
+          <form action={createSkill} className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="min-w-0 flex-1">
               <label className="label">Skill</label>
               <input name="name" className="input" required />
             </div>
             <div>
               <label className="label">Level (1-5)</label>
-              <input name="level" type="number" min={1} max={5} className="input w-24" defaultValue={3} />
+              <input name="level" type="number" min={1} max={5} className="input sm:w-24" defaultValue={3} />
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <label className="label">Notes</label>
               <input name="notes" className="input" />
             </div>
@@ -142,8 +142,8 @@ export default async function CareerPage() {
         </details>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {skills.map((s) => (
-            <div key={s.id} className="card flex items-center justify-between py-3">
-              <div>
+            <div key={s.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <p className="font-medium text-slate-800">{s.name}</p>
                 <div className="mt-1 flex gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
@@ -211,8 +211,8 @@ export default async function CareerPage() {
               c.expiresAt && c.expiresAt <= certExpirySoon && c.expiresAt >= now;
             const expired = c.expiresAt && c.expiresAt < now;
             return (
-              <div key={c.id} className="card flex items-center justify-between py-3">
-                <div>
+              <div key={c.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                   <p className="font-medium text-slate-800">
                     {c.name}
                     {expired && <span className="ml-2 badge bg-red-100 text-red-700">Expired</span>}
@@ -277,8 +277,8 @@ export default async function CareerPage() {
         </details>
         <div className="space-y-2">
           {experiences.map((e) => (
-            <div key={e.id} className="card flex items-start justify-between gap-3">
-              <div>
+            <div key={e.id} className="card flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <p className="font-medium text-slate-800">
                   {e.role} <span className="text-slate-400">@ {e.company}</span>
                 </p>
@@ -353,8 +353,8 @@ export default async function CareerPage() {
         </details>
         <div className="space-y-2">
           {learning.map((l) => (
-            <div key={l.id} className="card flex items-center justify-between py-3">
-              <div>
+            <div key={l.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <p className="font-medium text-slate-800">
                   {l.title}
                   <span className="ml-2 badge bg-slate-100 capitalize text-slate-500">{l.kind}</span>
@@ -428,8 +428,8 @@ export default async function CareerPage() {
         <div className="space-y-2">
           {jobApps.length === 0 && <p className="text-sm text-slate-400">No job applications tracked.</p>}
           {jobApps.map((j) => (
-            <div key={j.id} className="card flex flex-wrap items-center justify-between gap-3 py-3">
-              <div>
+            <div key={j.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <p className="font-medium text-slate-800">
                   {j.role} <span className="text-slate-400">@ {j.company}</span>
                 </p>

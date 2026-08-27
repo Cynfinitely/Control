@@ -12,16 +12,18 @@ import DayNavigator from "@/components/DayNavigator";
 import SubmitButton from "@/components/SubmitButton";
 import PrayerStatusPanel from "./PrayerStatusPanel";
 import PrayerDebtSetup from "./PrayerDebtSetup";
+import QuranKhatmCard from "./QuranKhatmCard";
+import DailyReadingsPanel from "./DailyReadingsPanel";
 import {
   fulfillQaza,
   fulfillPrayerDebt,
   clearPrayerDebt,
   logDhikr,
-  logQuran,
   logFasting,
   saveDhikrTarget,
   deleteDhikrTarget,
 } from "./actions";
+import { khatmPercent, QURAN_TOTAL_PAGES } from "@/lib/quran";
 
 export default async function ReligiousPage({
   searchParams,
@@ -44,7 +46,10 @@ export default async function ReligiousPage({
     getReligiousSidebarData(user.id, todayKey),
   ]);
 
-  const { pendingQaza, prayerDebts, dhikr, quran, fasts, dhikrTargets } = sidebar;
+  const { pendingQaza, prayerDebts, dhikr, quran, fasts, dhikrTargets, quranState, readingItems, readingEntries } =
+    sidebar;
+  const currentPage = quranState?.currentPage ?? 1;
+  const khatmsCompleted = quranState?.khatmsCompleted ?? 0;
 
   const prayerStatuses = Object.fromEntries(
     PRAYERS.map((p) => [p, dayPrayers.find((t) => t.prayer === p)?.status])
@@ -70,7 +75,7 @@ export default async function ReligiousPage({
     <div>
       <PageHeader
         title="Religious"
-        description="Track daily prayers, qaza makeup, historical debt, dhikr, Quran, and fasting."
+        description="Track daily prayers, qaza, dhikr, Quran khatm, daily readings, and fasting."
       />
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -91,9 +96,12 @@ export default async function ReligiousPage({
           <p className="mt-2 text-3xl font-bold text-slate-900">{dhikrTotal}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Quran (last)</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{quran[0]?.pagesRead ?? 0}</p>
-          <p className="text-xs text-slate-400">pages</p>
+          <p className="text-sm text-slate-500">Quran page</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900">
+            {currentPage}
+            <span className="text-base font-semibold text-slate-400">/{QURAN_TOTAL_PAGES}</span>
+          </p>
+          <p className="text-xs text-slate-400">{khatmPercent(currentPage)}% of khatm</p>
         </div>
       </div>
 
@@ -211,7 +219,20 @@ export default async function ReligiousPage({
         </details>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <QuranKhatmCard
+        currentPage={currentPage}
+        khatmsCompleted={khatmsCompleted}
+        sessions={quran}
+        dayValue={todayValue}
+      />
+
+      <DailyReadingsPanel
+        items={readingItems}
+        todayEntries={readingEntries}
+        dayValue={todayValue}
+      />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="card">
           <h2 className="section-title">Dhikr</h2>
           <form action={logDhikr} className="mt-3 space-y-2">
@@ -244,9 +265,9 @@ export default async function ReligiousPage({
           )}
           <details className="mt-3">
             <summary className="cursor-pointer text-xs text-brand-600">Manage targets</summary>
-            <form action={saveDhikrTarget} className="mt-2 flex flex-wrap gap-2">
-              <input name="name" className="input flex-1 py-1 text-xs" placeholder="Dhikr name" required />
-              <input name="dailyTarget" type="number" className="input w-20 py-1 text-xs" defaultValue={33} />
+            <form action={saveDhikrTarget} className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <input name="name" className="input min-w-0 flex-1 py-1 text-xs" placeholder="Dhikr name" required />
+              <input name="dailyTarget" type="number" className="input w-full py-1 text-xs sm:w-20" defaultValue={33} />
               <SubmitButton className="btn-ghost py-1 text-xs">Set</SubmitButton>
             </form>
             {dhikrTargets.map((t) => (
@@ -264,24 +285,6 @@ export default async function ReligiousPage({
               <div key={d.id} className="flex justify-between text-sm text-slate-500">
                 <span>{d.name}</span>
                 <span className="font-medium text-slate-700">{d.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="card">
-          <h2 className="section-title">Quran</h2>
-          <form action={logQuran} className="mt-3 space-y-2">
-            <input name="pagesRead" type="number" className="input" placeholder="pages read" defaultValue={1} />
-            <input name="note" className="input" placeholder="note (optional)" />
-            <input type="hidden" name="date" value={toDateInputValue(now)} />
-            <SubmitButton className="btn-primary touch-target w-full">Log reading</SubmitButton>
-          </form>
-          <div className="mt-4 space-y-1">
-            {quran.map((q) => (
-              <div key={q.id} className="flex justify-between text-sm text-slate-500">
-                <span>{formatDate(q.date)}</span>
-                <span className="font-medium text-slate-700">{q.pagesRead} pages</span>
               </div>
             ))}
           </div>

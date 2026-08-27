@@ -128,7 +128,7 @@ export default async function PlannerPage() {
         )}
         <div className="space-y-1">
           {shopping.map((s) => (
-            <form key={s.id} action={toggleShoppingItem} className="flex items-center gap-3">
+            <form key={s.id} action={toggleShoppingItem} className="flex items-start gap-3">
               <input type="hidden" name="id" value={s.id} />
               <SubmitIconButton
                 className={`flex h-4 w-4 items-center justify-center rounded border ${
@@ -136,7 +136,7 @@ export default async function PlannerPage() {
                 }`}
                 icon={s.checked ? <Icon name="check" className="h-3 w-3" /> : null}
               />
-              <span className={`text-sm ${s.checked ? "text-slate-400 line-through" : "text-slate-700"}`}>
+              <span className={`min-w-0 flex-1 text-sm ${s.checked ? "text-slate-400 line-through" : "text-slate-700"}`}>
                 {s.name}
                 {s.quantity && <span className="text-slate-400"> · {s.quantity}</span>}
                 <span className="ml-2 text-xs text-slate-300">({s.meal})</span>

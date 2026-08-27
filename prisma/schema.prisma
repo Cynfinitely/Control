@@ -43,7 +43,10 @@ model User {
   prayerDebts        PrayerDebt[]
   dhikrLogs          DhikrLog[]
   quranProgress      QuranProgress[]
+  quranState         QuranState?
   fastingLogs        FastingLog[]
+  dailyReadingItems  DailyReadingItem[]
+  dailyReadingEntries DailyReadingEntry[]
   careerGoals        CareerGoal[]
   skills             Skill[]
   certifications     Certification[]
@@ -486,11 +489,51 @@ model QuranProgress {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   pagesRead Int      @default(0)
+  fromPage  Int?
+  toPage    Int?
   note      String?
   date      DateTime
   createdAt DateTime @default(now())
 
   @@index([userId, date])
+}
+
+model QuranState {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentPage     Int      @default(1)
+  khatmsCompleted Int      @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+model DailyReadingItem {
+  id          String              @id @default(cuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  unit        String              @default("pages") // pages | times
+  dailyTarget Int                 @default(1)
+  sortOrder   Int                 @default(0)
+  linkKind    String? // quran
+  createdAt   DateTime            @default(now())
+  entries     DailyReadingEntry[]
+
+  @@index([userId])
+}
+
+model DailyReadingEntry {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      DailyReadingItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  amount    Int
+  date      DateTime
+  createdAt DateTime         @default(now())
+
+  @@index([userId, date])
+  @@index([itemId, date])
 }
 
 model FastingLog {

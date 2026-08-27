@@ -50,7 +50,7 @@ export default async function JournalPage({
           <label htmlFor="journal-mood" className="label">
             Mood (1–5)
           </label>
-          <select id="journal-mood" name="mood" className="input w-32" defaultValue={entry?.mood ?? ""}>
+          <select id="journal-mood" name="mood" className="input sm:w-32" defaultValue={entry?.mood ?? ""}>
             <option value="">—</option>
             {[1, 2, 3, 4, 5].map((n) => (
               <option key={n} value={n}>

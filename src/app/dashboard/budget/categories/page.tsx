@@ -24,9 +24,9 @@ function CategorySection({
   return (
     <section className="mb-8">
       <h2 className="section-title mb-3">{title}</h2>
-      <form action={addCategory} className="card mb-4 flex flex-wrap items-end gap-3">
+      <form action={addCategory} className="card mb-4 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-end">
         <input type="hidden" name="kind" value={kind} />
-        <div className="min-w-[200px] flex-1">
+        <div className="min-w-0 flex-1 sm:min-w-[200px]">
           <label className="label">New category</label>
           <input name="name" className="input" placeholder="Category name" required />
         </div>
@@ -40,7 +40,7 @@ function CategorySection({
         {items.map((cat) => (
           <div
             key={cat.id}
-            className={`card flex flex-wrap items-center gap-3 py-3 ${cat.isHidden ? "opacity-60" : ""}`}
+            className={`card flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-center ${cat.isHidden ? "opacity-60" : ""}`}
           >
             <div className="flex-1">
               <form action={renameCategory} className="flex flex-wrap items-center gap-2">

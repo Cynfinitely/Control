@@ -139,9 +139,9 @@ export default async function FoodPage({
       <div className="space-y-2">
         {entries.length === 0 && <p className="text-sm text-slate-400">No food logged for this day.</p>}
         {entries.map((e) => (
-          <div key={e.id} className="card flex items-center gap-3 py-3">
-            <span className="badge bg-slate-100 capitalize text-slate-500">{e.meal}</span>
-            <div className="flex-1">
+          <div key={e.id} className="card flex items-start gap-3 py-3">
+            <span className="badge mt-0.5 bg-slate-100 capitalize text-slate-500">{e.meal}</span>
+            <div className="min-w-0 flex-1">
               <p className="font-medium text-slate-800">{e.name}</p>
               <p className="text-xs text-slate-400">
                 {Math.round(e.calories)} kcal
@@ -163,7 +163,7 @@ export default async function FoodPage({
 
       <details className="card mt-8">
         <summary className="cursor-pointer font-medium text-slate-700">Nutrition targets</summary>
-        <form action={saveTarget} className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <form action={saveTarget} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="label">Calories</label>
             <input name="calories" type="number" step="any" className="input" defaultValue={calorieTarget} />

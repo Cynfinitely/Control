@@ -42,8 +42,8 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
       <div className="space-y-4">
         {workout.exercises.map((ex) => (
           <div key={ex.id} className="card">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-slate-800">{ex.name}</h3>
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="min-w-0 break-words font-semibold text-slate-800">{ex.name}</h3>
               <form action={deleteExercise}>
                 <input type="hidden" name="id" value={ex.id} />
                 <input type="hidden" name="workoutId" value={workout.id} />
@@ -55,7 +55,8 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
               </form>
             </div>
 
-            <table className="mt-3 w-full text-sm">
+            <div className="table-wrap mt-3">
+            <table className="w-full min-w-[28rem] text-sm">
               <thead>
                 <tr className="text-left text-xs text-slate-400">
                   <th className="pb-1">Set</th>
@@ -86,27 +87,28 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
                 ))}
               </tbody>
             </table>
+            </div>
 
-            <form action={addSet} className="mt-3 flex flex-wrap items-end gap-2">
+            <form action={addSet} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
               <input type="hidden" name="workoutExerciseId" value={ex.id} />
               <input type="hidden" name="workoutId" value={workout.id} />
-              <input name="reps" type="number" className="input w-20" placeholder="reps" />
-              <input name="weightKg" type="number" step="any" className="input w-24" placeholder="kg" />
-              <input name="durationSec" type="number" className="input w-24" placeholder="sec" />
-              <SubmitButton className="btn-ghost">+ Set</SubmitButton>
+              <input name="reps" type="number" className="input sm:w-20" placeholder="reps" />
+              <input name="weightKg" type="number" step="any" className="input sm:w-24" placeholder="kg" />
+              <input name="durationSec" type="number" className="input sm:w-24" placeholder="sec" />
+              <SubmitButton className="btn-ghost touch-target">+ Set</SubmitButton>
             </form>
           </div>
         ))}
       </div>
 
       <div className="card mt-4">
-        <form action={addExercise} className="flex items-end gap-2">
+        <form action={addExercise} className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <input type="hidden" name="workoutId" value={workout.id} />
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <label className="label">Add exercise</label>
             <input name="name" className="input" placeholder="e.g. Bench press" required />
           </div>
-          <SubmitButton className="btn-primary">Add</SubmitButton>
+          <SubmitButton className="btn-primary touch-target">Add</SubmitButton>
         </form>
       </div>
     </div>

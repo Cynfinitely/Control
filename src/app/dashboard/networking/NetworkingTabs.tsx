@@ -19,7 +19,7 @@ export default function NetworkingTabs({ active }: { active: NetworkingTabId }) 
     <nav
       role="tablist"
       aria-label="Networking sections"
-      className="mb-6 flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700"
+      className="mb-6 flex flex-nowrap gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-700"
     >
       {NETWORKING_TABS.map((tab) => (
         <Link
@@ -28,7 +28,7 @@ export default function NetworkingTabs({ active }: { active: NetworkingTabId }) 
           role="tab"
           aria-selected={active === tab.id}
           className={clsx(
-            "touch-target px-4 py-2 text-sm font-medium transition",
+            "touch-target shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium transition",
             active === tab.id
               ? "border-b-2 border-brand-600 text-brand-700 dark:text-brand-400"
               : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"

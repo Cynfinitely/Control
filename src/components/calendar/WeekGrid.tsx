@@ -30,7 +30,7 @@ export default function WeekGrid({
   const todayKey = toDateInputValue(new Date());
 
   return (
-    <div className="card grid grid-cols-1 gap-3 p-3 sm:grid-cols-7 sm:gap-2 sm:p-2">
+    <div className="card grid grid-cols-1 gap-3 p-3 md:grid-cols-7 md:gap-2 md:p-2">
       {days.map((day) => {
         const key = toDateInputValue(day);
         const dayOccs = occurrences.filter((o) => occurrenceDayKey(o.startsAt, timezone) === key);

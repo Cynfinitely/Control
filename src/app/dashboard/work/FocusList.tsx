@@ -53,7 +53,7 @@ function FocusRow({
 
   return (
     <div
-      className={`card flex items-center gap-3 py-3 ${isDone || isSkipped ? "opacity-70" : ""}`}
+      className={`card flex items-start gap-3 py-3 ${isDone || isSkipped ? "opacity-70" : ""}`}
     >
       <button
         type="button"
@@ -87,6 +87,7 @@ function FocusRow({
           )}
         </div>
       </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-1">
       {!isDone && !isSkipped && (
         <button
           type="button"
@@ -103,6 +104,7 @@ function FocusRow({
         message={`Remove "${item.title}"?`}
         onConfirm={() => onDelete(item.id)}
       />
+      </div>
     </div>
   );
 }
