@@ -107,6 +107,9 @@ const paths: Record<string, React.ReactNode> = {
   ),
   chevronUp: <path d="M6 15l6-6 6 6" />,
   chevronDown: <path d="M6 9l6 6 6-6" />,
+  heart: (
+    <path d="M19.5 12.6 12 20l-7.5-7.4a4.5 4.5 0 0 1 6.4-6.4l1.1 1.1 1.1-1.1a4.5 4.5 0 1 1 6.4 6.4z" />
+  ),
 };
 
 export default function Icon({ name, className }: Props) {

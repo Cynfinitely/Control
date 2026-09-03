@@ -58,6 +58,7 @@ model User {
   dhikrTargets       DhikrTarget[]
   waterLogs          WaterLog[]
   journalEntries     JournalEntry[]
+  migraineLogs       MigraineLog[]
   jobApplications    JobApplication[]
   budgetProfile        BudgetProfile?
   budgetCategories     BudgetCategory[]
@@ -697,6 +698,20 @@ model JournalEntry {
   note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model MigraineLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime
+  pain        Int
+  durationMin Int?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([userId, date])
 }

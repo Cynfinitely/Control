@@ -32,6 +32,12 @@ export const navSections: NavSection[] = [
     ],
   },
   {
+    title: "Health",
+    items: [
+      { href: "/dashboard/health/migraine", label: "Migraine", icon: "heart" },
+    ],
+  },
+  {
     title: "Grow",
     items: [
       { href: "/dashboard/goals", label: "Goals", icon: "target" },
