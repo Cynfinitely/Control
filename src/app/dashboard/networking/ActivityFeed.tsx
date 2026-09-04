@@ -26,8 +26,10 @@ export default function ActivityFeed({
         return (
           <div key={it.id} className="flex items-start gap-3 border-t border-slate-100 pt-3 text-sm dark:border-slate-700">
             <span
-              className={`badge mt-0.5 capitalize ${
-                it.type === "call" ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300"
+              className={`mt-0.5 capitalize ${
+                it.type === "call"
+                  ? "badge bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+                  : "badge-muted"
               }`}
             >
               {INTERACTION_TYPE_LABELS[it.type] ?? it.type}
@@ -42,7 +44,7 @@ export default function ActivityFeed({
               {topics.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {topics.map((topic) => (
-                    <span key={topic} className="badge bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                    <span key={topic} className="badge-muted">
                       {topic}
                     </span>
                   ))}
@@ -56,7 +58,7 @@ export default function ActivityFeed({
               <input type="hidden" name="id" value={it.id} />
               <input type="hidden" name="contactId" value={it.contactId} />
               <SubmitIconButton
-                className="text-slate-300 hover:text-red-500"
+                className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                 icon={<Icon name="trash" className="h-3 w-3" />}
                 aria-label="Delete log"
               />

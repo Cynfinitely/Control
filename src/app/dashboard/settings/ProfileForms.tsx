@@ -17,12 +17,12 @@ const initialState: ActionState = {};
 function FormMessage({ state }: { state: ActionState }) {
   if (state.error) {
     return (
-      <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
+      <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{state.error}</p>
     );
   }
   if (state.ok) {
     return (
-      <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+      <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
         Saved successfully.
       </p>
     );
@@ -86,7 +86,7 @@ export function ProfileForm({
         <label className="label" htmlFor="email">
           Email
         </label>
-        <input id="email" className="input bg-slate-50 text-slate-500" value={email} disabled />
+        <input id="email" className="input bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400" value={email} disabled />
         <p className="mt-1 text-xs text-slate-400">Email cannot be changed.</p>
       </div>
       <SubmitButton className="btn-primary touch-target">Save profile</SubmitButton>

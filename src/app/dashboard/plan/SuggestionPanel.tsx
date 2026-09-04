@@ -23,8 +23,8 @@ export default function SuggestionPanel({ suggestions, dayValue }: Props) {
       {suggestions.map((s) => (
         <div key={s.key} className="card flex flex-wrap items-center justify-between gap-3 py-3">
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-slate-800">{s.title}</p>
-            <p className="text-xs text-slate-500">
+            <p className="font-medium text-slate-800 dark:text-slate-100">{s.title}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {s.startTime} – {s.endTime} · {s.reason}
             </p>
           </div>

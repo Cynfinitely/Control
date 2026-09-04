@@ -80,24 +80,24 @@ export default async function ReligiousPage({
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="card">
-          <p className="text-sm text-slate-500">On-time streak</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{streak}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">On-time streak</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{streak}</p>
           <p className="text-xs text-slate-400">days all 5 on time</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Qaza pending</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{totalQaza}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Qaza pending</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{totalQaza}</p>
           <p className="text-xs text-slate-400">
             {dailyQazaCount} daily · {historicalRemaining} historical
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Dhikr today</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{dhikrTotal}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Dhikr today</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{dhikrTotal}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Quran page</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Quran page</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">
             {currentPage}
             <span className="text-base font-semibold text-slate-400">/{QURAN_TOTAL_PAGES}</span>
           </p>
@@ -121,14 +121,14 @@ export default async function ReligiousPage({
       {qazaCounts.length > 0 && (
         <div className="card mb-6">
           <h2 className="section-title mb-4">Daily qaza</h2>
-          <p className="mb-4 text-sm text-slate-500">
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
             Missed prayers from your daily log are added here automatically. Tap Fulfill when you
             make them up.
           </p>
           <div className="space-y-4">
             {qazaCounts.map(({ prayer, count, items }) => (
               <div key={prayer}>
-                <p className="mb-2 font-medium capitalize text-slate-700">
+                <p className="mb-2 font-medium capitalize text-slate-700 dark:text-slate-100">
                   {prayer} <span className="text-slate-400">× {count}</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -157,7 +157,7 @@ export default async function ReligiousPage({
         {debtWithRemaining.length > 0 ? (
           <div className="space-y-4">
             {prayerDebts[0]?.note && (
-              <p className="text-sm text-slate-500">{prayerDebts[0].note}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{prayerDebts[0].note}</p>
             )}
             {(prayerDebts[0]?.periodStart || prayerDebts[0]?.periodEnd) && (
               <p className="text-xs text-slate-400">
@@ -171,12 +171,12 @@ export default async function ReligiousPage({
               return (
                 <div key={d.prayer}>
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="font-medium capitalize text-slate-700">{d.prayer}</span>
-                    <span className="text-slate-500">
+                    <span className="font-medium capitalize text-slate-700 dark:text-slate-100">{d.prayer}</span>
+                    <span className="text-slate-500 dark:text-slate-400">
                       {d.fulfilled}/{d.owed} fulfilled · {d.remaining} left
                     </span>
                   </div>
-                  <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full progress-track">
                     <div className="h-full bg-brand-500" style={{ width: `${pct}%` }} />
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -202,17 +202,17 @@ export default async function ReligiousPage({
               );
             })}
             <form action={clearPrayerDebt}>
-              <SubmitButton className="btn-ghost text-sm text-red-600">Clear all historical debt</SubmitButton>
+              <SubmitButton className="btn-ghost text-sm text-red-600 dark:text-red-400">Clear all historical debt</SubmitButton>
             </form>
           </div>
         ) : (
-          <p className="mb-4 text-sm text-slate-500">
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
             No historical debt logged yet. Use the setup below if you owe prayers from before you
             started tracking.
           </p>
         )}
         <details className="mt-4">
-          <summary className="cursor-pointer font-medium text-brand-700">
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">
             {debtWithRemaining.length > 0 ? "Update historical debt" : "Set up historical debt"}
           </summary>
           <PrayerDebtSetup existingDebts={prayerDebts} />
@@ -243,19 +243,19 @@ export default async function ReligiousPage({
           </form>
           {dhikrTargets.length > 0 && (
             <div className="mt-4 space-y-2">
-              <p className="text-xs font-medium text-slate-500">Daily targets</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Daily targets</p>
               {dhikrTargets.map((t) => {
                 const logged = dhikr.filter((d) => d.name === t.name).reduce((s, d) => s + d.count, 0);
                 const pct = Math.min(100, Math.round((logged / t.dailyTarget) * 100));
                 return (
                   <div key={t.id}>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-700">{t.name}</span>
-                      <span className="text-slate-500">
+                      <span className="text-slate-700 dark:text-slate-100">{t.name}</span>
+                      <span className="text-slate-500 dark:text-slate-400">
                         {logged}/{t.dailyTarget}
                       </span>
                     </div>
-                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full progress-track">
                       <div className="h-full bg-brand-500" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
@@ -264,7 +264,7 @@ export default async function ReligiousPage({
             </div>
           )}
           <details className="mt-3">
-            <summary className="cursor-pointer text-xs text-brand-600">Manage targets</summary>
+            <summary className="cursor-pointer text-xs text-brand-600 dark:text-brand-400">Manage targets</summary>
             <form action={saveDhikrTarget} className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <input name="name" className="input min-w-0 flex-1 py-1 text-xs" placeholder="Dhikr name" required />
               <input name="dailyTarget" type="number" className="input w-full py-1 text-xs sm:w-20" defaultValue={33} />
@@ -272,19 +272,19 @@ export default async function ReligiousPage({
             </form>
             {dhikrTargets.map((t) => (
               <form key={t.id} action={deleteDhikrTarget} className="mt-1 flex items-center justify-between text-xs">
-                <span className="text-slate-500">
+                <span className="text-slate-500 dark:text-slate-400">
                   {t.name} · {t.dailyTarget}/day
                 </span>
-                <SubmitButton className="text-red-500">Remove</SubmitButton>
+                <SubmitButton className="text-red-500 dark:text-red-400">Remove</SubmitButton>
                 <input type="hidden" name="id" value={t.id} />
               </form>
             ))}
           </details>
           <div className="mt-4 space-y-1">
             {dhikr.map((d) => (
-              <div key={d.id} className="flex justify-between text-sm text-slate-500">
+              <div key={d.id} className="flex justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span>{d.name}</span>
-                <span className="font-medium text-slate-700">{d.count}</span>
+                <span className="font-medium text-slate-700 dark:text-slate-100">{d.count}</span>
               </div>
             ))}
           </div>
@@ -304,9 +304,9 @@ export default async function ReligiousPage({
           </form>
           <div className="mt-4 space-y-1">
             {fasts.map((f) => (
-              <div key={f.id} className="flex justify-between text-sm text-slate-500">
+              <div key={f.id} className="flex justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span>{formatDate(f.date)}</span>
-                <span className="badge bg-slate-100 capitalize text-slate-600">{f.kind}</span>
+                <span className="badge-muted capitalize">{f.kind}</span>
               </div>
             ))}
           </div>

@@ -54,7 +54,7 @@ export default function PrayerDebtSetup({ existingDebts }: PrayerDebtSetupProps)
 
   return (
     <form action={savePrayerDebt} className="mt-4 space-y-4">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         If you started praying later in life, enter the period you owe prayers for. The calculator
         estimates one prayer per day per salah; adjust the counts before saving.
       </p>
@@ -81,7 +81,7 @@ export default function PrayerDebtSetup({ existingDebts }: PrayerDebtSetupProps)
         </div>
       </div>
       {estimatedDays > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600">
+        <div className="flex flex-wrap items-center gap-3 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-400">
           <span>
             Estimated <strong>{estimatedDays}</strong> days × 5 prayers ={" "}
             <strong>{estimatedDays * 5}</strong> total

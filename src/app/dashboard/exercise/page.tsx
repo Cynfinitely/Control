@@ -75,7 +75,7 @@ export default async function ExercisePage() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <details className="card" open>
-          <summary className="cursor-pointer font-medium text-brand-700">Run</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Run</summary>
           <form action={createCardioWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input type="hidden" name="activityType" value="run" />
             <div>
@@ -101,7 +101,7 @@ export default async function ExercisePage() {
         </details>
 
         <details className="card">
-          <summary className="cursor-pointer font-medium text-brand-700">Swim</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Swim</summary>
           <form action={createCardioWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input type="hidden" name="activityType" value="swim" />
             <div>
@@ -127,7 +127,7 @@ export default async function ExercisePage() {
         </details>
 
         <details className="card">
-          <summary className="cursor-pointer font-medium text-brand-700">Walk</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Walk</summary>
           <form action={createCardioWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input type="hidden" name="activityType" value="walk" />
             <div>
@@ -160,7 +160,7 @@ export default async function ExercisePage() {
         </details>
 
         <details className="card">
-          <summary className="cursor-pointer font-medium text-brand-700">Gym session</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Gym session</summary>
           <form action={createGymWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="label">Session name</label>
@@ -181,7 +181,7 @@ export default async function ExercisePage() {
         </details>
 
         <details className="card">
-          <summary className="cursor-pointer font-medium text-brand-700">Other</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Other</summary>
           <form action={createCardioWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input type="hidden" name="activityType" value="other" />
             <div className="sm:col-span-2">
@@ -208,17 +208,17 @@ export default async function ExercisePage() {
         {workouts.length === 0 && <p className="text-sm text-slate-400">No workouts logged yet.</p>}
         {workouts.map((w) => (
           <div key={w.id} className="card flex items-start gap-3 py-3">
-            <Icon name="dumbbell" className="h-5 w-5 shrink-0 text-brand-500" />
+            <Icon name="dumbbell" className="h-5 w-5 shrink-0 text-brand-500 dark:text-brand-400" />
             {w.activityType === "gym" ? (
               <Link href={`/dashboard/exercise/${w.id}`} className="min-w-0 flex-1">
-                <p className="font-medium text-slate-800">{w.name}</p>
+                <p className="font-medium text-slate-800 dark:text-slate-100">{w.name}</p>
                 <p className="text-xs text-slate-400">
                   {ACTIVITY_LABELS[w.activityType]} · {formatDate(w.date)} · {formatWorkoutSummary(w)}
                 </p>
               </Link>
             ) : (
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-slate-800">{w.name}</p>
+                <p className="font-medium text-slate-800 dark:text-slate-100">{w.name}</p>
                 <p className="text-xs text-slate-400">
                   {ACTIVITY_LABELS[w.activityType]} · {formatDate(w.date)} · {formatWorkoutSummary(w)}
                 </p>
@@ -227,7 +227,7 @@ export default async function ExercisePage() {
             <form action={deleteWorkout}>
               <input type="hidden" name="id" value={w.id} />
               <SubmitIconButton
-                className="touch-target text-slate-300 hover:text-red-500"
+                className="touch-target text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                 title="Delete"
                 icon={<Icon name="trash" className="h-4 w-4" />}
               />
@@ -241,10 +241,10 @@ export default async function ExercisePage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="section-title">Body weight</h2>
             {latestWeight && (
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-slate-500 dark:text-slate-400">
                 {latestWeight.weightKg} kg
                 {delta !== null && (
-                  <span className={delta <= 0 ? "text-green-600" : "text-amber-600"}>
+                  <span className={delta <= 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}>
                     {" "}
                     ({delta > 0 ? "+" : ""}
                     {delta.toFixed(1)})
@@ -266,14 +266,14 @@ export default async function ExercisePage() {
           </form>
           <div className="mt-4 space-y-1">
             {weights.map((w) => (
-              <div key={w.id} className="flex items-center justify-between text-sm text-slate-500">
+              <div key={w.id} className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span>{formatDate(w.date)}</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-slate-700">{w.weightKg} kg</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-100">{w.weightKg} kg</span>
                   <form action={deleteWeight}>
                     <input type="hidden" name="id" value={w.id} />
                     <SubmitIconButton
-                      className="text-slate-300 hover:text-red-500"
+                      className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                       icon={<Icon name="trash" className="h-3 w-3" />}
                     />
                   </form>
@@ -302,16 +302,16 @@ export default async function ExercisePage() {
           </form>
           <div className="mt-4 space-y-1">
             {measurements.map((m) => (
-              <div key={m.id} className="flex items-center justify-between text-sm text-slate-500">
+              <div key={m.id} className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span className="capitalize">
-                  {m.label} <span className="text-slate-300">· {formatDate(m.date)}</span>
+                  {m.label} <span className="text-slate-300 dark:text-slate-600">· {formatDate(m.date)}</span>
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-slate-700">{m.valueCm} cm</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-100">{m.valueCm} cm</span>
                   <form action={deleteMeasurement}>
                     <input type="hidden" name="id" value={m.id} />
                     <SubmitIconButton
-                      className="text-slate-300 hover:text-red-500"
+                      className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                       icon={<Icon name="trash" className="h-3 w-3" />}
                     />
                   </form>

@@ -65,7 +65,7 @@ export default async function CareerPage() {
       <section className="mb-8">
         <CollapsibleSection title="Career goals" count={goals.length} defaultOpen>
         <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700">+ Add goal</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add goal</summary>
           <form action={createCareerGoal} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="label">Title</label>
@@ -89,11 +89,11 @@ export default async function CareerPage() {
           {goals.map((g) => (
             <div key={g.id} className="card flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="font-medium text-slate-800">
+                <p className="font-medium text-slate-800 dark:text-slate-100">
                   {g.title}
-                  <span className="ml-2 badge bg-slate-100 text-slate-500">{g.status}</span>
+                  <span className="ml-2 badge-muted">{g.status}</span>
                 </p>
-                {g.description && <p className="mt-1 text-sm text-slate-500">{g.description}</p>}
+                {g.description && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{g.description}</p>}
                 {g.targetDate && <p className="mt-1 text-xs text-slate-400">Target: {formatDate(g.targetDate)}</p>}
               </div>
               <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export default async function CareerPage() {
                 <form action={deleteCareerGoal}>
                   <input type="hidden" name="id" value={g.id} />
                   <SubmitIconButton
-                    className="text-slate-300 hover:text-red-500"
+                    className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                     icon={<Icon name="trash" className="h-4 w-4" />}
                   />
                 </form>
@@ -123,7 +123,7 @@ export default async function CareerPage() {
       <section className="mb-8">
         <CollapsibleSection title="Skills" count={skills.length} defaultOpen>
         <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700">+ Add skill</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add skill</summary>
           <form action={createSkill} className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="min-w-0 flex-1">
               <label className="label">Skill</label>
@@ -144,12 +144,12 @@ export default async function CareerPage() {
           {skills.map((s) => (
             <div key={s.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="font-medium text-slate-800">{s.name}</p>
+                <p className="font-medium text-slate-800 dark:text-slate-100">{s.name}</p>
                 <div className="mt-1 flex gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <span
                       key={n}
-                      className={`h-2 w-6 rounded-full ${n <= s.level ? "bg-brand-500" : "bg-slate-200"}`}
+                      className={`h-2 w-6 rounded-full ${n <= s.level ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-700"}`}
                     />
                   ))}
                 </div>
@@ -163,7 +163,7 @@ export default async function CareerPage() {
                 <form action={deleteSkill}>
                   <input type="hidden" name="id" value={s.id} />
                   <SubmitIconButton
-                    className="text-slate-300 hover:text-red-500"
+                    className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                     icon={<Icon name="trash" className="h-4 w-4" />}
                   />
                 </form>
@@ -178,7 +178,7 @@ export default async function CareerPage() {
       <section className="mb-8">
         <CollapsibleSection title="Certifications" count={certs.length} defaultOpen>
         <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700">+ Add certification</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add certification</summary>
           <form action={createCertification} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Name</label>
@@ -213,11 +213,11 @@ export default async function CareerPage() {
             return (
               <div key={c.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="font-medium text-slate-800">
+                  <p className="font-medium text-slate-800 dark:text-slate-100">
                     {c.name}
-                    {expired && <span className="ml-2 badge bg-red-100 text-red-700">Expired</span>}
+                    {expired && <span className="ml-2 badge-danger">Expired</span>}
                     {expiringSoon && !expired && (
-                      <span className="ml-2 badge bg-amber-100 text-amber-700">Expiring soon</span>
+                      <span className="ml-2 badge-warning">Expiring soon</span>
                     )}
                   </p>
                   <p className="text-xs text-slate-400">
@@ -229,7 +229,7 @@ export default async function CareerPage() {
                 <form action={deleteCertification}>
                   <input type="hidden" name="id" value={c.id} />
                   <SubmitIconButton
-                    className="text-slate-300 hover:text-red-500"
+                    className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                     icon={<Icon name="trash" className="h-4 w-4" />}
                   />
                 </form>
@@ -245,7 +245,7 @@ export default async function CareerPage() {
       <section className="mb-8">
         <CollapsibleSection title="Work history" count={experiences.length} defaultOpen>
         <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700">+ Add experience</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add experience</summary>
           <form action={createWorkExperience} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Company</label>
@@ -263,7 +263,7 @@ export default async function CareerPage() {
               <label className="label">End</label>
               <input name="endDate" type="date" className="input" />
             </div>
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <input name="current" type="checkbox" /> Current role
             </label>
             <div className="sm:col-span-2">
@@ -279,19 +279,19 @@ export default async function CareerPage() {
           {experiences.map((e) => (
             <div key={e.id} className="card flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="font-medium text-slate-800">
+                <p className="font-medium text-slate-800 dark:text-slate-100">
                   {e.role} <span className="text-slate-400">@ {e.company}</span>
                 </p>
                 <p className="text-xs text-slate-400">
                   {e.startDate ? formatDate(e.startDate) : "?"} -{" "}
                   {e.current ? "Present" : e.endDate ? formatDate(e.endDate) : "?"}
                 </p>
-                {e.summary && <p className="mt-1 text-sm text-slate-500">{e.summary}</p>}
+                {e.summary && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{e.summary}</p>}
               </div>
               <form action={deleteWorkExperience}>
                 <input type="hidden" name="id" value={e.id} />
                 <SubmitIconButton
-                  className="text-slate-300 hover:text-red-500"
+                  className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                   icon={<Icon name="trash" className="h-4 w-4" />}
                 />
               </form>
@@ -305,7 +305,7 @@ export default async function CareerPage() {
       <section>
         <CollapsibleSection title="Learning log" count={learning.length} defaultOpen>
         <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700">+ Add learning entry</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add learning entry</summary>
           <form action={createLearning} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="sm:col-span-2">
               <label className="label">Title</label>
@@ -355,9 +355,9 @@ export default async function CareerPage() {
           {learning.map((l) => (
             <div key={l.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="font-medium text-slate-800">
+                <p className="font-medium text-slate-800 dark:text-slate-100">
                   {l.title}
-                  <span className="ml-2 badge bg-slate-100 capitalize text-slate-500">{l.kind}</span>
+                  <span className="ml-2 badge-muted capitalize">{l.kind}</span>
                 </p>
                 <p className="text-xs text-slate-400">
                   {formatDate(l.date)} · {l.hours}h · {l.status === "completed" ? "completed" : "in progress"}
@@ -367,7 +367,7 @@ export default async function CareerPage() {
               <form action={deleteLearning}>
                 <input type="hidden" name="id" value={l.id} />
                 <SubmitIconButton
-                  className="text-slate-300 hover:text-red-500"
+                  className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                   icon={<Icon name="trash" className="h-4 w-4" />}
                 />
               </form>
@@ -381,7 +381,7 @@ export default async function CareerPage() {
       <section className="mt-8">
         <CollapsibleSection title="Job applications" count={jobApps.length} defaultOpen>
         <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700">+ Add application</summary>
+          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add application</summary>
           <form action={createJobApplication} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Company</label>
@@ -430,11 +430,11 @@ export default async function CareerPage() {
           {jobApps.map((j) => (
             <div key={j.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="font-medium text-slate-800">
+                <p className="font-medium text-slate-800 dark:text-slate-100">
                   {j.role} <span className="text-slate-400">@ {j.company}</span>
                 </p>
                 <p className="text-xs text-slate-400">
-                  <span className="badge bg-slate-100 capitalize text-slate-600">{j.stage}</span>
+                  <span className="badge-muted capitalize">{j.stage}</span>
                   {j.contact && ` · contact: ${j.contact.name}`}
                   {j.dueDate && ` · follow up ${formatDate(j.dueDate)}`}
                 </p>
@@ -454,7 +454,7 @@ export default async function CareerPage() {
                 <form action={deleteJobApplication}>
                   <input type="hidden" name="id" value={j.id} />
                   <SubmitIconButton
-                    className="text-slate-300 hover:text-red-500"
+                    className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                     icon={<Icon name="trash" className="h-4 w-4" />}
                   />
                 </form>

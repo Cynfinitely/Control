@@ -42,7 +42,7 @@ export default function RegisterPage() {
     return (
       <div className="card">
         <h2 className="section-title mb-2">Verify your email</h2>
-        <p className="mb-4 text-sm text-slate-600">
+        <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
           Email verification is required. No email service is configured in this version,
           so use the link below to verify your account directly.
         </p>
@@ -56,11 +56,11 @@ export default function RegisterPage() {
   return (
     <div className="card">
       <h2 className="section-title mb-4">Create account</h2>
-      <p className="mb-4 text-sm text-slate-500">
+      <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
         Registration is invite-only. Enter the invite code you received.
       </p>
       {error && (
-        <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{error}</p>
       )}
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
@@ -109,7 +109,7 @@ export default function RegisterPage() {
           )}
         </button>
       </form>
-      <p className="mt-4 text-center text-sm text-slate-500">
+      <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
         Already have an account?{" "}
         <Link href="/login" className="font-medium text-brand-600 hover:underline">
           Sign in

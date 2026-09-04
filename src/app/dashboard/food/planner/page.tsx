@@ -51,23 +51,23 @@ export default async function PlannerPage() {
           const dayItems = byDay(d);
           return (
             <div key={d.toISOString()} className="card">
-              <p className="mb-2 text-sm font-semibold text-slate-700">
+              <p className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-100">
                 {d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" })}
               </p>
               <div className="space-y-2">
                 {dayItems.map((it) => (
-                  <div key={it.id} className="rounded-md bg-slate-50 p-2 text-xs">
+                  <div key={it.id} className="rounded-md bg-slate-50 p-2 text-xs dark:bg-slate-700">
                     <div className="flex items-start justify-between">
-                      <span className="font-medium capitalize text-slate-600">{it.meal}</span>
+                      <span className="font-medium capitalize text-slate-600 dark:text-slate-400">{it.meal}</span>
                       <form action={deletePlanItem}>
                         <input type="hidden" name="id" value={it.id} />
                         <SubmitIconButton
-                          className="text-slate-300 hover:text-red-500"
+                          className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                           icon={<Icon name="trash" className="h-3 w-3" />}
                         />
                       </form>
                     </div>
-                    <p className="text-slate-800">{it.name}</p>
+                    <p className="text-slate-800 dark:text-slate-100">{it.name}</p>
                     {it.calories > 0 && (
                       <p className="text-xs text-slate-400">{Math.round(it.calories)} kcal</p>
                     )}
@@ -76,12 +76,12 @@ export default async function PlannerPage() {
                     )}
                     <form action={logFromPlan} className="mt-1">
                       <input type="hidden" name="planId" value={it.id} />
-                      <SubmitButton className="btn-ghost py-0.5 text-xs text-brand-600">
+                      <SubmitButton className="btn-ghost py-0.5 text-xs text-brand-600 dark:text-brand-400">
                         Log to diary
                       </SubmitButton>
                     </form>
                     <details className="mt-1">
-                      <summary className="cursor-pointer text-brand-600">+ item</summary>
+                      <summary className="cursor-pointer text-brand-600 dark:text-brand-400">+ item</summary>
                       <form action={addShoppingItem} className="mt-1 space-y-1">
                         <input type="hidden" name="mealPlanItemId" value={it.id} />
                         <input name="name" className="input py-1 text-xs" placeholder="ingredient" required />
@@ -93,7 +93,7 @@ export default async function PlannerPage() {
                 ))}
               </div>
               <details className="mt-2">
-                <summary className="cursor-pointer text-xs font-medium text-brand-600">
+                <summary className="cursor-pointer text-xs font-medium text-brand-600 dark:text-brand-400">
                   + add meal
                 </summary>
                 <form action={addPlanItem} className="mt-2 space-y-1">
@@ -132,14 +132,14 @@ export default async function PlannerPage() {
               <input type="hidden" name="id" value={s.id} />
               <SubmitIconButton
                 className={`flex h-4 w-4 items-center justify-center rounded border ${
-                  s.checked ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300"
+                  s.checked ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 dark:border-slate-600"
                 }`}
                 icon={s.checked ? <Icon name="check" className="h-3 w-3" /> : null}
               />
-              <span className={`min-w-0 flex-1 text-sm ${s.checked ? "text-slate-400 line-through" : "text-slate-700"}`}>
+              <span className={`min-w-0 flex-1 text-sm ${s.checked ? "text-slate-400 line-through dark:text-slate-500" : "text-slate-700 dark:text-slate-100"}`}>
                 {s.name}
                 {s.quantity && <span className="text-slate-400"> · {s.quantity}</span>}
-                <span className="ml-2 text-xs text-slate-300">({s.meal})</span>
+                <span className="ml-2 text-xs text-slate-300 dark:text-slate-600">({s.meal})</span>
               </span>
             </form>
           ))}

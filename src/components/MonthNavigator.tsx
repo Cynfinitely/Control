@@ -49,7 +49,7 @@ export default function MonthNavigator({ basePath, monthKey, monthLabel, dayValu
         ←
       </button>
       <div>
-        <p className="font-semibold text-slate-900">{monthLabel}</p>
+        <p className="font-semibold text-slate-900 dark:text-slate-100">{monthLabel}</p>
         <p className="text-xs text-slate-400">{monthKey}</p>
       </div>
       <button

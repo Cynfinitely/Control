@@ -45,14 +45,14 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
         <span
           className={`badge mt-0.5 capitalize ${
             entry.type === "income"
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-red-100 text-red-700"
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+              : "badge-danger"
           }`}
         >
           {entry.type}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="break-words font-medium text-slate-800">
+          <p className="break-words font-medium text-slate-800 dark:text-slate-100">
             {entry.rawDescription || entry.note || entry.categoryName}
           </p>
           <p className="text-xs text-slate-400">{entry.categoryName}</p>
@@ -60,7 +60,7 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
         <div className="flex shrink-0 items-center gap-1">
         <p
           className={`font-semibold ${
-            entry.type === "income" ? "text-emerald-600" : "text-red-600"
+            entry.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
           }`}
         >
           {entry.type === "income" ? "+" : "−"}
@@ -69,7 +69,7 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
         <button
           type="button"
           onClick={() => setEditing((v) => !v)}
-          className="touch-target text-slate-300 hover:text-brand-600"
+          className="touch-target text-slate-300 hover:text-brand-600 dark:hover:text-brand-400"
           title="Edit"
         >
           <Icon name="pencil" className="h-4 w-4" />
@@ -77,7 +77,7 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
         <form action={deleteTransaction}>
           <input type="hidden" name="id" value={entry.id} />
           <SubmitIconButton
-            className="touch-target text-slate-300 hover:text-red-500"
+            className="touch-target text-slate-300 hover:text-red-500 dark:hover:text-red-400"
             title="Delete"
             icon={<Icon name="trash" className="h-4 w-4" />}
           />
@@ -89,7 +89,7 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
         <FormAction
           action={updateTransactionForm}
           successMessage="Transaction updated"
-          className="mt-4 grid grid-cols-1 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2"
+          className="mt-4 grid grid-cols-1 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 dark:border-slate-700"
         >
           <input type="hidden" name="id" value={entry.id} />
           <div className="sm:col-span-2">
@@ -100,8 +100,8 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
                 onClick={() => setType("expense")}
                 className={`touch-target flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
                   type === "expense"
-                    ? "border-brand-500 bg-brand-50 text-brand-700"
-                    : "border-slate-200 text-slate-600"
+                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+                    : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-400"
                 }`}
               >
                 Expense
@@ -111,8 +111,8 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
                 onClick={() => setType("income")}
                 className={`touch-target flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
                   type === "income"
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-slate-200 text-slate-600"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                    : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-400"
                 }`}
               >
                 Income

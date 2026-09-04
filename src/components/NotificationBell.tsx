@@ -113,7 +113,7 @@ export default function NotificationBell() {
                     )}
                   >
                     <span className="font-medium text-slate-900 dark:text-slate-100">{item.title}</span>
-                    {item.body && <span className="text-xs text-slate-500">{item.body}</span>}
+                    {item.body && <span className="text-xs text-slate-500 dark:text-slate-400">{item.body}</span>}
                     <span className="text-[10px] text-slate-400">
                       {new Date(item.dueAt).toLocaleString()}
                     </span>

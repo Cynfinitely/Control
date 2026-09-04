@@ -8,9 +8,9 @@ type Props = {
 };
 
 function deltaClass(cents: number) {
-  if (cents > 0) return "text-emerald-600";
-  if (cents < 0) return "text-red-600";
-  return "text-slate-500";
+  if (cents > 0) return "text-emerald-600 dark:text-emerald-400";
+  if (cents < 0) return "text-red-600 dark:text-red-400";
+  return "text-slate-500 dark:text-slate-400";
 }
 
 function formatDelta(cents: number) {
@@ -34,22 +34,22 @@ export default function BudgetAnalysisExtras({ mom, merchants, savingsSeries }: 
         ) : (
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">Income</dt>
+              <dt className="text-slate-500 dark:text-slate-400">Income</dt>
               <dd className={deltaClass(mom.incomeDeltaCents)}>{formatDelta(mom.incomeDeltaCents)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">Expenses</dt>
+              <dt className="text-slate-500 dark:text-slate-400">Expenses</dt>
               <dd className={deltaClass(-mom.expenseDeltaCents)}>
                 {formatDelta(mom.expenseDeltaCents)}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">Net</dt>
+              <dt className="text-slate-500 dark:text-slate-400">Net</dt>
               <dd className={deltaClass(mom.netDeltaCents)}>{formatDelta(mom.netDeltaCents)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">Savings rate</dt>
-              <dd className="text-slate-700">
+              <dt className="text-slate-500 dark:text-slate-400">Savings rate</dt>
+              <dd className="text-slate-700 dark:text-slate-100">
                 {mom.savingsRateDelta === null
                   ? "—"
                   : `${mom.savingsRateDelta > 0 ? "+" : ""}${mom.savingsRateDelta} pts`}
@@ -68,12 +68,12 @@ export default function BudgetAnalysisExtras({ mom, merchants, savingsSeries }: 
             {merchants.map((m) => (
               <div key={m.merchantKey}>
                 <div className="mb-1 flex justify-between gap-2 text-sm">
-                  <span className="truncate font-medium text-slate-700" title={m.label}>
+                  <span className="truncate font-medium text-slate-700 dark:text-slate-100" title={m.label}>
                     {m.label}
                   </span>
-                  <span className="shrink-0 text-slate-600">{formatEuro(m.totalCents)}</span>
+                  <span className="shrink-0 text-slate-600 dark:text-slate-400">{formatEuro(m.totalCents)}</span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                <div className="h-2 w-full overflow-hidden rounded-full progress-track">
                   <div
                     className="h-full bg-slate-500"
                     style={{ width: `${Math.round((m.totalCents / maxMerchant) * 100)}%` }}
@@ -91,7 +91,7 @@ export default function BudgetAnalysisExtras({ mom, merchants, savingsSeries }: 
           <p className="text-sm text-slate-400">Import months to see a trend.</p>
         ) : (
           <>
-            <svg viewBox="0 0 240 80" className="h-20 w-full text-brand-600" aria-hidden>
+            <svg viewBox="0 0 240 80" className="h-20 w-full text-brand-600 dark:text-brand-400" aria-hidden>
               <polyline
                 fill="none"
                 stroke="currentColor"
@@ -115,7 +115,7 @@ export default function BudgetAnalysisExtras({ mom, merchants, savingsSeries }: 
               </span>
               <span>{savingsSeries[savingsSeries.length - 1]?.monthKey}</span>
             </div>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               Latest net {formatEuroSigned(savingsSeries[savingsSeries.length - 1]?.netCents ?? 0)}
             </p>
           </>

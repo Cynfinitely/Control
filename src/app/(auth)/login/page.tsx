@@ -104,7 +104,7 @@ function LoginForm() {
           )}
         </button>
       </form>
-      <p className="mt-4 text-center text-sm text-slate-500">
+      <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
         Have an invite?{" "}
         <Link href="/register" className="font-medium text-brand-600 hover:underline">
           Create account

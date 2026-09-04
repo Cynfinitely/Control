@@ -72,14 +72,14 @@ function FocusRow({
         <p
           className={
             isDone || isSkipped
-              ? "text-slate-500 line-through"
+              ? "text-slate-500 line-through dark:text-slate-400"
               : "font-medium text-slate-800 dark:text-slate-100"
           }
         >
           {item.title}
         </p>
         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-          {isSkipped && <span className="badge bg-amber-50 text-xs text-amber-700">skipped</span>}
+          {isSkipped && <span className="badge bg-amber-50 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">skipped</span>}
           {item.linkLabel && (
             <span className="badge bg-slate-100 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {item.linkLabel}

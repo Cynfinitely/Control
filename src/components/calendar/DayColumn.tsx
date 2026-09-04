@@ -49,14 +49,14 @@ export default function DayColumn({
           key={`${occ.eventId}-${occ.originalStartsAt.toISOString()}`}
           type="button"
           onClick={() => onSelectOccurrence(occ)}
-          className="card flex w-full items-start gap-3 text-left transition hover:border-brand-300"
+          className="card flex w-full items-start gap-3 text-left transition hover:border-brand-300 dark:hover:border-brand-700"
         >
           <div className="w-20 shrink-0 text-xs font-medium text-brand-700 dark:text-brand-300">
             {formatOccurrenceTime(occ.startsAt, occ.endsAt, occ.allDay, timezone)}
           </div>
           <div>
             <p className="font-medium text-slate-900 dark:text-slate-100">{occ.title}</p>
-            {occ.location && <p className="text-xs text-slate-500">{occ.location}</p>}
+            {occ.location && <p className="text-xs text-slate-500 dark:text-slate-400">{occ.location}</p>}
             {occ.isRecurring && <p className="mt-0.5 text-[10px] text-slate-400">Recurring</p>}
           </div>
         </button>
@@ -68,7 +68,7 @@ export default function DayColumn({
           onClick={() => onSelectReminder(r.id)}
           className="card flex w-full items-start gap-3 border-amber-200 text-left dark:border-amber-900"
         >
-          <div className="w-20 shrink-0 text-xs font-medium text-amber-700">Reminder</div>
+          <div className="w-20 shrink-0 text-xs font-medium text-amber-700 dark:text-amber-300">Reminder</div>
           <p className="font-medium text-slate-900 dark:text-slate-100">{r.title}</p>
         </button>
       ))}

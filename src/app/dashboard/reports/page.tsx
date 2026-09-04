@@ -51,20 +51,20 @@ export default async function ReportsPage({
               {section.stats.map((s) => {
                 const inner = (
                   <>
-                    <p className="text-xl font-bold text-slate-900">{s.value}</p>
-                    <p className="text-xs text-slate-500">{s.label}</p>
+                    <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{s.value}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{s.label}</p>
                   </>
                 );
                 return s.href ? (
                   <Link
                     key={s.label}
                     href={s.href}
-                    className="rounded-lg bg-slate-50 p-3 transition hover:bg-brand-50 hover:ring-1 hover:ring-brand-200"
+                    className="rounded-lg bg-slate-50 p-3 transition hover:bg-brand-50 hover:ring-1 hover:ring-brand-200 dark:bg-slate-700 dark:hover:bg-brand-950 dark:hover:ring-brand-800"
                   >
                     {inner}
                   </Link>
                 ) : (
-                  <div key={s.label} className="rounded-lg bg-slate-50 p-3">
+                  <div key={s.label} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
                     {inner}
                   </div>
                 );

@@ -23,6 +23,10 @@ function getSystemTheme(): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
+function applyThemeClass(resolved: "light" | "dark") {
+  document.documentElement.classList.toggle("dark", resolved === "dark");
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("system");
   const [resolved, setResolved] = useState<"light" | "dark">("light");
@@ -35,13 +39,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const next = theme === "system" ? getSystemTheme() : theme;
     setResolved(next);
-    document.documentElement.classList.toggle("dark", next === "dark");
+    applyThemeClass(next);
   }, [theme]);
 
   useEffect(() => {
     if (theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => setResolved(mq.matches ? "dark" : "light");
+    const handler = () => {
+      const next = mq.matches ? "dark" : "light";
+      setResolved(next);
+      applyThemeClass(next);
+    };
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, [theme]);

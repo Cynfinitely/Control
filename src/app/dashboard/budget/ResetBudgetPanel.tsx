@@ -6,9 +6,9 @@ import { resetBudgetDataForm } from "./actions";
 
 export default function ResetBudgetPanel() {
   return (
-    <details className="card mt-8 border-red-100">
-      <summary className="cursor-pointer font-medium text-red-700">Reset all budget data</summary>
-      <p className="mt-3 text-sm text-slate-600">
+    <details className="card mt-8 border-red-100 dark:border-red-900">
+      <summary className="cursor-pointer font-medium text-red-700 dark:text-red-400">Reset all budget data</summary>
+      <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
         Permanently deletes all transactions, import batches, and merchant category rules. Categories
         are kept. Use this before importing a clean July statement.
       </p>
@@ -30,7 +30,7 @@ export default function ResetBudgetPanel() {
             required
           />
         </div>
-        <SubmitButton className="btn-ghost touch-target text-red-700" pendingLabel="Clearing…">
+        <SubmitButton className="btn-ghost touch-target text-red-700 dark:text-red-400" pendingLabel="Clearing…">
           Clear budget data
         </SubmitButton>
       </FormAction>

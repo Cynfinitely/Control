@@ -57,14 +57,14 @@ export default function InspirationSpotlight({ items, compact = false }: Props) 
           <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
             &ldquo;{current.text}&rdquo;
           </p>
-          {current.author && <p className="mt-1 text-xs text-slate-500">— {current.author}</p>}
+          {current.author && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">— {current.author}</p>}
           <div className="mt-2 flex flex-wrap gap-2">
             {items.length > 1 && (
               <button type="button" onClick={shuffle} className="text-xs text-brand-600 hover:underline">
                 Another
               </button>
             )}
-            <Link href="/dashboard/inspirations" className="text-xs text-slate-400 hover:text-slate-600">
+            <Link href="/dashboard/inspirations" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
               Manage
             </Link>
           </div>
@@ -82,7 +82,7 @@ export default function InspirationSpotlight({ items, compact = false }: Props) 
             &ldquo;{current.text}&rdquo;
           </p>
           {current.author && (
-            <p className="mt-2 text-sm text-slate-500">— {current.author}</p>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">— {current.author}</p>
           )}
           <div className="mt-4 flex flex-wrap gap-2">
             {items.length > 1 && (

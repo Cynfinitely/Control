@@ -36,11 +36,11 @@ export default function ImportUpload({ empty }: Props) {
   }
 
   return (
-    <div className={`card ${empty ? "border-brand-200 bg-brand-50/40" : ""}`}>
-      <h2 className="font-semibold text-slate-900">
+    <div className={`card ${empty ? "border-brand-200 bg-brand-50/40 dark:border-brand-800 dark:bg-brand-950/40" : ""}`}>
+      <h2 className="font-semibold text-slate-900 dark:text-slate-100">
         {empty ? "Import your first Nordea statement" : "Import Nordea CSV"}
       </h2>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         From Nordea Netbank, download account transactions as CSV/TXT and upload here. Known
         merchants are categorized automatically.
       </p>
@@ -71,8 +71,8 @@ export default function ImportUpload({ empty }: Props) {
           )}
         </button>
       </form>
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-      {message && <p className="mt-3 text-sm text-emerald-700">{message}</p>}
+      {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {message && <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400">{message}</p>}
     </div>
   );
 }

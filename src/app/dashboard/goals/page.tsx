@@ -47,7 +47,7 @@ export default async function GoalsPage({
             className={`touch-target rounded-full px-4 py-2 text-sm font-medium transition ${
               period === p.value
                 ? "bg-brand-600 text-white"
-                : "bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
+                : "bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700 dark:hover:bg-slate-700"
             }`}
           >
             {p.label}
@@ -63,7 +63,7 @@ export default async function GoalsPage({
           >
             ← Prev
           </Link>
-          <span className="text-sm font-medium text-slate-700">{periodLabel(period, periodKey)}</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-100">{periodLabel(period, periodKey)}</span>
           {canGoNext && (
             <Link
               href={`/dashboard/goals?period=${period}&offset=${nextOffset}`}
@@ -86,7 +86,7 @@ export default async function GoalsPage({
       </div>
 
       <details className="card mb-6">
-        <summary className="cursor-pointer font-medium text-brand-700">+ Add goal</summary>
+        <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add goal</summary>
         <FormAction action={createGoalForm} successMessage="Goal added" resetOnSuccess className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <input type="hidden" name="period" value={period} />
           <input type="hidden" name="periodKey" value={periodKey} />

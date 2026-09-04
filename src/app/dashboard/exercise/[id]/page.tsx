@@ -37,18 +37,18 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
         description={formatDate(workout.date)}
       />
 
-      {workout.notes && <p className="mb-6 text-sm text-slate-500">{workout.notes}</p>}
+      {workout.notes && <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">{workout.notes}</p>}
 
       <div className="space-y-4">
         {workout.exercises.map((ex) => (
           <div key={ex.id} className="card">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="min-w-0 break-words font-semibold text-slate-800">{ex.name}</h3>
+              <h3 className="min-w-0 break-words font-semibold text-slate-800 dark:text-slate-100">{ex.name}</h3>
               <form action={deleteExercise}>
                 <input type="hidden" name="id" value={ex.id} />
                 <input type="hidden" name="workoutId" value={workout.id} />
                 <SubmitIconButton
-                  className="text-slate-300 hover:text-red-500"
+                  className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                   title="Remove exercise"
                   icon={<Icon name="trash" className="h-4 w-4" />}
                 />
@@ -68,7 +68,7 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
               </thead>
               <tbody>
                 {ex.sets.map((s, i) => (
-                  <tr key={s.id} className="border-t border-slate-100">
+                  <tr key={s.id} className="border-t border-slate-100 dark:border-slate-700">
                     <td className="py-1 text-slate-400">{i + 1}</td>
                     <td className="py-1">{s.reps ?? "-"}</td>
                     <td className="py-1">{s.weightKg ?? "-"}</td>
@@ -78,7 +78,7 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
                         <input type="hidden" name="id" value={s.id} />
                         <input type="hidden" name="workoutId" value={workout.id} />
                         <SubmitIconButton
-                          className="text-slate-300 hover:text-red-500"
+                          className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                           icon={<Icon name="trash" className="h-3 w-3" />}
                         />
                       </form>

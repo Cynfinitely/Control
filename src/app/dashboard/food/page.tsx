@@ -56,10 +56,10 @@ export default async function FoodPage({
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card">
-          <p className="text-sm text-slate-500">Calories</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{Math.round(totalCalories)}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Calories</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{Math.round(totalCalories)}</p>
           <p className="text-xs text-slate-400">of {Math.round(calorieTarget)} kcal</p>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full progress-track">
             <div
               className={`h-full ${totalCalories > calorieTarget ? "bg-red-500" : "bg-brand-500"}`}
               style={{ width: `${calPct}%` }}
@@ -67,16 +67,16 @@ export default async function FoodPage({
           </div>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Protein</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{Math.round(totalProtein)}g</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Protein</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{Math.round(totalProtein)}g</p>
           <p className="text-xs text-slate-400">of {Math.round(proteinTarget)}g</p>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full progress-track">
             <div className="h-full bg-emerald-500" style={{ width: `${proteinPct}%` }} />
           </div>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Carbs / Fat</p>
-          <p className="mt-2 text-lg font-bold text-slate-900">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Carbs / Fat</p>
+          <p className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">
             {Math.round(totalCarbs)}g / {Math.round(totalFat)}g
           </p>
           <p className="text-xs text-slate-400">
@@ -84,8 +84,8 @@ export default async function FoodPage({
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Water</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{waterGlasses}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Water</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{waterGlasses}</p>
           <p className="text-xs text-slate-400">glasses today</p>
           <form action={logWater} className="mt-2 flex gap-1">
             <input type="hidden" name="date" value={dayValue} />
@@ -140,9 +140,9 @@ export default async function FoodPage({
         {entries.length === 0 && <p className="text-sm text-slate-400">No food logged for this day.</p>}
         {entries.map((e) => (
           <div key={e.id} className="card flex items-start gap-3 py-3">
-            <span className="badge mt-0.5 bg-slate-100 capitalize text-slate-500">{e.meal}</span>
+            <span className="badge-muted mt-0.5 capitalize">{e.meal}</span>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-slate-800">{e.name}</p>
+              <p className="font-medium text-slate-800 dark:text-slate-100">{e.name}</p>
               <p className="text-xs text-slate-400">
                 {Math.round(e.calories)} kcal
                 {(e.protein > 0 || e.carbs > 0 || e.fat > 0) &&
@@ -152,7 +152,7 @@ export default async function FoodPage({
             <form action={deleteFood}>
               <input type="hidden" name="id" value={e.id} />
               <SubmitIconButton
-                className="touch-target text-slate-300 hover:text-red-500"
+                className="touch-target text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                 title="Delete"
                 icon={<Icon name="trash" className="h-4 w-4" />}
               />
@@ -162,7 +162,7 @@ export default async function FoodPage({
       </div>
 
       <details className="card mt-8">
-        <summary className="cursor-pointer font-medium text-slate-700">Nutrition targets</summary>
+        <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-100">Nutrition targets</summary>
         <form action={saveTarget} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="label">Calories</label>

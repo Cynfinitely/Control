@@ -8,13 +8,13 @@ export default function AuthLayout({
 }) {
   return (
     <Providers>
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 dark:bg-slate-900">
         <div className="w-full max-w-md">
           <div className="mb-6 flex flex-col items-center text-center">
-            <div className="rounded-xl bg-white px-6 py-4 shadow-sm">
+            <div className="rounded-xl bg-white px-6 py-4 shadow-sm dark:bg-slate-800">
               <Logo variant="full" className="h-12" />
             </div>
-            <p className="mt-3 text-sm text-slate-500">
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
               Your personal life management helper
             </p>
           </div>

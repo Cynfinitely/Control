@@ -38,7 +38,7 @@ export default function EmptyState({
         </button>
       )}
       {tip && (
-        <p className="mt-4 max-w-sm text-xs text-slate-400 dark:text-slate-500">{tip}</p>
+        <p className="mt-4 max-w-sm text-xs text-slate-400">{tip}</p>
       )}
     </div>
   );

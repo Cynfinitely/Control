@@ -5,7 +5,7 @@ type Props = {
 };
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-slate-200 ${className ?? ""}`} />;
+  return <div className={`skeleton ${className ?? ""}`} />;
 }
 
 export default function PageLoadingSkeleton({ variant = "default" }: Props) {

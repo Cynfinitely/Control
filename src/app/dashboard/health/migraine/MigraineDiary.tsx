@@ -174,7 +174,7 @@ export default function MigraineDiary({
         />
 
         <div>
-          <div className="grid grid-cols-7 text-center text-[10px] font-medium text-slate-500 sm:text-xs">
+          <div className="grid grid-cols-7 text-center text-[10px] font-medium text-slate-500 dark:text-slate-400 sm:text-xs">
             {WEEKDAYS.map((d) => (
               <div key={d} className="px-0.5 py-1.5">
                 <span className="sm:hidden">{d[0]}</span>
@@ -245,10 +245,10 @@ export default function MigraineDiary({
         <div>
           <h2 className="section-title">{selectedLabel}</h2>
           {!selectedDay && (
-            <p className="mt-1 text-sm text-slate-500">Tap a day on the calendar to log pain.</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Tap a day on the calendar to log pain.</p>
           )}
           {isFutureSelected && (
-            <p className="mt-1 text-sm text-slate-500">Future days stay empty until they arrive.</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Future days stay empty until they arrive.</p>
           )}
         </div>
 

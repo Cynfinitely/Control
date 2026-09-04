@@ -46,7 +46,7 @@ export default function PlanTextImport({ dayValue }: Props) {
     <details className="card">
       <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">Import from text</summary>
       <p className="mt-2 text-xs text-slate-400">
-        Paste one line per block: <code className="text-slate-500">HH:MM  Title</code>. End times are
+        Paste one line per block: <code className="text-slate-500 dark:text-slate-400">HH:MM  Title</code>. End times are
         inferred from the next line.
       </p>
 
@@ -71,7 +71,7 @@ export default function PlanTextImport({ dayValue }: Props) {
       {preview && (
         <div className="mt-4">
           {preview.warnings.length > 0 && (
-            <ul className="mb-3 space-y-1 text-xs text-amber-700">
+            <ul className="mb-3 space-y-1 text-xs text-amber-700 dark:text-amber-400">
               {preview.warnings.map((w) => (
                 <li key={w}>· {w}</li>
               ))}
@@ -82,9 +82,9 @@ export default function PlanTextImport({ dayValue }: Props) {
             <p className="text-sm text-slate-400">No valid blocks found in pasted text.</p>
           ) : (
             <>
-              <div className="table-wrap max-h-64 overflow-auto rounded-lg border border-slate-100">
+              <div className="table-wrap max-h-64 overflow-auto rounded-lg border border-slate-100 dark:border-slate-700">
                 <table className="w-full min-w-[22rem] text-left text-sm">
-                  <thead className="sticky top-0 bg-slate-50 text-xs text-slate-500">
+                  <thead className="sticky top-0 bg-slate-50 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                     <tr>
                       <th className="px-3 py-2">Time</th>
                       <th className="px-3 py-2">Title</th>
@@ -93,15 +93,15 @@ export default function PlanTextImport({ dayValue }: Props) {
                   </thead>
                   <tbody>
                     {preview.entries.map((entry) => (
-                      <tr key={`${entry.lineNumber}-${entry.startTime}`} className="border-t border-slate-50">
-                        <td className="whitespace-nowrap px-3 py-2 text-slate-600">
+                      <tr key={`${entry.lineNumber}-${entry.startTime}`} className="border-t border-slate-50 dark:border-slate-700">
+                        <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-400">
                           {entry.startTime} – {entry.endTime}
                           {entry.crossesMidnight && (
                             <span className="ml-1 text-xs text-slate-400">+1d</span>
                           )}
                         </td>
                         <td className="px-3 py-2">{entry.title}</td>
-                        <td className="px-3 py-2 text-slate-500">
+                        <td className="px-3 py-2 text-slate-500 dark:text-slate-400">
                           {PLAN_KIND_LABELS[entry.kind as PlanKind] ?? entry.kind}
                         </td>
                       </tr>
@@ -147,7 +147,7 @@ export default function PlanTextImport({ dayValue }: Props) {
       )}
 
       {result && (
-        <p className="mt-3 text-sm text-green-700">
+        <p className="mt-3 text-sm text-green-700 dark:text-green-400">
           Imported {result.imported} block{result.imported === 1 ? "" : "s"}
           {result.skipped > 0 && ` · ${result.skipped} skipped (overlap in merge mode)`}
         </p>

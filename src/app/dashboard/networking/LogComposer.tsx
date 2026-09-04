@@ -190,7 +190,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
               className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
                 type === t
                   ? "bg-brand-600 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200"
+                  : "chip-idle"
               }`}
             >
               {INTERACTION_TYPE_LABELS[t]}
@@ -210,7 +210,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
               className={`rounded-full px-3 py-1.5 text-sm font-medium capitalize transition ${
                 dateChip === chip
                   ? "bg-brand-600 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200"
+                  : "chip-idle"
               }`}
             >
               {chip}
@@ -236,7 +236,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
               {topic}
               <button
                 type="button"
-                className="ml-1 text-brand-500 hover:text-brand-800"
+                className="ml-1 text-brand-500 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-200"
                 aria-label={`Remove ${topic}`}
                 onClick={() => setTopics((prev) => prev.filter((t) => t !== topic))}
               >
@@ -245,7 +245,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
             </span>
           ))}
           <input
-            className="min-w-[8rem] flex-1 border-0 bg-transparent px-1 py-1 text-sm outline-none"
+            className="min-w-[8rem] flex-1 border-0 bg-transparent px-1 py-1 text-sm text-slate-800 outline-none dark:text-slate-100"
             placeholder={topics.length === 0 ? "health, kids, work…" : "Add topic"}
             value={topicDraft}
             onChange={(e) => setTopicDraft(e.target.value)}
@@ -259,7 +259,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
               <button
                 key={topic}
                 type="button"
-                className="badge bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300"
+                className="badge chip-idle"
                 onClick={() => addTopic(topic)}
               >
                 + {topic}

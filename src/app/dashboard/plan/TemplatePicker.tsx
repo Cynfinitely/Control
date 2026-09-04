@@ -33,7 +33,7 @@ export default function TemplatePicker({ templates, dayValue, blockCount }: Prop
   return (
     <div className="space-y-4">
       <div className="card">
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">Quick actions</h3>
+        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-100">Quick actions</h3>
         <div className="flex flex-wrap gap-2">
           <form action={copyYesterdayPlan}>
             <input type="hidden" name="planDate" value={dayValue} />
@@ -61,7 +61,7 @@ export default function TemplatePicker({ templates, dayValue, blockCount }: Prop
                 </option>
               ))}
             </select>
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <input name="isDefault" type="checkbox" value="true" />
               Default for this weekday
             </label>
@@ -72,12 +72,12 @@ export default function TemplatePicker({ templates, dayValue, blockCount }: Prop
 
       {templates.length > 0 && (
         <div className="card">
-          <h3 className="mb-2 text-sm font-semibold text-slate-700">Templates</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-100">Templates</h3>
           <div className="space-y-2">
             {templates.map((t) => (
-              <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2">
+              <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-700">
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{t.name}</p>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{t.name}</p>
                   <p className="text-xs text-slate-400">
                     {t.blockCount} blocks
                     {t.isDefault && " · default"}
@@ -98,7 +98,7 @@ export default function TemplatePicker({ templates, dayValue, blockCount }: Prop
                   </form>
                   <form action={deletePlanTemplate}>
                     <input type="hidden" name="id" value={t.id} />
-                    <SubmitButton className="btn-ghost text-xs text-red-600">Delete</SubmitButton>
+                    <SubmitButton className="btn-ghost text-xs text-red-600 dark:text-red-400">Delete</SubmitButton>
                   </form>
                 </div>
               </div>

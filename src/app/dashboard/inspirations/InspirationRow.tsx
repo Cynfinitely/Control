@@ -20,7 +20,7 @@ export default function InspirationRow({ id, text, author }: Props) {
   return (
     <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
       <blockquote className="text-slate-700 dark:text-slate-200">&ldquo;{text}&rdquo;</blockquote>
-      {author && <p className="mt-2 text-sm text-slate-500">— {author}</p>}
+      {author && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">— {author}</p>}
       <details className="mt-3">
         <summary className="cursor-pointer text-xs text-brand-600">Edit</summary>
         <FormAction action={updateInspirationForm} successMessage="Inspiration updated" className="mt-3 space-y-3">
@@ -58,7 +58,7 @@ export default function InspirationRow({ id, text, author }: Props) {
           title="Delete inspiration?"
           message="This quote or note will be removed from your library."
           label="Delete inspiration"
-          className="text-xs text-slate-400 hover:text-red-500"
+          className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400"
           onConfirm={() => {
             startTransition(async () => {
               const fd = new FormData();

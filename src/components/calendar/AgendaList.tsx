@@ -89,7 +89,7 @@ export default function AgendaList({
                 onClick={() => onSelectReminder(row.rem.id)}
                 className="card flex w-full items-start gap-3 border-amber-200 text-left dark:border-amber-900"
               >
-                <span className="w-24 shrink-0 text-xs text-amber-700">Reminder</span>
+                <span className="w-24 shrink-0 text-xs text-amber-700 dark:text-amber-300">Reminder</span>
                 <span className="font-medium">{row.rem.title}</span>
               </button>
             )}

@@ -31,7 +31,7 @@ export default function PlanPreview({
         <div>
           <h2 className="section-title">Today&apos;s plan</h2>
           {stats.totalBlocks > 0 || todoTotal > 0 ? (
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {todoTotal > 0 && (
                 <>
                   {todoOpen > 0 ? `${todoOpen} open` : "All done"}
@@ -56,7 +56,7 @@ export default function PlanPreview({
       </div>
 
       {stats.totalBlocks > 0 && (
-        <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100">
+        <div className="mb-4 h-2 overflow-hidden rounded-full progress-track">
           <div
             className="h-full rounded-full bg-brand-500 transition-all"
             style={{ width: `${stats.completionPct}%` }}
@@ -65,13 +65,13 @@ export default function PlanPreview({
       )}
 
       {isToday && stats.runningBehindCount > 0 && (
-        <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
           Running behind on {stats.runningBehindCount} block{stats.runningBehindCount === 1 ? "" : "s"}
         </p>
       )}
 
       {stats.hasOverlaps && (
-        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
           Some blocks overlap — review your schedule
         </p>
       )}
@@ -90,7 +90,7 @@ export default function PlanPreview({
                 key={block.id}
                 className={`flex items-start gap-3 rounded-lg border px-3 py-2 ${kindColor(block.kind as PlanKind, block.color)} ${active ? "ring-2 ring-brand-400" : ""}`}
               >
-                <span className="shrink-0 text-xs font-medium text-slate-500">
+                <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
                   {block.startTime}
                 </span>
                 <span className={`min-w-0 flex-1 truncate text-sm ${block.status === "done" ? "line-through opacity-70" : ""}`}>
@@ -98,7 +98,7 @@ export default function PlanPreview({
                 </span>
                 {active && <Icon name="calendar" className="h-4 w-4 shrink-0 text-brand-500" />}
                 {overdue && !active && (
-                  <span className="shrink-0 text-xs text-red-600">Late</span>
+                  <span className="shrink-0 text-xs text-red-600 dark:text-red-400">Late</span>
                 )}
               </div>
             );

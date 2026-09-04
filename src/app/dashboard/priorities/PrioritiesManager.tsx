@@ -75,7 +75,7 @@ export default function PrioritiesManager({ priorities }: Props) {
       )}
 
       {atCap && (
-        <p className="mb-6 text-sm text-slate-500">
+        <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
           You&apos;ve reached the maximum of {MAX_LIFE_PRIORITIES} priorities. Remove one to add another.
         </p>
       )}

@@ -74,11 +74,11 @@ function GoalMilestones({ goal, pending }: { goal: GoalItem; pending: boolean })
                 {m.done ? <Icon name="check" className="h-2.5 w-2.5" /> : null}
               </SubmitButton>
             </form>
-            <span className={m.done ? "text-slate-400 line-through" : "text-slate-700 dark:text-slate-200"}>{m.title}</span>
+            <span className={m.done ? "text-slate-400 line-through dark:text-slate-500" : "text-slate-700 dark:text-slate-200"}>{m.title}</span>
             <form action={deleteMilestone}>
               <input type="hidden" name="id" value={m.id} />
               <input type="hidden" name="goalId" value={goal.id} />
-              <SubmitButton className="text-slate-300 hover:text-red-500" disabled={pending} aria-label="Delete milestone">
+              <SubmitButton className="text-slate-300 hover:text-red-500 dark:hover:text-red-400" disabled={pending} aria-label="Delete milestone">
                 <Icon name="trash" className="h-3 w-3" />
               </SubmitButton>
             </form>
@@ -106,7 +106,7 @@ function GoalCheckIns({ goal }: { goal: GoalItem }) {
     >
       <ul className="space-y-0.5">
         {goal.checkIns.map((c) => (
-          <li key={c.id} className="text-xs text-slate-500">
+          <li key={c.id} className="text-xs text-slate-500 dark:text-slate-400">
             +{c.value} · {formatDate(c.date)}
             {c.note && ` · ${c.note}`}
           </li>
@@ -137,13 +137,13 @@ function GoalRow({
       <div className={`card py-3 ${isDone ? "opacity-70" : ""}`}>
         <div className="flex flex-wrap items-start gap-3">
           <div className="min-w-0 flex-1">
-            <p className={`font-medium ${isDone ? "text-slate-500 line-through" : "text-slate-800 dark:text-slate-100"}`}>
+            <p className={`font-medium ${isDone ? "text-slate-500 line-through dark:text-slate-400" : "text-slate-800 dark:text-slate-100"}`}>
               {goal.title}
             </p>
             <p className="text-sm text-slate-400">
               {Math.round(goal.currentValue)} / {Math.round(target)}
               {goal.linkType && (
-                <span className="ml-2 badge bg-blue-50 text-blue-600">auto: {goal.linkType}</span>
+                <span className="ml-2 badge bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300">auto: {goal.linkType}</span>
               )}
             </p>
           </div>
@@ -157,7 +157,7 @@ function GoalRow({
               +1
             </button>
           )}
-          {isDone && <span className="badge bg-green-100 text-green-700">Done</span>}
+          {isDone && <span className="badge-success">Done</span>}
           <DeleteConfirmButton
             disabled={pending}
             title="Delete goal?"
@@ -187,7 +187,7 @@ function GoalRow({
         >
           {isDone ? <Icon name="check" className="h-3.5 w-3.5" /> : null}
         </button>
-        <p className={`min-w-0 flex-1 ${isDone ? "text-slate-500 line-through" : "font-medium text-slate-800 dark:text-slate-100"}`}>
+        <p className={`min-w-0 flex-1 ${isDone ? "text-slate-500 line-through dark:text-slate-400" : "font-medium text-slate-800 dark:text-slate-100"}`}>
           {goal.title}
         </p>
         <DeleteConfirmButton

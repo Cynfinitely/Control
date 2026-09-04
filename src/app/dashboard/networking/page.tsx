@@ -101,7 +101,7 @@ async function PeopleTab({
   return (
     <>
       <details className="card mb-4">
-        <summary className="cursor-pointer font-medium text-brand-700">+ Add person</summary>
+        <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add person</summary>
         <form action={createContact} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="label">Name</label>
@@ -128,7 +128,9 @@ async function PeopleTab({
           <Link
             href={href(null)}
             className={`rounded-full px-3 py-1 text-xs font-medium ${
-              !relationshipFilter ? "bg-brand-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200"
+              !relationshipFilter
+                ? "bg-brand-600 text-white"
+                : "bg-white text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700"
             }`}
           >
             All people
@@ -140,7 +142,7 @@ async function PeopleTab({
               className={`rounded-full px-3 py-1 text-xs font-medium ${
                 relationshipFilter?.toLowerCase() === rel.toLowerCase()
                   ? "bg-brand-600 text-white"
-                  : "bg-white text-slate-600 ring-1 ring-slate-200"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700"
               }`}
             >
               {RELATIONSHIP_LABELS[rel] ?? rel}
@@ -190,7 +192,7 @@ async function InsightsTab({ userId, period }: { userId: string; period: Network
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {formatDate(range.from)} – {formatDate(range.to)}
         </p>
         <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-800">
@@ -199,7 +201,9 @@ async function InsightsTab({ userId, period }: { userId: string; period: Network
               key={p.id}
               href={`/dashboard/networking?tab=insights&period=${p.id}`}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                p.id === period ? "bg-brand-600 text-white" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300"
+                p.id === period
+                  ? "bg-brand-600 text-white"
+                  : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700"
               }`}
             >
               {p.label}

@@ -180,7 +180,7 @@ export default function EventForm({ open, mode, initial, onClose, onSaved }: Pro
             </button>
           </div>
 
-          {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+          {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
           <div className="space-y-3">
             <div>
@@ -306,7 +306,7 @@ export default function EventForm({ open, mode, initial, onClose, onSaved }: Pro
                     value={interval}
                     onChange={(e) => setInterval(Math.max(1, Number(e.target.value) || 1))}
                   />
-                  <span className="ml-2 text-sm text-slate-500">
+                  <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">
                     {freq === "DAILY"
                       ? "day(s)"
                       : freq === "WEEKLY"
@@ -347,7 +347,7 @@ export default function EventForm({ open, mode, initial, onClose, onSaved }: Pro
                   />
                 </div>
                 {rrule && (
-                  <p className="font-mono text-xs text-slate-400 break-all">RRULE:{rrule}</p>
+                  <p className="break-all font-mono text-xs text-slate-400">RRULE:{rrule}</p>
                 )}
               </div>
             )}

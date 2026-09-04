@@ -17,7 +17,7 @@ export default function DeleteConfirmButton({
   onConfirm,
   title = "Delete item?",
   message = "This action cannot be undone.",
-  className = "touch-target shrink-0 text-slate-300 hover:text-red-500 disabled:opacity-50",
+  className = "touch-target shrink-0 text-slate-300 hover:text-red-500 disabled:opacity-50 dark:hover:text-red-400",
   label = "Delete",
   disabled,
 }: Props) {

@@ -64,7 +64,7 @@ export default function LedgerRangeNavigator({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="section-title">Spending log</h2>
-        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
           {PERIODS.map((p) => (
             <button
               key={p.value}
@@ -73,7 +73,7 @@ export default function LedgerRangeNavigator({
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                 p.value === period
                   ? "bg-brand-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-white"
+                  : "text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700"
               }`}
             >
               {p.label}
@@ -110,7 +110,7 @@ export default function LedgerRangeNavigator({
               className="input"
             />
           </div>
-          <p className="pb-2 text-sm text-slate-500">{label}</p>
+          <p className="pb-2 text-sm text-slate-500 dark:text-slate-400">{label}</p>
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
@@ -124,7 +124,7 @@ export default function LedgerRangeNavigator({
           </button>
           <div>
             <p className="font-semibold text-slate-900 dark:text-slate-100">{label}</p>
-            <p className="text-xs text-slate-400 capitalize">{period} view</p>
+            <p className="text-xs capitalize text-slate-400">{period} view</p>
           </div>
           <button
             type="button"

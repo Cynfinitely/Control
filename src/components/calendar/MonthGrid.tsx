@@ -54,7 +54,7 @@ export default function MonthGrid({
 
   return (
     <div className="card overflow-hidden p-0">
-      <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50 text-center text-[10px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 sm:text-xs">
+      <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50 text-center text-[10px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400 sm:text-xs">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
           <div key={d} className="px-0.5 py-1.5 sm:px-1 sm:py-2">
             <span className="sm:hidden">{d[0]}</span>
@@ -78,7 +78,7 @@ export default function MonthGrid({
               onDoubleClick={() => onCreateAt(day)}
               className={clsx(
                 "min-h-[3.25rem] border-b border-r border-slate-100 p-0.5 text-left align-top transition hover:bg-brand-50/50 dark:border-slate-800 dark:hover:bg-brand-950/30 sm:min-h-[6.5rem] sm:p-1",
-                !inMonth && "bg-slate-50/60 text-slate-400 dark:bg-slate-950/40",
+                !inMonth && "bg-slate-50/60 text-slate-400 dark:bg-slate-950/40 dark:text-slate-500",
                 isToday && "bg-brand-50/40 dark:bg-brand-950/20"
               )}
             >

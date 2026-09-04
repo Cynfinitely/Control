@@ -12,7 +12,7 @@ export default function LifePrioritiesCard({ items }: Props) {
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="section-title">Life priorities</h2>
-          <p className="mt-1 text-sm text-slate-500">What you serve first.</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">What you serve first.</p>
         </div>
         <Link href="/dashboard/priorities" className="btn-ghost text-sm">
           {items.length === 0 ? "Add" : "Manage"}

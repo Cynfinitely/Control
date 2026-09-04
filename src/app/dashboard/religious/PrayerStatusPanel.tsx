@@ -39,7 +39,7 @@ export default function PrayerStatusPanel({ dayValue, initialStatuses }: Props) 
         const current = statuses[p];
         return (
           <div key={p} className="flex flex-wrap items-center gap-3">
-            <span className="w-20 font-medium capitalize text-slate-700">{p}</span>
+            <span className="w-20 font-medium capitalize text-slate-700 dark:text-slate-100">{p}</span>
             <div className="flex gap-2">
               {(["ontime", "missed"] as const).map((status) => (
                 <button
@@ -47,12 +47,12 @@ export default function PrayerStatusPanel({ dayValue, initialStatuses }: Props) 
                   type="button"
                   disabled={isPending}
                   onClick={() => handleSetPrayer(p, status)}
-                  className={`touch-target badge px-4 py-2 text-sm disabled:opacity-50 ${
+                  className={`touch-target px-4 py-2 text-sm disabled:opacity-50 ${
                     current === status
                       ? status === "ontime"
-                        ? "bg-green-100 text-green-700 ring-2 ring-offset-1 ring-green-300"
-                        : "bg-red-100 text-red-700 ring-2 ring-offset-1 ring-red-300"
-                      : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
+                        ? "badge-success ring-2 ring-offset-1 ring-green-300 dark:ring-offset-slate-900"
+                        : "badge-danger ring-2 ring-offset-1 ring-red-300 dark:ring-offset-slate-900"
+                      : "badge bg-white text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700 dark:hover:bg-slate-700"
                   }`}
                 >
                   {status === "ontime" ? "On time" : "Missed"}

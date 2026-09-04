@@ -37,13 +37,13 @@ export default function DailyReadingsPanel({ items, todayEntries, dayValue }: Pr
   return (
     <div className="card mb-6">
       <h2 className="section-title">Daily readings</h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Track a personal set of daily readings. Add, edit, or remove items any time.
       </p>
 
       {items.length === 0 ? (
         <div className="mt-4 space-y-3">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             No readings yet. Start with a suggested set (Quran, Jawshan, Risale-i Nur, Gülen) or add
             your own.
           </p>
@@ -71,15 +71,15 @@ export default function DailyReadingsPanel({ items, todayEntries, dayValue }: Pr
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-medium text-slate-800 dark:text-slate-100">{item.name}</p>
-                      {done && <span className="badge bg-emerald-100 text-emerald-700">Done</span>}
+                      {done && <span className="badge bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Done</span>}
                       {item.linkKind === "quran" && (
-                        <span className="badge bg-brand-50 text-brand-700">linked to khatm</span>
+                        <span className="badge bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300">linked to khatm</span>
                       )}
                     </div>
-                    <p className="mt-0.5 text-sm text-slate-500">
+                    <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                       {logged}/{item.dailyTarget} {unitLabel(item.unit, item.dailyTarget)}
                     </p>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full progress-track">
                       <div className="h-full bg-brand-500" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
@@ -107,7 +107,7 @@ export default function DailyReadingsPanel({ items, todayEntries, dayValue }: Pr
       )}
 
       <details className="mt-4">
-        <summary className="cursor-pointer text-sm font-medium text-brand-700">Manage readings</summary>
+        <summary className="cursor-pointer text-sm font-medium text-brand-700 dark:text-brand-300">Manage readings</summary>
         <form action={saveDailyReadingItem} className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-4">
           <input name="name" className="input sm:col-span-2" placeholder="Name" required />
           <input
@@ -146,7 +146,7 @@ export default function DailyReadingsPanel({ items, todayEntries, dayValue }: Pr
               {item.linkKind === "quran" ? (
                 <>
                   <input type="hidden" name="unit" value="pages" />
-                  <p className="input flex items-center text-slate-500">pages</p>
+                  <p className="input flex items-center text-slate-500 dark:text-slate-400">pages</p>
                 </>
               ) : (
                 <select name="unit" className="input" defaultValue={item.unit}>
@@ -160,7 +160,7 @@ export default function DailyReadingsPanel({ items, todayEntries, dayValue }: Pr
             </form>
             <form action={deleteDailyReadingItem}>
               <input type="hidden" name="id" value={item.id} />
-              <SubmitButton className="btn-ghost touch-target text-sm text-red-600">Remove</SubmitButton>
+              <SubmitButton className="btn-ghost touch-target text-sm text-red-600 dark:text-red-400">Remove</SubmitButton>
             </form>
           </div>
         ))}

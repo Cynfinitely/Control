@@ -91,20 +91,20 @@ function BlockRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`font-medium ${isDone ? "line-through" : ""}`}>{block.title}</span>
-            <span className="rounded bg-white/60 px-1.5 py-0.5 text-xs">
+            <span className="rounded bg-white/60 px-1.5 py-0.5 text-xs dark:bg-slate-800/60">
               {PLAN_KIND_LABELS[block.kind as PlanKind] ?? block.kind}
             </span>
             {overdue && (
-              <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700">Running behind</span>
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">Running behind</span>
             )}
             {hasOverlap && (
-              <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700">Overlap</span>
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">Overlap</span>
             )}
           </div>
-          <p className="mt-0.5 text-sm text-slate-600">
+          <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
             {block.startTime} – {block.endTime}
           </p>
-          {block.notes && <p className="mt-1 text-xs text-slate-500">{block.notes}</p>}
+          {block.notes && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{block.notes}</p>}
           {moduleLink && (
             <Link href={moduleLink} className="mt-1 inline-block text-xs text-brand-600">
               Open in module →
@@ -142,7 +142,7 @@ function BlockRow({
       {editing && (
         <form
           action={updatePlanBlock}
-          className="mt-3 grid grid-cols-1 gap-2 border-t border-slate-200/60 pt-3 sm:grid-cols-2"
+          className="mt-3 grid grid-cols-1 gap-2 border-t border-slate-200/60 pt-3 sm:grid-cols-2 dark:border-slate-700/60"
           onSubmit={() => setEditing(false)}
         >
           <input type="hidden" name="id" value={block.id} />

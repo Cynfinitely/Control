@@ -107,7 +107,7 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
 
       {mode === "read" ? (
         filtered.length === 0 ? (
-          <p className="text-sm text-slate-500">No principles match your search.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No principles match your search.</p>
         ) : (
           <article className="mx-auto max-w-2xl">
             {readRows.map((row, i) =>
@@ -182,7 +182,7 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
           </FormAction>
 
           {filtered.length === 0 ? (
-            <p className="text-sm text-slate-500">No principles match your search.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">No principles match your search.</p>
           ) : (
             <div className="space-y-2">
               {filtered.map((item) => (
@@ -242,7 +242,7 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
                       title="Archive principle?"
                       message="This principle will be hidden from your list. You can add it again later if needed."
                       label="Archive"
-                      className="text-xs text-slate-400 hover:text-red-500"
+                      className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400"
                       onConfirm={() => {
                         startTransition(async () => {
                           const fd = new FormData();

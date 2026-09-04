@@ -52,7 +52,7 @@ export default async function AdminPage() {
           return (
             <div key={inv.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="font-mono font-medium text-slate-800">{inv.code}</p>
+                <p className="font-mono font-medium text-slate-800 dark:text-slate-100">{inv.code}</p>
                 <p className="text-xs text-slate-400">
                   {inv.uses}/{inv.maxUses} used
                   {inv.email && ` · for ${inv.email}`}
@@ -62,14 +62,14 @@ export default async function AdminPage() {
               </div>
               <div className="flex items-center gap-3">
                 {(exhausted || expired) && (
-                  <span className="badge bg-slate-100 text-slate-500">
+                  <span className="badge-muted">
                     {expired ? "expired" : "used up"}
                   </span>
                 )}
                 <form action={deleteInvite}>
                   <input type="hidden" name="id" value={inv.id} />
                   <SubmitIconButton
-                    className="text-slate-300 hover:text-red-500"
+                    className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
                     icon={<Icon name="trash" className="h-4 w-4" />}
                   />
                 </form>
@@ -84,17 +84,13 @@ export default async function AdminPage() {
         {users.map((u) => (
           <div key={u.id} className="card flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="font-medium text-slate-800">
+              <p className="font-medium text-slate-800 dark:text-slate-100">
                 {u.name ?? "(no name)"}
-                {u.role === "admin" && <span className="ml-2 badge bg-brand-100 text-brand-700">admin</span>}
+                {u.role === "admin" && <span className="ml-2 badge bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-300">admin</span>}
               </p>
               <p className="text-xs text-slate-400">{u.email}</p>
             </div>
-            <span
-              className={`badge ${
-                u.emailVerifiedAt ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-              }`}
-            >
+            <span className={u.emailVerifiedAt ? "badge-success" : "badge-warning"}>
               {u.emailVerifiedAt ? "verified" : "unverified"}
             </span>
           </div>

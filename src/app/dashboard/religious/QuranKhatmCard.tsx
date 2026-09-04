@@ -36,19 +36,19 @@ export default function QuranKhatmCard({
   return (
     <div className="card mb-6">
       <h2 className="section-title">Quran khatm</h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Next page to read in the 604-page mushaf. Logging pages moves the bookmark and counts toward
         a Quran daily reading if you have one.
       </p>
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-slate-500">Currently at</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Currently at</p>
           <p className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             {currentPage}
             <span className="text-lg font-semibold text-slate-400"> / {QURAN_TOTAL_PAGES}</span>
           </p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Juz {juz} of 30 · Khatm {khatmNumber}
             {khatmsCompleted > 0 ? ` · ${khatmsCompleted} completed` : ""}
           </p>
@@ -56,7 +56,7 @@ export default function QuranKhatmCard({
         <p className="text-sm font-medium text-brand-700 dark:text-brand-300">{pct}% of this khatm</p>
       </div>
 
-      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full progress-track">
         <div className="h-full bg-brand-500" style={{ width: `${pct}%` }} />
       </div>
 
@@ -86,7 +86,7 @@ export default function QuranKhatmCard({
       </div>
 
       <details className="mt-4">
-        <summary className="cursor-pointer text-sm font-medium text-brand-700">Set current page</summary>
+        <summary className="cursor-pointer text-sm font-medium text-brand-700 dark:text-brand-300">Set current page</summary>
         <form action={setQuranPosition} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label className="label" htmlFor="quran-current-page">
@@ -124,9 +124,9 @@ export default function QuranKhatmCard({
 
       {sessions.length > 0 && (
         <div className="mt-4 space-y-1 border-t border-slate-100 pt-3 dark:border-slate-700">
-          <p className="text-xs font-medium text-slate-500">Recent sessions</p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Recent sessions</p>
           {sessions.map((session) => (
-            <div key={session.id} className="flex items-start justify-between gap-3 text-sm text-slate-500">
+            <div key={session.id} className="flex items-start justify-between gap-3 text-sm text-slate-500 dark:text-slate-400">
               <span className="min-w-0">
                 {formatDate(session.date)}
                 {session.fromPage != null && session.toPage != null && (

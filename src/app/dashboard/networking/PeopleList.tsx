@@ -52,11 +52,11 @@ export default function PeopleList({ people }: { people: PersonRow[] }) {
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {p.overdue && (
-                    <span className="badge bg-amber-100 text-amber-700">
+                    <span className="badge-warning">
                       {p.lastTouch ? `${p.touchCadenceDays ?? 30}d+ silent` : "no contact"}
                     </span>
                   )}
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     {p.lastTouch ? formatDaysAgo(p.lastTouch) : "Never"}
                     {p.lastTouchType && p.lastTouchType !== "call" ? ` · ${p.lastTouchType}` : ""}
                   </span>

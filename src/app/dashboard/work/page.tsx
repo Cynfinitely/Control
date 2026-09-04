@@ -39,7 +39,7 @@ export default async function WorkPage({
       <div className="card mb-6 flex flex-wrap items-center justify-between gap-3">
         <DayNavigator basePath="/dashboard/work" dayValue={dayValue} dayLabel={dayLabel} />
         {totalCount > 0 && (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {doneCount}/{totalCount} done
           </p>
         )}

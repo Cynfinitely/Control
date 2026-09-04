@@ -52,7 +52,7 @@ export default async function PlanPage({
       <div className="card mb-6">
         <DayNavigator basePath="/dashboard/plan" dayValue={dayValue} dayLabel={dayLabel} />
         {stats.totalBlocks > 0 && (
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             {stats.doneBlocks}/{stats.totalBlocks} done · {stats.completionPct}% complete
             {stats.hasOverlaps && " · overlaps detected"}
           </p>
@@ -60,8 +60,8 @@ export default async function PlanPage({
       </div>
 
       {blocks.length === 0 && defaultTemplate && (
-        <div className="card mb-6 border-brand-200 bg-brand-50/50">
-          <p className="text-sm text-slate-700">
+        <div className="card mb-6 border-brand-200 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-950/30">
+          <p className="text-sm text-slate-700 dark:text-slate-200">
             Empty day — apply your default template &quot;{defaultTemplate.name}&quot;?
           </p>
           <form action={applyPlanTemplate} className="mt-2">

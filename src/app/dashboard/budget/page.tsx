@@ -95,7 +95,7 @@ export default async function BudgetPage({
             {monthData.uncategorizedCount > 0 && (
               <Link
                 href={`/dashboard/budget?month=${monthKey}&view=uncategorized`}
-                className="btn-ghost touch-target text-amber-700"
+                className="btn-ghost touch-target text-amber-700 dark:text-amber-400"
               >
                 Uncategorized ({monthData.uncategorizedCount})
               </Link>
@@ -117,7 +117,7 @@ export default async function BudgetPage({
           <ul className="space-y-2 text-sm">
             {monthData.recentBatches.map((batch) => (
               <li key={batch.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-slate-700">
+                <span className="text-slate-700 dark:text-slate-100">
                   <span className="font-medium">{batch.filename}</span>
                   <span className="text-slate-400">
                     {" "}
@@ -129,7 +129,7 @@ export default async function BudgetPage({
                 </span>
                 <FormAction action={undoImportBatchForm} successMessage="Import undone">
                   <input type="hidden" name="batchId" value={batch.id} />
-                  <SubmitButton className="btn-ghost touch-target text-red-600" pendingLabel="Undoing…">
+                  <SubmitButton className="btn-ghost touch-target text-red-600 dark:text-red-400" pendingLabel="Undoing…">
                     Undo
                   </SubmitButton>
                 </FormAction>
@@ -176,26 +176,26 @@ export default async function BudgetPage({
               <>
                 <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="card">
-                    <p className="text-sm text-slate-500">Income</p>
-                    <p className="mt-2 text-2xl font-bold text-emerald-600">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Income</p>
+                    <p className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                       {formatEuro(monthData.incomeCents)}
                     </p>
                   </div>
                   <div className="card">
-                    <p className="text-sm text-slate-500">Expenses</p>
-                    <p className="mt-2 text-2xl font-bold text-red-600">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Expenses</p>
+                    <p className="mt-2 text-2xl font-bold text-red-600 dark:text-red-400">
                       {formatEuro(monthData.expenseCents)}
                     </p>
                   </div>
                   <div className="card">
-                    <p className="text-sm text-slate-500">Net</p>
-                    <p className="mt-2 text-2xl font-bold text-slate-900">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Net</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
                       {formatEuroSigned(monthData.netCents)}
                     </p>
                   </div>
                   <div className="card">
-                    <p className="text-sm text-slate-500">Savings rate</p>
-                    <p className="mt-2 text-2xl font-bold text-slate-900">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Savings rate</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
                       {monthData.savingsRate === null ? "—" : `${monthData.savingsRate}%`}
                     </p>
                     <p className="text-xs text-slate-400">
@@ -217,10 +217,10 @@ export default async function BudgetPage({
                       {monthData.breakdown.map((row) => (
                         <div key={row.categoryId}>
                           <div className="mb-1 flex justify-between text-sm">
-                            <span className="font-medium text-slate-700">{row.name}</span>
-                            <span className="text-slate-600">{formatEuro(row.totalCents)}</span>
+                            <span className="font-medium text-slate-700 dark:text-slate-100">{row.name}</span>
+                            <span className="text-slate-600 dark:text-slate-400">{formatEuro(row.totalCents)}</span>
                           </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div className="h-2 w-full overflow-hidden rounded-full progress-track">
                             <div
                               className="h-full bg-brand-500"
                               style={{

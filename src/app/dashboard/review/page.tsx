@@ -62,32 +62,32 @@ export default async function WeeklyReviewPage() {
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <div className="card">
-          <p className="text-sm text-slate-500">Backlog</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Backlog</p>
           <p className="text-2xl font-bold">{backlog.length}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Goals done</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Goals done</p>
           <p className="text-2xl font-bold">
             {completedGoals}/{goals.length}
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Spent this week</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Spent this week</p>
           <p className="text-2xl font-bold">{formatEuro(weekExpensesCents)}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Qaza pending</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Qaza pending</p>
           <p className="text-2xl font-bold">{pendingQaza}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Overdue people</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Overdue people</p>
           <p className="text-2xl font-bold">{overduePeople.length}</p>
         </div>
       </div>
 
       <section className="card mb-6">
         <h2 className="section-title mb-2">1. Clear past todos</h2>
-        <p className="mb-3 text-sm text-slate-500">
+        <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
           Move unfinished todos from previous days into backlog so today starts clean.
         </p>
         {staleCount > 0 ? (
@@ -102,7 +102,7 @@ export default async function WeeklyReviewPage() {
         {backlog.length === 0 ? (
           <p className="text-sm text-slate-400">Backlog is empty — nice work.</p>
         ) : (
-          <ul className="space-y-1 text-sm text-slate-600">
+          <ul className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
             {backlog.slice(0, 8).map((t) => (
               <li key={t.id}>· {t.title}</li>
             ))}
@@ -116,7 +116,7 @@ export default async function WeeklyReviewPage() {
 
       <section className="card mb-6">
         <h2 className="section-title mb-2">3. Weekly goals ({incompleteGoals} active)</h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {completedGoals} completed · {incompleteGoals} still active this week.
         </p>
         <Link href="/dashboard/goals" className="btn-ghost mt-3 inline-block text-sm">
@@ -126,7 +126,7 @@ export default async function WeeklyReviewPage() {
 
       <section className="card mb-6">
         <h2 className="section-title mb-2">4. Spiritual catch-up</h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {pendingQaza > 0
             ? `${pendingQaza} qaza prayers waiting (daily misses + historical debt) — work through them on the religious page.`
             : "No pending qaza — keep it up."}
@@ -138,7 +138,7 @@ export default async function WeeklyReviewPage() {
 
       <section className="card mb-6">
         <h2 className="section-title mb-2">5. Relationships</h2>
-        <p className="mb-2 text-sm text-slate-500">
+        <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
           Stay in touch with family, friends, and professional contacts — log calls when you talk.
         </p>
         {overduePeople.length === 0 ? (
@@ -163,7 +163,7 @@ export default async function WeeklyReviewPage() {
 
       <section className="card mb-6">
         <h2 className="section-title mb-2">6. Plan next week</h2>
-        <p className="mb-3 text-sm text-slate-500">
+        <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
           Schedule tomorrow and the week ahead with time blocks — todos, meals, and prayers.
         </p>
         <Link
@@ -172,7 +172,7 @@ export default async function WeeklyReviewPage() {
         >
           Plan tomorrow →
         </Link>
-        <p className="mt-3 text-sm text-slate-500">
+        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
           {shoppingRemaining > 0
             ? `${shoppingRemaining} shopping items left for this week&apos;s meal plan.`
             : "Meal plan shopping looks complete."}

@@ -63,7 +63,7 @@ export default function UncategorizedQueue({ entries, categories }: Props) {
         <FormAction
           action={categorizeTransactionsBulkForm}
           successMessage="Categories saved"
-          className="card flex flex-col items-stretch gap-3 border-brand-200 bg-brand-50/50 sm:flex-row sm:flex-wrap sm:items-end"
+          className="card flex flex-col items-stretch gap-3 border-brand-200 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-950/50 sm:flex-row sm:flex-wrap sm:items-end"
         >
           {[...selected].map((id) => (
             <input key={id} type="hidden" name="ids" value={id} />
@@ -98,7 +98,7 @@ export default function UncategorizedQueue({ entries, categories }: Props) {
                   aria-label="Select transaction"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-slate-800">
+                  <p className="font-medium text-slate-800 dark:text-slate-100">
                     {entry.rawDescription || entry.note || entry.merchantKey || "Transaction"}
                   </p>
                   <p className="text-xs text-slate-400">
@@ -108,7 +108,7 @@ export default function UncategorizedQueue({ entries, categories }: Props) {
                 </div>
                 <p
                   className={`shrink-0 font-semibold ${
-                    entry.type === "income" ? "text-emerald-600" : "text-red-600"
+                    entry.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
                   }`}
                 >
                   {entry.type === "income" ? "+" : "−"}
@@ -118,7 +118,7 @@ export default function UncategorizedQueue({ entries, categories }: Props) {
               <FormAction
                 action={categorizeTransactionForm}
                 successMessage="Category saved"
-                className="mt-3 flex flex-col items-stretch gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-end"
+                className="mt-3 flex flex-col items-stretch gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-end dark:border-slate-700"
               >
                 <input type="hidden" name="id" value={entry.id} />
                 <div className="min-w-0 flex-1 sm:min-w-[10rem]">

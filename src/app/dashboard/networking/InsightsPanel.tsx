@@ -20,9 +20,9 @@ function BarList({
         <div key={item.key}>
           <div className="mb-1 flex justify-between gap-2 text-sm">
             <span className="truncate font-medium text-slate-700 dark:text-slate-200">{label(item)}</span>
-            <span className="shrink-0 text-slate-600">{item.count}</span>
+            <span className="shrink-0 text-slate-600 dark:text-slate-400">{item.count}</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+          <div className="progress-track h-2 w-full overflow-hidden rounded-full">
             <div className="h-full bg-brand-500" style={{ width: `${Math.round((item.count / max) * 100)}%` }} />
           </div>
         </div>
@@ -44,15 +44,15 @@ export default function InsightsPanel({
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="card">
-          <p className="text-sm text-slate-500">Touches</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Touches</p>
           <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{insights.touches}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">Calls</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Calls</p>
           <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{insights.calls}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-slate-500">People reached</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">People reached</p>
           <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{insights.uniquePeople}</p>
         </div>
       </div>
@@ -112,14 +112,14 @@ export default function InsightsPanel({
               {insights.overdue.map((c) => (
                 <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
                   <div>
-                    <Link href={`/dashboard/networking/${c.id}`} className="font-medium text-brand-700 hover:underline">
+                    <Link href={`/dashboard/networking/${c.id}`} className="font-medium text-brand-700 hover:underline dark:text-brand-400">
                       {c.name}
                     </Link>
                     {relationshipLabel(c.relationship) && (
                       <span className="text-slate-400"> · {relationshipLabel(c.relationship)}</span>
                     )}
                   </div>
-                  <span className="badge bg-amber-100 text-amber-700">
+                  <span className="badge-warning">
                     {c.lastTouch ? formatDaysAgo(c.lastTouch) : "no contact"}
                   </span>
                 </li>
@@ -138,7 +138,7 @@ export default function InsightsPanel({
                 <div key={t.topic}>
                   <div className="mb-1 flex justify-between text-sm">
                     <span className="font-medium text-slate-700 dark:text-slate-200">{t.topic}</span>
-                    <span className="text-slate-500">{t.count}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{t.count}</span>
                   </div>
                   <p className="text-xs text-slate-400">
                     {t.people.map((p) => `${p.name} (${p.count})`).join(" · ")}

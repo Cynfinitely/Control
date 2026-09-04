@@ -23,9 +23,9 @@ type OptimisticAction =
   | { type: "backlog"; id: string };
 
 const PRIORITY_STYLE: Record<string, string> = {
-  high: "bg-red-100 text-red-700",
-  medium: "bg-slate-100 text-slate-500",
-  low: "bg-blue-50 text-blue-600",
+  high: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+  medium: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300",
+  low: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300",
 };
 
 function applyOptimistic(todos: TodoItem[], action: OptimisticAction): TodoItem[] {
@@ -79,7 +79,7 @@ function TodoRow({
       <div className="min-w-0 flex-1">
         <p
           className={`${compact ? "text-sm" : ""} ${
-            isDone ? "text-slate-500 line-through" : "font-medium text-slate-800 dark:text-slate-100"
+            isDone ? "text-slate-500 line-through dark:text-slate-400" : "font-medium text-slate-800 dark:text-slate-100"
           }`}
         >
           {todo.title}
@@ -90,10 +90,10 @@ function TodoRow({
               {todo.priority}
             </span>
             {todo.category && (
-              <span className="badge bg-violet-50 text-xs text-violet-600">{todo.category}</span>
+              <span className="badge bg-violet-50 text-xs text-violet-600 dark:bg-violet-950 dark:text-violet-300">{todo.category}</span>
             )}
             {todo.dueDate && (
-              <span className={`text-xs ${isOverdue ? "font-medium text-red-600" : "text-slate-400"}`}>
+              <span className={`text-xs ${isOverdue ? "font-medium text-red-600 dark:text-red-400" : "text-slate-400"}`}>
                 due {formatDate(todo.dueDate)}
                 {isOverdue ? " · overdue" : ""}
               </span>

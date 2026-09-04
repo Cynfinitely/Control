@@ -46,7 +46,7 @@ export default function OnboardingChecklist({ items, userCreatedAt }: Props) {
             localStorage.setItem(STORAGE_KEY, "1");
             setDismissed(true);
           }}
-          className="text-xs text-slate-400 hover:text-slate-600"
+          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
           aria-label="Dismiss setup checklist"
         >
           Dismiss
@@ -68,7 +68,7 @@ export default function OnboardingChecklist({ items, userCreatedAt }: Props) {
               >
                 {item.done && <Icon name="check" className="h-3 w-3" />}
               </span>
-              <span className={item.done ? "text-slate-400 line-through" : "text-slate-700 dark:text-slate-200"}>
+              <span className={item.done ? "text-slate-400 line-through dark:text-slate-500" : "text-slate-700 dark:text-slate-200"}>
                 {item.label}
               </span>
             </Link>

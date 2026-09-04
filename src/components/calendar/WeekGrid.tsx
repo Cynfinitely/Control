@@ -50,7 +50,7 @@ export default function WeekGrid({
               className="mb-2 flex w-full items-center justify-between text-left"
               onClick={() => onCreateAt(day)}
             >
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 {day.toLocaleDateString("en-GB", { weekday: "short" })}
               </span>
               <span

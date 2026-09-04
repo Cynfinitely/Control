@@ -74,7 +74,7 @@ export default async function ContactDetail({ params }: { params: { id: string }
 
       <div className="card mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-slate-500">Last contact</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Last contact</p>
           <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">
             {last ? formatDaysAgo(last.date) : "Never"}
           </p>
@@ -86,7 +86,7 @@ export default async function ContactDetail({ params }: { params: { id: string }
           )}
         </div>
         {overdue && (
-          <span className="badge bg-amber-100 text-amber-700">
+          <span className="badge-warning">
             {last ? `${cadenceDays}d+ silent` : "no contact"}
           </span>
         )}

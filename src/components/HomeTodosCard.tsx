@@ -19,7 +19,7 @@ export default function HomeTodosCard({ todos, dayValue }: Props) {
     <section className="card mb-6">
       <CollapsibleSection title="Today's todos" count={todos.length} defaultOpen>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {todos.length === 0
               ? "Add a task for today."
               : `${open} open${done > 0 ? ` · ${done} done` : ""}`}

@@ -70,26 +70,26 @@ export default function SpendingLedger({
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="card py-3">
-          <p className="text-xs text-slate-500">Income</p>
-          <p className="mt-1 text-lg font-bold text-emerald-600">
+          <p className="text-xs text-slate-500 dark:text-slate-400">Income</p>
+          <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400">
             {formatEuro(rangeData.incomeCents)}
           </p>
         </div>
         <div className="card py-3">
-          <p className="text-xs text-slate-500">Expenses</p>
-          <p className="mt-1 text-lg font-bold text-red-600">
+          <p className="text-xs text-slate-500 dark:text-slate-400">Expenses</p>
+          <p className="mt-1 text-lg font-bold text-red-600 dark:text-red-400">
             {formatEuro(rangeData.expenseCents)}
           </p>
         </div>
         <div className="card py-3">
-          <p className="text-xs text-slate-500">Net</p>
-          <p className="mt-1 text-lg font-bold text-slate-900">
+          <p className="text-xs text-slate-500 dark:text-slate-400">Net</p>
+          <p className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">
             {formatEuroSigned(rangeData.netCents)}
           </p>
         </div>
         <div className="card py-3">
-          <p className="text-xs text-slate-500">Transactions</p>
-          <p className="mt-1 text-lg font-bold text-slate-900">{rangeData.transactionCount}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Transactions</p>
+          <p className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">{rangeData.transactionCount}</p>
         </div>
       </div>
 
@@ -101,21 +101,21 @@ export default function SpendingLedger({
             className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium transition ${
               ledger.typeFilter === f.value
                 ? "bg-brand-600 text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                : "chip-idle"
             }`}
           >
             {f.label}
           </Link>
         ))}
         {expenseCategories.length > 0 && (
-          <span className="mx-1 self-center text-slate-300">|</span>
+          <span className="mx-1 self-center text-slate-300 dark:text-slate-600">|</span>
         )}
         <Link
           href={buildBudgetUrl(basePath, searchParams, { category: undefined })}
           className={`rounded-full px-3 py-1 text-sm font-medium transition ${
             !ledger.categoryId
               ? "bg-slate-700 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              : "chip-idle"
           }`}
         >
           All categories
@@ -125,7 +125,7 @@ export default function SpendingLedger({
           className={`rounded-full px-3 py-1 text-sm font-medium transition ${
             ledger.categoryId === "__uncategorized__"
               ? "bg-slate-700 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              : "chip-idle"
           }`}
         >
           Uncategorized
@@ -137,7 +137,7 @@ export default function SpendingLedger({
             className={`rounded-full px-3 py-1 text-sm font-medium transition ${
               ledger.categoryId === cat.id
                 ? "bg-slate-700 text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                : "chip-idle"
             }`}
           >
             {cat.name}
@@ -160,10 +160,10 @@ export default function SpendingLedger({
             return (
               <div key={group.dayKey}>
                 <div className="mb-2 flex items-baseline justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-slate-700">{group.dayLabel}</h3>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-100">{group.dayLabel}</h3>
                   <span
                     className={`text-xs font-medium ${
-                      dayTotal >= 0 ? "text-emerald-600" : "text-red-600"
+                      dayTotal >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
                     }`}
                   >
                     {formatEuroSigned(dayTotal)}
