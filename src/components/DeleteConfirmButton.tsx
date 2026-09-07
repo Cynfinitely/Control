@@ -10,6 +10,7 @@ type Props = {
   message?: string;
   className?: string;
   label?: string;
+  confirmLabel?: string;
   disabled?: boolean;
 };
 
@@ -19,6 +20,7 @@ export default function DeleteConfirmButton({
   message = "This action cannot be undone.",
   className = "touch-target shrink-0 text-slate-300 hover:text-red-500 disabled:opacity-50 dark:hover:text-red-400",
   label = "Delete",
+  confirmLabel = "Delete",
   disabled,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -39,7 +41,7 @@ export default function DeleteConfirmButton({
         open={open}
         title={title}
         message={message}
-        confirmLabel="Delete"
+        confirmLabel={confirmLabel}
         onConfirm={() => {
           setOpen(false);
           onConfirm();

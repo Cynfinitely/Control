@@ -36,6 +36,7 @@ model User {
   nutritionTargets   NutritionTarget[]
   mealPlanItems      MealPlanItem[]
   workouts           Workout[]
+  workoutPrograms    WorkoutProgram[]
   bodyWeightLogs     BodyWeightLog[]
   bodyMeasurements   BodyMeasurement[]
   prayerLogs         PrayerLog[]
@@ -375,6 +376,34 @@ model Workout {
   exercises WorkoutExercise[]
 
   @@index([userId, date])
+}
+
+model WorkoutProgram {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  notes      String?
+  archivedAt DateTime?
+  sortOrder  Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  exercises WorkoutProgramExercise[]
+
+  @@index([userId, archivedAt])
+}
+
+model WorkoutProgramExercise {
+  id          String         @id @default(cuid())
+  programId   String
+  program     WorkoutProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  name        String
+  plannedSets Int
+  plannedReps Int?
+  order       Int            @default(0)
+
+  @@index([programId])
 }
 
 model WorkoutExercise {
