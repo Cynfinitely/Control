@@ -15,6 +15,7 @@ import {
   deleteWeight,
   deleteMeasurement,
 } from "./actions";
+import ProgramsSection from "./ProgramsSection";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   run: "Run",
@@ -46,7 +47,7 @@ function formatWorkoutSummary(w: {
 export default async function ExercisePage() {
   const user = await requireUser();
   const now = new Date();
-  const [workouts, weights, measurements] = await Promise.all([
+  const [workouts, weights, measurements, programs] = await Promise.all([
     prisma.workout.findMany({
       where: { userId: user.id, deletedAt: null },
       orderBy: { date: "desc" },
@@ -63,6 +64,11 @@ export default async function ExercisePage() {
       orderBy: { date: "desc" },
       take: 10,
     }),
+    prisma.workoutProgram.findMany({
+      where: { userId: user.id },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      include: { exercises: { orderBy: { order: "asc" } } },
+    }),
   ]);
 
   const latestWeight = weights[0];
@@ -72,6 +78,8 @@ export default async function ExercisePage() {
   return (
     <div>
       <PageHeader title="Exercise" description="Log runs, walks, swims, gym sessions, and body metrics." />
+
+      <ProgramsSection programs={programs} />
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <details className="card" open>
