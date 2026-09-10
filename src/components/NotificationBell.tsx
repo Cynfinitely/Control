@@ -9,6 +9,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/app/dashboard/notifications/actions";
+import { isNetworkError, shouldPollNotifications } from "@/lib/network-error";
 
 type Item = {
   id: string;
@@ -28,17 +29,53 @@ export default function NotificationBell() {
   const [pending, startTransition] = useTransition();
 
   const refresh = useCallback(() => {
+    if (
+      typeof document !== "undefined" &&
+      !shouldPollNotifications({ hidden: document.hidden, online: navigator.onLine })
+    ) {
+      return;
+    }
     startTransition(async () => {
-      const feed = await getNotificationFeed();
-      setItems(feed.items);
-      setUnreadCount(feed.unreadCount);
+      try {
+        const feed = await getNotificationFeed();
+        setItems(feed.items);
+        setUnreadCount(feed.unreadCount);
+      } catch (error) {
+        if (isNetworkError(error)) return;
+        throw error;
+      }
     });
   }, []);
 
   useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, 45_000);
-    return () => clearInterval(id);
+    let interval: ReturnType<typeof setInterval> | undefined;
+
+    function startOrStop() {
+      const canPoll = shouldPollNotifications({
+        hidden: document.hidden,
+        online: navigator.onLine,
+      });
+      if (canPoll) {
+        refresh();
+        if (interval == null) {
+          interval = setInterval(refresh, 45_000);
+        }
+      } else if (interval != null) {
+        clearInterval(interval);
+        interval = undefined;
+      }
+    }
+
+    startOrStop();
+    document.addEventListener("visibilitychange", startOrStop);
+    window.addEventListener("online", startOrStop);
+    window.addEventListener("offline", startOrStop);
+    return () => {
+      if (interval != null) clearInterval(interval);
+      document.removeEventListener("visibilitychange", startOrStop);
+      window.removeEventListener("online", startOrStop);
+      window.removeEventListener("offline", startOrStop);
+    };
   }, [refresh]);
 
   useEffect(() => {
@@ -46,16 +83,24 @@ export default function NotificationBell() {
   }, [open, refresh]);
 
   async function onItemClick(item: Item) {
-    const fd = new FormData();
-    fd.set("id", item.id);
-    await markNotificationRead(fd);
+    try {
+      const fd = new FormData();
+      fd.set("id", item.id);
+      await markNotificationRead(fd);
+    } catch (error) {
+      if (!isNetworkError(error)) throw error;
+    }
     setOpen(false);
     if (item.href) router.push(item.href);
     refresh();
   }
 
   async function onMarkAll() {
-    await markAllNotificationsRead();
+    try {
+      await markAllNotificationsRead();
+    } catch (error) {
+      if (!isNetworkError(error)) throw error;
+    }
     refresh();
   }
 
