@@ -57,6 +57,7 @@ export default function Sidebar({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   onClick={() => setOpen(false)}
                   className={clsx(
                     "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition",
@@ -79,6 +80,7 @@ export default function Sidebar({
             </p>
             <Link
               href="/dashboard/admin"
+              prefetch={false}
               onClick={() => setOpen(false)}
               className={clsx(
                 "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition",
@@ -100,6 +102,7 @@ export default function Sidebar({
         </div>
         <Link
           href="/dashboard/settings"
+          prefetch={false}
           onClick={() => setOpen(false)}
           className={clsx(
             "btn-ghost touch-target mb-1 w-full",

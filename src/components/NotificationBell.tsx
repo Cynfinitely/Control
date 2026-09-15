@@ -1,88 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import Icon from "@/components/Icon";
-import {
-  getNotificationFeed,
-  markAllNotificationsRead,
-  markNotificationRead,
-} from "@/app/dashboard/notifications/actions";
-import { isNetworkError, shouldPollNotifications } from "@/lib/network-error";
-
-type Item = {
-  id: string;
-  title: string;
-  body: string | null;
-  dueAt: string;
-  readAt: string | null;
-  href: string | null;
-  sourceType: string;
-};
+import { useNotificationFeed, type NotificationItem } from "@/components/NotificationProvider";
+import { markAllNotificationsRead, markNotificationRead } from "@/app/dashboard/notifications/actions";
+import { isNetworkError } from "@/lib/network-error";
 
 export default function NotificationBell() {
   const router = useRouter();
+  const { items, unreadCount, pending, refresh } = useNotificationFeed();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<Item[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [pending, startTransition] = useTransition();
-
-  const refresh = useCallback(() => {
-    if (
-      typeof document !== "undefined" &&
-      !shouldPollNotifications({ hidden: document.hidden, online: navigator.onLine })
-    ) {
-      return;
-    }
-    startTransition(async () => {
-      try {
-        const feed = await getNotificationFeed();
-        setItems(feed.items);
-        setUnreadCount(feed.unreadCount);
-      } catch (error) {
-        if (isNetworkError(error)) return;
-        throw error;
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
-
-    function startOrStop() {
-      const canPoll = shouldPollNotifications({
-        hidden: document.hidden,
-        online: navigator.onLine,
-      });
-      if (canPoll) {
-        refresh();
-        if (interval == null) {
-          interval = setInterval(refresh, 45_000);
-        }
-      } else if (interval != null) {
-        clearInterval(interval);
-        interval = undefined;
-      }
-    }
-
-    startOrStop();
-    document.addEventListener("visibilitychange", startOrStop);
-    window.addEventListener("online", startOrStop);
-    window.addEventListener("offline", startOrStop);
-    return () => {
-      if (interval != null) clearInterval(interval);
-      document.removeEventListener("visibilitychange", startOrStop);
-      window.removeEventListener("online", startOrStop);
-      window.removeEventListener("offline", startOrStop);
-    };
-  }, [refresh]);
 
   useEffect(() => {
     if (open) refresh();
   }, [open, refresh]);
 
-  async function onItemClick(item: Item) {
+  async function onItemClick(item: NotificationItem) {
     try {
       const fd = new FormData();
       fd.set("id", item.id);

@@ -23,27 +23,3 @@ export async function markAllNotificationsRead() {
   });
   revalidateUserCache(userId, "notifications", "dashboard");
 }
-
-export async function getNotificationFeed() {
-  const userId = await getUserId();
-  const [items, unreadCount] = await Promise.all([
-    prisma.notification.findMany({
-      where: { userId },
-      orderBy: [{ readAt: "asc" }, { dueAt: "desc" }],
-      take: 40,
-    }),
-    prisma.notification.count({ where: { userId, readAt: null } }),
-  ]);
-  return {
-    unreadCount,
-    items: items.map((n) => ({
-      id: n.id,
-      title: n.title,
-      body: n.body,
-      dueAt: n.dueAt.toISOString(),
-      readAt: n.readAt?.toISOString() ?? null,
-      href: n.href,
-      sourceType: n.sourceType,
-    })),
-  };
-}

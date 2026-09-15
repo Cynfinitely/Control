@@ -17,9 +17,26 @@ export function isNetworkError(error: unknown): boolean {
 export function shouldPollNotifications({
   hidden,
   online,
+  inFlight = false,
 }: {
   hidden: boolean;
   online: boolean;
+  inFlight?: boolean;
 }): boolean {
-  return !hidden && online;
+  return !hidden && online && !inFlight;
+}
+
+export type NotificationPollDecision = "apply" | "ignore" | "stop";
+
+export function notificationPollDecision({
+  error,
+  status,
+}: {
+  error?: unknown;
+  status?: number;
+}): NotificationPollDecision {
+  if (error != null) return "ignore";
+  if (status === 401) return "stop";
+  if (status === 200) return "apply";
+  return "ignore";
 }
