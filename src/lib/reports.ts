@@ -3,6 +3,7 @@ import { rangeFor } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
 import { computePeriodTotals, computeSavingsRate, formatEuro, formatEuroSigned } from "@/lib/budget";
+import { weeklyFoodSummary } from "@/lib/food/insights";
 
 export type Period = "daily" | "weekly" | "monthly";
 
@@ -42,6 +43,7 @@ export async function buildReport(userId: string, period: Period) {
     calls,
     waterGlasses,
     budgetTransactions,
+    user,
   ] = await Promise.all([
     prisma.todo.count({ where: { userId, completedAt: { gte: from, lte: to } } }),
     prisma.todo.count({ where: { userId, createdAt: { gte: from, lte: to }, deletedAt: null } }),
@@ -87,14 +89,26 @@ export async function buildReport(userId: string, period: Period) {
       where: { userId, deletedAt: null, date: { gte: from, lte: to } },
       include: { category: true },
     }),
+    prisma.user.findUnique({ where: { id: userId }, select: { timezone: true } }),
   ]);
 
   const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / 86400000));
-  const totalCalories = foodEntries.reduce((s, f) => s + f.calories, 0);
-  const totalProtein = foodEntries.reduce((s, f) => s + f.protein, 0);
-  const avgCalories = foodEntries.length ? totalCalories / days : 0;
-  const avgProtein = foodEntries.length ? totalProtein / days : 0;
-  const calorieTarget = target?.calories ?? 2000;
+  const food = weeklyFoodSummary(foodEntries, { timeZone: user?.timezone ?? "Europe/Istanbul", daysInPeriod: days });
+  const nutritionStats: ReportStat[] = food.nutrition
+    ? [
+        {
+          label: "Avg calories/day",
+          value: Math.round(food.nutrition.calories / food.nutrition.daysWithData),
+          href: "/dashboard/food/week",
+        },
+        {
+          label: "Avg protein/day",
+          value: `${Math.round(food.nutrition.protein / food.nutrition.daysWithData)}g`,
+          href: "/dashboard/food/week",
+        },
+        ...(target ? [{ label: "Calorie target", value: Math.round(target.calories), href: "/dashboard/food/settings" }] : []),
+      ]
+    : [];
 
   const qazaPending = qazaPendingDaily + historicalDebtRemaining(prayerDebts);
 
@@ -163,13 +177,14 @@ export async function buildReport(userId: string, period: Period) {
         ],
       },
       {
-        title: "Nutrition",
+        title: "Food",
         stats: [
-          { label: "Avg calories/day", value: Math.round(avgCalories), href: "/dashboard/food" },
-          { label: "Avg protein/day", value: `${Math.round(avgProtein)}g`, href: "/dashboard/food" },
-          { label: "Daily target", value: Math.round(calorieTarget), href: "/dashboard/food" },
-          { label: "Food entries", value: foodEntries.length, href: "/dashboard/food" },
+          { label: "Days logged", value: `${food.daysLogged}/${days}`, href: "/dashboard/food/week" },
+          { label: "Meals logged", value: food.totalMeals, href: "/dashboard/food/week" },
+          { label: "Snack days", value: food.snackDays, href: "/dashboard/food/week" },
+          { label: "Default Meal uses", value: food.defaultMealUses, href: "/dashboard/food/meals" },
           { label: "Water (glasses)", value: waterGlasses._sum.glasses ?? 0, href: "/dashboard/food" },
+          ...nutritionStats,
         ],
       },
       {

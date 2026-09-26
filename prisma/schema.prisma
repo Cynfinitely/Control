@@ -35,6 +35,8 @@ model User {
   foodEntries        FoodLogEntry[]
   nutritionTargets   NutritionTarget[]
   mealPlanItems      MealPlanItem[]
+  defaultMeals       DefaultMeal[]
+  foodPreference     FoodPreference?
   workouts           Workout[]
   workoutPrograms    WorkoutProgram[]
   bodyWeightLogs     BodyWeightLog[]
@@ -297,17 +299,66 @@ model FoodLogEntry {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
-  meal      String   @default("breakfast")
+  meal      String?
   quantity  String?
   calories  Float    @default(0)
   protein   Float    @default(0)
   carbs     Float    @default(0)
   fat       Float    @default(0)
+  // Day bucket used by range queries; eatenAt is the actual time (null on legacy rows).
   date      DateTime
+  eatenAt   DateTime?
+  items     String?
+  note      String?
+  hunger    Int?
+  defaultMeal   DefaultMeal? @relation(fields: [defaultMealId], references: [id], onDelete: SetNull)
+  defaultMealId String?
   deletedAt DateTime?
   createdAt DateTime @default(now())
 
   @@index([userId, date])
+  @@index([defaultMealId])
+}
+
+model DefaultMeal {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  meal      String?
+  calories  Float     @default(0)
+  protein   Float     @default(0)
+  carbs     Float     @default(0)
+  fat       Float     @default(0)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  items         DefaultMealItem[]
+  foodEntries   FoodLogEntry[]
+  mealPlanItems MealPlanItem[]
+
+  @@index([userId])
+}
+
+model DefaultMealItem {
+  id            String      @id @default(cuid())
+  defaultMeal   DefaultMeal @relation(fields: [defaultMealId], references: [id], onDelete: Cascade)
+  defaultMealId String
+  name          String
+  quantity      String?
+  sortOrder     Int         @default(0)
+
+  @@index([defaultMealId])
+}
+
+model FoodPreference {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode       String   @default("observe") // observe | stabilize | optimize
+  mealLabels String   @default("Meal 1\nMeal 2\nSnack") // newline-separated
+  updatedAt  DateTime @updatedAt
 }
 
 model NutritionTarget {
@@ -328,19 +379,22 @@ model MealPlanItem {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime
-  meal      String    @default("breakfast")
+  meal      String?
   name      String
   notes     String?
   calories  Float     @default(0)
   protein   Float     @default(0)
   carbs     Float     @default(0)
   fat       Float     @default(0)
+  defaultMeal   DefaultMeal? @relation(fields: [defaultMealId], references: [id], onDelete: SetNull)
+  defaultMealId String?
   deletedAt DateTime?
   createdAt DateTime  @default(now())
 
   ingredients ShoppingItem[]
 
   @@index([userId, date])
+  @@index([defaultMealId])
 }
 
 model ShoppingItem {

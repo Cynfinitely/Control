@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { startOfDay, endOfDay, startOfWeek, addDays, coerceDate } from "@/lib/date";
+import { startOfDay, endOfDay, startOfWeek, addDays, coerceDate, toDateInputValue } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
 import { getBudgetSummaryForDashboard } from "@/lib/queries/budget";
@@ -19,7 +19,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
   const certExpirySoon = addDays(day, 30);
 
   return cachedQuery(
-    ["dashboard-stats", "v3", userId, todayKey],
+    ["dashboard-stats", "v4", userId, todayKey],
     [cacheTag("dashboard", userId), cacheTag("plan", userId), cacheTag("religious", userId), cacheTag("todos", userId), cacheTag("networking", userId)],
     async () => {
       const [
@@ -28,8 +28,8 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         overdueTodos,
         weeklyGoals,
         weeklyGoalsCompleted,
-        caloriesAgg,
-        target,
+        mealsToday,
+        foodDatesThisWeek,
         workoutsToday,
         workoutsThisWeek,
         prayersToday,
@@ -77,11 +77,13 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         prisma.goal.count({
           where: { userId, status: "completed", deletedAt: null, period: "weekly", periodKey: weekKey },
         }),
-        prisma.foodLogEntry.aggregate({
+        prisma.foodLogEntry.count({
           where: { userId, deletedAt: null, date: { gte: from, lte: to } },
-          _sum: { calories: true },
         }),
-        prisma.nutritionTarget.findUnique({ where: { userId } }),
+        prisma.foodLogEntry.findMany({
+          where: { userId, deletedAt: null, date: { gte: weekStart, lte: weekEnd } },
+          select: { date: true },
+        }),
         prisma.workout.count({
           where: { userId, deletedAt: null, date: { gte: from, lte: to } },
         }),
@@ -130,8 +132,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         }),
       ]);
 
-      const calorieTarget = target?.calories ?? 2000;
-      const caloriesToday = caloriesAgg._sum.calories ?? 0;
+      const foodDaysThisWeek = new Set(foodDatesThisWeek.map((f) => toDateInputValue(coerceDate(f.date)))).size;
       const todayPrayers = summarizeDayPrayers(prayersToday);
       const prayersOnTimeToday = todayPrayers.onTime;
       const prayersOnTimeWeek = prayersThisWeek.filter((p) => p.status === "ontime").length;
@@ -154,12 +155,7 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         todos:
           overdueTodos > 0 ? ("bad" as DomainHealth) : todayOpenTodos === 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
         goals: weeklyGoals === 0 ? ("warn" as DomainHealth) : weeklyGoalsCompleted > 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
-        food:
-          caloriesToday === 0
-            ? ("warn" as DomainHealth)
-            : caloriesToday <= calorieTarget * 1.1
-              ? ("good" as DomainHealth)
-              : ("bad" as DomainHealth),
+        food: mealsToday > 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
         exercise: workoutsThisWeek >= 3 ? ("good" as DomainHealth) : workoutsThisWeek > 0 ? ("warn" as DomainHealth) : ("bad" as DomainHealth),
         religious:
           pendingQaza > 5
@@ -187,8 +183,8 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         overdueTodos,
         weeklyGoals,
         weeklyGoalsCompleted,
-        caloriesToday,
-        calorieTarget,
+        mealsToday,
+        foodDaysThisWeek,
         workoutsToday,
         workoutsThisWeek,
         prayersOnTime: prayersOnTimeToday,

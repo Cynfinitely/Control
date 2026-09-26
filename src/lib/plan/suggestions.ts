@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { startOfDay, endOfDay, startOfWeek, addDays } from "@/lib/date";
 import { formatMinutesToTime, parseTimeToMinutes } from "@/lib/plan/time";
 import { blocksOverlap } from "@/lib/plan/overlap";
+import { displayMealLabel } from "@/lib/food/meals";
 
 export type PlanSuggestion = {
   key: string;
@@ -19,6 +20,8 @@ const MEAL_TIMES: Record<string, { start: string; end: string }> = {
   lunch: { start: "13:00", end: "13:45" },
   dinner: { start: "19:00", end: "19:45" },
   snack: { start: "16:00", end: "16:30" },
+  "meal 1": { start: "12:00", end: "12:45" },
+  "meal 2": { start: "18:30", end: "19:15" },
 };
 
 const PRAYER_SLOTS: { prayer: string; title: string; start: string; end: string }[] = [
@@ -135,7 +138,7 @@ export async function getPlanSuggestions(
   for (const meal of meals) {
     const key = `meal:${meal.id}`;
     if (dismissedKeys.includes(key) || alreadyLinked(existingBlocks, "meal", meal.id)) continue;
-    const mealSlot = MEAL_TIMES[meal.meal] ?? MEAL_TIMES.lunch;
+    const mealSlot = MEAL_TIMES[(meal.meal ?? "").toLowerCase()] ?? MEAL_TIMES.lunch;
     const slot = slotFits(occupied, mealSlot.start, mealSlot.end)
       ? { startTime: mealSlot.start, endTime: mealSlot.end }
       : nextFreeSlot(occupied, mealSlot.start, 45);
@@ -147,7 +150,7 @@ export async function getPlanSuggestions(
       kind: "meal",
       linkType: "meal",
       linkId: meal.id,
-      reason: `Meal plan: ${meal.meal}`,
+      reason: meal.meal ? `Meal plan: ${displayMealLabel(meal.meal)}` : "Meal plan",
     });
     occupied.push(slot);
   }

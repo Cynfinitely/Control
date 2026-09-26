@@ -80,13 +80,13 @@ export default async function DashboardHome() {
       progress: goalTotal > 0 ? (stats.weeklyGoalsCompleted / goalTotal) * 100 : 0,
     },
     {
-      label: "Calories today",
-      value: Math.round(stats.caloriesToday),
-      sub: `of ${Math.round(stats.calorieTarget)} kcal · ${stats.waterGlasses} water`,
+      label: "Food logged",
+      value: `${stats.mealsToday} today`,
+      sub: `${stats.foodDaysThisWeek}/7 days this week · ${stats.waterGlasses} water`,
       href: "/dashboard/food",
       icon: "food",
       health: stats.health.food,
-      progress: stats.calorieTarget > 0 ? (stats.caloriesToday / stats.calorieTarget) * 100 : 0,
+      progress: (stats.foodDaysThisWeek / 7) * 100,
     },
     {
       label: "Budget",

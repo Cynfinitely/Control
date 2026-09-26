@@ -2,11 +2,14 @@ import Link from "next/link";
 import { requireUser } from "@/lib/session";
 import { toDateInputValue, formatDate, startOfWeek, addDays } from "@/lib/date";
 import { getWeekMealPlan } from "@/lib/queries/food-planner";
+import { getDefaultMeals, getFoodSettings } from "@/lib/queries/food";
+import { displayMealLabel, hasNutrition } from "@/lib/food/meals";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
 import CollapsibleSection from "@/components/CollapsibleSection";
+import FoodNav from "../FoodNav";
 import {
   addPlanItem,
   deletePlanItem,
@@ -15,14 +18,16 @@ import {
   logFromPlan,
 } from "../actions";
 
-const MEALS = ["breakfast", "lunch", "dinner", "snack"];
-
 export default async function PlannerPage() {
   const user = await requireUser();
   const weekStart = startOfWeek(new Date());
   const weekStartKey = toDateInputValue(weekStart);
 
-  const items = await getWeekMealPlan(user.id, weekStartKey);
+  const [items, defaults, settings] = await Promise.all([
+    getWeekMealPlan(user.id, weekStartKey),
+    getDefaultMeals(user.id),
+    getFoodSettings(user.id),
+  ]);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const byDay = (d: Date) =>
@@ -39,12 +44,18 @@ export default async function PlannerPage() {
       <PageHeader
         title="Meal planner"
         description={`Week of ${formatDate(weekStart)} - ${formatDate(addDays(weekStart, 6))}`}
-        action={
-          <Link href="/dashboard/food" className="btn-ghost">
-            ← Food diary
-          </Link>
-        }
       />
+      <FoodNav active="/dashboard/food/planner" />
+
+      {defaults.length === 0 && (
+        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          Tip: save meals you repeat as{" "}
+          <Link href="/dashboard/food/meals" className="font-medium text-brand-600 dark:text-brand-400">
+            Default Meals
+          </Link>{" "}
+          to plan them in one step, ingredients included.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
         {days.map((d) => {
@@ -57,8 +68,8 @@ export default async function PlannerPage() {
               <div className="space-y-2">
                 {dayItems.map((it) => (
                   <div key={it.id} className="rounded-md bg-slate-50 p-2 text-xs dark:bg-slate-700">
-                    <div className="flex items-start justify-between">
-                      <span className="font-medium capitalize text-slate-600 dark:text-slate-400">{it.meal}</span>
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="font-medium text-slate-800 dark:text-slate-100">{it.name}</p>
                       <form action={deletePlanItem}>
                         <input type="hidden" name="id" value={it.id} />
                         <SubmitIconButton
@@ -67,8 +78,10 @@ export default async function PlannerPage() {
                         />
                       </form>
                     </div>
-                    <p className="text-slate-800 dark:text-slate-100">{it.name}</p>
-                    {it.calories > 0 && (
+                    {it.meal && (
+                      <p className="text-slate-500 dark:text-slate-400">{displayMealLabel(it.meal)}</p>
+                    )}
+                    {settings.mode === "optimize" && hasNutrition(it) && (
                       <p className="text-xs text-slate-400">{Math.round(it.calories)} kcal</p>
                     )}
                     {it.ingredients.length > 0 && (
@@ -98,15 +111,36 @@ export default async function PlannerPage() {
                 </summary>
                 <form action={addPlanItem} className="mt-2 space-y-1">
                   <input type="hidden" name="date" value={toDateInputValue(d)} />
-                  <select name="meal" className="input py-1 text-xs" defaultValue="breakfast">
-                    {MEALS.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                  <input name="name" className="input py-1 text-xs" placeholder="meal name" required />
-                  <input name="calories" type="number" className="input py-1 text-xs" placeholder="kcal (optional)" />
+                  {defaults.length > 0 && (
+                    <select name="defaultMealId" className="input py-1 text-xs" defaultValue="" aria-label="Default Meal">
+                      <option value="">Pick a Default Meal…</option>
+                      {defaults.map((dm) => (
+                        <option key={dm.id} value={dm.id}>
+                          {dm.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <input
+                    name="name"
+                    className="input py-1 text-xs"
+                    placeholder={defaults.length > 0 ? "…or type a meal name" : "meal name"}
+                    required={defaults.length === 0}
+                  />
+                  <details>
+                    <summary className="cursor-pointer text-xs text-slate-500 dark:text-slate-400">More</summary>
+                    <div className="mt-1 space-y-1">
+                      <select name="meal" className="input py-1 text-xs" defaultValue="" aria-label="Meal">
+                        <option value="">Meal (optional)</option>
+                        {settings.mealLabels.map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                      <input name="calories" type="number" className="input py-1 text-xs" placeholder="kcal (optional)" />
+                    </div>
+                  </details>
                   <SubmitButton className="btn-primary w-full py-1 text-xs">Add meal</SubmitButton>
                 </form>
               </details>
@@ -123,7 +157,7 @@ export default async function PlannerPage() {
       >
         {shopping.length === 0 && (
           <p className="text-sm text-slate-400">
-            Add ingredients to planned meals and they will appear here.
+            Add ingredients to planned meals, or plan a Default Meal, and they will appear here.
           </p>
         )}
         <div className="space-y-1">

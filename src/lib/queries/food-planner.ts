@@ -13,7 +13,7 @@ export async function getWeekMealPlan(userId: string, weekStartKey: string) {
       prisma.mealPlanItem.findMany({
         where: { userId, deletedAt: null, date: { gte: weekStart, lte: weekEnd } },
         orderBy: { createdAt: "asc" },
-        include: { ingredients: true },
+        include: { ingredients: { orderBy: { createdAt: "asc" } } },
       })
   );
 }
