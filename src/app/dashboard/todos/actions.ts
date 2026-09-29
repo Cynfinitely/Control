@@ -21,11 +21,12 @@ export async function createTodo(formData: FormData): Promise<ActionResult> {
   const priority = str(formData.get("priority")) || "medium";
   const category = str(formData.get("category")) || null;
   const dueDate = parseOptionalDate(formData.get("dueDate"));
+  const inBacklog = str(formData.get("destination")) === "backlog";
   await prisma.todo.create({
-    data: { userId, title, dayDate, inBacklog: false, priority, category, dueDate },
+    data: { userId, title, dayDate, inBacklog, priority, category, dueDate },
   });
   invalidate(userId);
-  return success("Todo added");
+  return success(inBacklog ? "Added to backlog" : "Todo added");
 }
 
 export const createTodoForm = wrapFormAction(createTodo, "Todo added");

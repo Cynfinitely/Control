@@ -44,10 +44,10 @@ export default async function TodosPage({
             action={createTodoForm}
             successMessage="Todo added"
             resetOnSuccess
-            className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+            className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
           >
             <input type="hidden" name="dayDate" value={dayValue} />
-            <div className="sm:col-span-2 lg:col-span-4">
+            <div className="sm:col-span-2 lg:col-span-5">
               <label htmlFor="todo-title" className="sr-only">
                 Todo title
               </label>
@@ -82,6 +82,15 @@ export default async function TodosPage({
               </label>
               <input id="todo-due" name="dueDate" type="date" className="input" />
             </div>
+            <div>
+              <label htmlFor="todo-destination" className="label">
+                Add to
+              </label>
+              <select id="todo-destination" name="destination" className="input" defaultValue="day">
+                <option value="day">This day</option>
+                <option value="backlog">Backlog</option>
+              </select>
+            </div>
             <div className="flex items-end">
               <SubmitButton className="btn-primary touch-target w-full">Add</SubmitButton>
             </div>
@@ -91,22 +100,47 @@ export default async function TodosPage({
 
       <TodoList initialTodos={dayTodos} />
 
-      {backlog.length > 0 && (
-        <CollapsibleSection
-          title="Backlog"
-          count={backlog.length}
-          className="card mt-8"
+      <CollapsibleSection
+        title="Backlog"
+        count={backlog.length}
+        defaultOpen={backlog.length === 0}
+        className="card mt-8"
+      >
+        <p className="text-xs text-slate-400">
+          {backlog.length === 0
+            ? "Nothing saved for later."
+            : "Unfinished items saved for later. Pull into today's list when ready."}
+        </p>
+        <FormAction
+          action={createTodoForm}
+          successMessage="Added to backlog"
+          resetOnSuccess
+          className="mt-3 flex flex-col gap-2 sm:flex-row"
         >
-          <p className="text-xs text-slate-400">
-            Unfinished items saved for later. Pull into today&apos;s list when ready.
-          </p>
+          <input type="hidden" name="destination" value="backlog" />
+          <input type="hidden" name="priority" value="medium" />
+          <input type="hidden" name="dayDate" value={dayValue} />
+          <label htmlFor="backlog-title" className="sr-only">
+            Backlog title
+          </label>
+          <input
+            id="backlog-title"
+            name="title"
+            className="input flex-1"
+            placeholder="Add to backlog for later…"
+            required
+            autoComplete="off"
+          />
+          <SubmitButton className="btn-primary shrink-0">Add</SubmitButton>
+        </FormAction>
+        {backlog.length > 0 && (
           <div className="mt-4 space-y-2">
             {backlog.map((t) => (
               <BacklogRow key={t.id} id={t.id} title={t.title} dayValue={dayValue} />
             ))}
           </div>
-        </CollapsibleSection>
-      )}
+        )}
+      </CollapsibleSection>
     </div>
   );
 }
