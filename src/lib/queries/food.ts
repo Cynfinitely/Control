@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { addDays, coerceDate, startOfDay, endOfDay } from "@/lib/date";
+import { addDays, coerceDate, startOfDay, endOfDay, toDateInputValue } from "@/lib/date";
 import { resolveFoodSettings, type FoodSettings } from "@/lib/food/meals";
 import type { FoodInsightEntry } from "@/lib/food/insights";
 import { normalizeFood } from "@/lib/food/items";
@@ -188,4 +188,41 @@ export async function getFoodRange(userId: string, from: Date, to: Date): Promis
         },
       })
   );
+}
+
+export async function getFoodReportRange(userId: string, from: Date, to: Date) {
+  const fromKey = toDateInputValue(from);
+  const toKey = toDateInputValue(to);
+  const data = await cachedQuery(
+    ["food-report", userId, fromKey, toKey],
+    [cacheTag("food", userId), cacheTag("dashboard", userId)],
+    async () => {
+      const [entries, target, waterLogs] = await Promise.all([
+        prisma.foodLogEntry.findMany({
+          where: {
+            userId,
+            deletedAt: null,
+            date: { gte: from, lte: to },
+          },
+          orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+        }),
+        prisma.nutritionTarget.findUnique({ where: { userId } }),
+        prisma.waterLog.findMany({
+          where: { userId, date: { gte: from, lte: to } },
+          orderBy: { date: "asc" },
+        }),
+      ]);
+      return { entries, target, waterLogs };
+    }
+  );
+
+  return {
+    entries: data.entries.map((entry) => ({
+      ...entry,
+      date: coerceDate(entry.date),
+      meal: entry.meal ?? "",
+    })),
+    target: data.target,
+    waterLogs: data.waterLogs.map((log) => ({ ...log, date: coerceDate(log.date) })),
+  };
 }

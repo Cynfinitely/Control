@@ -4,6 +4,7 @@ import clsx from "clsx";
 const LINKS = [
   { href: "/dashboard/food", label: "Diary" },
   { href: "/dashboard/food/week", label: "Week" },
+  { href: "/dashboard/food/report", label: "Reports" },
   { href: "/dashboard/food/meals", label: "Default Meals" },
   { href: "/dashboard/food/planner", label: "Planner" },
   { href: "/dashboard/food/settings", label: "Settings" },
