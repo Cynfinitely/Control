@@ -132,7 +132,7 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
         }));
 
       const recentBatches = await prisma.budgetImportBatch.findMany({
-        where: { userId, deletedAt: null },
+        where: { userId, deletedAt: null, rowCount: { gt: 0 } },
         orderBy: { importedAt: "desc" },
         take: 5,
       });

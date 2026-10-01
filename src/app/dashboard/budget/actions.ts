@@ -35,7 +35,7 @@ async function markBudgetSetupComplete(userId: string) {
 
 export type ImportBudgetResult = {
   ok: true;
-  batchId: string;
+  batchId: string | null;
   imported: number;
   skippedDuplicates: number;
   autoCategorized: number;
@@ -119,6 +119,21 @@ export async function importNordeaFile(
     toCreate.filter((tx) => resolveCategory(tx.merchantKey)).length +
     toRestore.filter(({ tx }) => resolveCategory(tx.merchantKey)).length;
   const imported = toCreate.length + toRestore.length;
+
+  // Nothing new (e.g. the whole file was already imported): don't record an empty batch.
+  if (imported === 0) {
+    return {
+      ok: true,
+      batchId: null,
+      imported: 0,
+      skippedDuplicates,
+      autoCategorized: 0,
+      uncategorized: await prisma.budgetTransaction.count({
+        where: { userId, deletedAt: null, categoryId: null },
+      }),
+      message: `Nothing new to import · skipped ${skippedDuplicates} duplicates`,
+    };
+  }
 
   let batch;
   try {
