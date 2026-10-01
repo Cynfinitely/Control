@@ -6,6 +6,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getUserId, str } from "@/lib/actions";
 import { isValidTimezone } from "@/lib/timezones";
+import { revalidateUserCache } from "@/lib/cache";
+import { failure, success, type ActionResult } from "@/lib/action-result";
+import { searchLocations, type LocationResult } from "@/lib/weather/client";
 
 export type ActionState = {
   ok?: boolean;
@@ -102,5 +105,63 @@ export async function changePassword(
     return { ok: true };
   } catch {
     return { error: "Could not change password." };
+  }
+}
+
+const weatherLocationSchema = z.object({
+  locationName: z.string().trim().min(1, "Location name is required.").max(120),
+  region: z.string().trim().max(160).nullable(),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  units: z.enum(["metric", "imperial"]),
+});
+
+export type WeatherLocationInput = z.infer<typeof weatherLocationSchema>;
+
+function invalidateWeather(userId: string) {
+  revalidateUserCache(userId, "weather", "dashboard");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/weather");
+}
+
+export async function searchWeatherLocations(
+  query: string
+): Promise<{ ok: true; results: LocationResult[] } | { ok: false; error: string }> {
+  try {
+    await getUserId();
+    return { ok: true, results: await searchLocations(String(query).slice(0, 100)) };
+  } catch {
+    return { ok: false, error: "Location search is unavailable right now." };
+  }
+}
+
+export async function saveWeatherLocation(input: WeatherLocationInput): Promise<ActionResult> {
+  const parsed = weatherLocationSchema.safeParse(input);
+  if (!parsed.success) {
+    return failure(parsed.error.errors[0]?.message ?? "Invalid location.");
+  }
+  try {
+    const userId = await getUserId();
+    await prisma.weatherPreference.upsert({
+      where: { userId },
+      create: { userId, ...parsed.data },
+      update: parsed.data,
+    });
+    invalidateWeather(userId);
+    return success("Weather location saved");
+  } catch {
+    return failure("Could not save weather location.");
+  }
+}
+
+export async function clearWeatherLocation(): Promise<ActionResult> {
+  try {
+    const userId = await getUserId();
+    await prisma.weatherPreference.deleteMany({ where: { userId } });
+    invalidateWeather(userId);
+    return success("Weather location removed");
+  } catch {
+    return failure("Could not remove weather location.");
   }
 }

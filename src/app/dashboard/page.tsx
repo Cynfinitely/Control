@@ -10,6 +10,7 @@ import { getInspirations } from "@/lib/queries/inspirations";
 import { getPrincipleReviewedToday } from "@/lib/queries/principles";
 import { getLifePriorities } from "@/lib/queries/priorities";
 import { getDayTodos } from "@/lib/queries/todos";
+import { getUserWeather } from "@/lib/queries/weather";
 import { formatEuroSigned } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
@@ -19,6 +20,7 @@ import InspirationSpotlight from "@/components/InspirationSpotlight";
 import PrincipleReviewCard from "@/components/PrincipleReviewCard";
 import LifePrioritiesCard from "@/components/LifePrioritiesCard";
 import HomeTodosCard from "@/components/HomeTodosCard";
+import HomeWeatherCard from "@/components/HomeWeatherCard";
 import PlanPreview from "./plan/PlanPreview";
 import HomeQuickActions from "./HomeQuickActions";
 
@@ -57,7 +59,7 @@ export default async function DashboardHome() {
   const lastWeekKey = getPeriodKey("weekly", addDays(now, -7));
 
   const stats = await getDashboardStats(sessionUser.id, todayKey);
-  const [planPreview, planStats, inspirations, principlesReviewed, priorities, todayTodos, reviews] = await Promise.all([
+  const [planPreview, planStats, inspirations, principlesReviewed, priorities, todayTodos, reviews, weather] = await Promise.all([
     getPlanPreviewBlocks(sessionUser.id, todayKey),
     getPlanDayStats(sessionUser.id, todayKey, now),
     getInspirations(sessionUser.id),
@@ -65,6 +67,7 @@ export default async function DashboardHome() {
     getLifePriorities(sessionUser.id),
     getDayTodos(sessionUser.id, todayKey),
     getRecentWeeklyReviews(sessionUser.id, [thisWeekKey, lastWeekKey]),
+    getUserWeather(sessionUser.id),
   ]);
 
   const thisWeekReview = reviews.find((r) => r.weekKey === thisWeekKey);
@@ -242,6 +245,7 @@ export default async function DashboardHome() {
           <h2 id="glance-title" className="section-title mb-3">
             Today at a glance
           </h2>
+          <HomeWeatherCard weather={weather} />
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
             {cards.map((c) => (
               <StatCard

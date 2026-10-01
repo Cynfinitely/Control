@@ -37,6 +37,7 @@ model User {
   mealPlanItems      MealPlanItem[]
   defaultMeals       DefaultMeal[]
   foodPreference     FoodPreference?
+  weatherPreference  WeatherPreference?
   workouts           Workout[]
   workoutPrograms    WorkoutProgram[]
   bodyWeightLogs     BodyWeightLog[]
@@ -360,6 +361,19 @@ model FoodPreference {
   mode       String   @default("observe") // observe | stabilize | optimize
   mealLabels String   @default("Meal 1\nMeal 2\nSnack") // newline-separated
   updatedAt  DateTime @updatedAt
+}
+
+model WeatherPreference {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationName String
+  region       String? // "Uusimaa, Finland" (admin area + country, for display)
+  latitude     Float
+  longitude    Float
+  units        String   @default("metric") // metric | imperial
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model NutritionTarget {

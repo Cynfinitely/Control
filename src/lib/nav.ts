@@ -19,6 +19,7 @@ export const navSections: NavSection[] = [
       { href: "/dashboard/todos", label: "Todos", icon: "check" },
       { href: "/dashboard/work", label: "Work", icon: "briefcase" },
       { href: "/dashboard/journal", label: "Journal", icon: "book" },
+      { href: "/dashboard/weather", label: "Weather", icon: "cloud-sun" },
     ],
   },
   {
