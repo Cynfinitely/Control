@@ -237,6 +237,8 @@ export function parseNordeaCsv(content: string): NordeaParseResult {
 
   const transactions: ParsedNordeaTx[] = [];
   let skippedRows = 0;
+  // Identical rows (same day, amount, label) are distinct real transactions.
+  const seenFingerprints = new Map<string, number>();
 
   for (let i = headerIndex + 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -272,7 +274,13 @@ export function parseNordeaCsv(content: string): NordeaParseResult {
     const amountCents = Math.abs(signedCents);
     const rawDescription = label || "Nordea transaction";
     const merchantKey = merchantKeyFromParts(rawDescription);
-    const fingerprint = importFingerprint(date, signedCents, rawDescription);
+    const baseFingerprint = importFingerprint(date, signedCents, rawDescription);
+    const occurrence = seenFingerprints.get(baseFingerprint) ?? 0;
+    seenFingerprints.set(baseFingerprint, occurrence + 1);
+    const fingerprint =
+      occurrence === 0
+        ? baseFingerprint
+        : importFingerprint(date, signedCents, rawDescription, occurrence);
 
     transactions.push({
       date,

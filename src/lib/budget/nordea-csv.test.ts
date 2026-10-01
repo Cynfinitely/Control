@@ -45,6 +45,22 @@ describe("nordea csv parser", () => {
     expect(parseNordeaDate("2026-07-15")?.getMonth()).toBe(6);
   });
 
+  it("gives identical rows in one file distinct, repeatable fingerprints", () => {
+    const content = [
+      "Booking date;Amount;Name",
+      "15.07.2026;-3,50;Cafe Regatta",
+      "15.07.2026;-3,50;Cafe Regatta",
+      "15.07.2026;-3,50;Cafe Regatta",
+    ].join("\n");
+    const first = parseNordeaCsv(content).transactions.map((t) => t.fingerprint);
+    expect(first).toHaveLength(3);
+    expect(new Set(first).size).toBe(3);
+    // First occurrence keeps the legacy fingerprint so earlier imports still dedupe.
+    expect(first[0]).toBe(importFingerprint(new Date(2026, 6, 15), -350, "Cafe Regatta"));
+    // Re-importing the same file yields the same fingerprints.
+    expect(parseNordeaCsv(content).transactions.map((t) => t.fingerprint)).toEqual(first);
+  });
+
   it("parses Finnish TSV fixture", () => {
     const content = readFileSync(join(fixtures, "nordea-fi-tsv.txt"), "utf8");
     const result = parseNordeaCsv(content);

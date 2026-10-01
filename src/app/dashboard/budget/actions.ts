@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
@@ -90,7 +91,13 @@ export async function importNordeaFile(
   const toRestore: { id: string; tx: (typeof parsed.transactions)[0] }[] = [];
   let skippedDuplicates = 0;
 
+  const seen = new Set<string>();
   for (const tx of parsed.transactions) {
+    if (seen.has(tx.fingerprint)) {
+      skippedDuplicates++;
+      continue;
+    }
+    seen.add(tx.fingerprint);
     const hit = existingByFp.get(tx.fingerprint);
     if (hit && !hit.deletedAt) {
       skippedDuplicates++;
@@ -107,66 +114,77 @@ export async function importNordeaFile(
   const dateFrom = new Date(Math.min(...dates));
   const dateTo = new Date(Math.max(...dates));
 
-  const batch = await prisma.budgetImportBatch.create({
-    data: {
-      userId,
-      filename,
-      rowCount: 0,
-      skippedDuplicates,
-      dateFrom,
-      dateTo,
-    },
-  });
-
   const resolveCategory = (merchantKey: string) => ruleMap.get(merchantKey) ?? null;
   const autoCategorized =
     toCreate.filter((tx) => resolveCategory(tx.merchantKey)).length +
     toRestore.filter(({ tx }) => resolveCategory(tx.merchantKey)).length;
-
-  await prisma.$transaction(async (txClient) => {
-    for (const { id, tx } of toRestore) {
-      await txClient.budgetTransaction.update({
-        where: { id },
-        data: {
-          deletedAt: null,
-          type: tx.type,
-          amountCents: tx.amountCents,
-          date: tx.date,
-          note: tx.rawDescription,
-          merchantKey: tx.merchantKey,
-          rawDescription: tx.rawDescription,
-          importFingerprint: tx.fingerprint,
-          importBatchId: batch.id,
-          categoryId: resolveCategory(tx.merchantKey),
-        },
-      });
-    }
-
-    if (toCreate.length > 0) {
-      await txClient.budgetTransaction.createMany({
-        data: toCreate.map((tx) => ({
-          userId,
-          type: tx.type,
-          amountCents: tx.amountCents,
-          categoryId: resolveCategory(tx.merchantKey),
-          date: tx.date,
-          note: tx.rawDescription,
-          merchantKey: tx.merchantKey,
-          rawDescription: tx.rawDescription,
-          importFingerprint: tx.fingerprint,
-          importBatchId: batch.id,
-        })),
-      });
-    }
-
-    const imported = toCreate.length + toRestore.length;
-    await txClient.budgetImportBatch.update({
-      where: { id: batch.id },
-      data: { rowCount: imported, skippedDuplicates },
-    });
-  });
-
   const imported = toCreate.length + toRestore.length;
+
+  let batch;
+  try {
+    batch = await prisma.$transaction(
+      async (txClient) => {
+        const created = await txClient.budgetImportBatch.create({
+          data: {
+            userId,
+            filename,
+            rowCount: imported,
+            skippedDuplicates,
+            dateFrom,
+            dateTo,
+          },
+        });
+
+        for (const { id, tx } of toRestore) {
+          await txClient.budgetTransaction.update({
+            where: { id },
+            data: {
+              deletedAt: null,
+              type: tx.type,
+              amountCents: tx.amountCents,
+              date: tx.date,
+              note: tx.rawDescription,
+              merchantKey: tx.merchantKey,
+              rawDescription: tx.rawDescription,
+              importFingerprint: tx.fingerprint,
+              importBatchId: created.id,
+              categoryId: resolveCategory(tx.merchantKey),
+            },
+          });
+        }
+
+        if (toCreate.length > 0) {
+          await txClient.budgetTransaction.createMany({
+            data: toCreate.map((tx) => ({
+              userId,
+              type: tx.type,
+              amountCents: tx.amountCents,
+              categoryId: resolveCategory(tx.merchantKey),
+              date: tx.date,
+              note: tx.rawDescription,
+              merchantKey: tx.merchantKey,
+              rawDescription: tx.rawDescription,
+              importFingerprint: tx.fingerprint,
+              importBatchId: created.id,
+            })),
+          });
+        }
+
+        return created;
+      },
+      { maxWait: 10_000, timeout: 20_000 }
+    );
+  } catch (err) {
+    console.error("[budget] Nordea import failed", err);
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return {
+        ok: false,
+        error: "Some of these transactions were just imported. Refresh the page and try again.",
+      };
+    }
+    return { ok: false, error: "Import failed. Please try again." };
+  }
+
   const uncategorized = await prisma.budgetTransaction.count({
     where: { userId, deletedAt: null, categoryId: null },
   });
