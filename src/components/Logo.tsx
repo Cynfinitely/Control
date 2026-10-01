@@ -24,7 +24,7 @@ export default function Logo({ className, href, onClick, variant = "full" }: Log
 
   if (href) {
     return (
-      <Link href={href} onClick={onClick} className="inline-flex">
+      <Link href={href} onClick={onClick} className="inline-flex rounded-md" aria-label="Control home">
         {image}
       </Link>
     );

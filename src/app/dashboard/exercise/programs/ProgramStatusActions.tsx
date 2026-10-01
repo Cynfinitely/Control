@@ -1,54 +1,43 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
-import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import ActionForm from "@/components/ActionForm";
+import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
 import { archiveProgram, restoreProgram } from "./actions";
 
 export default function ProgramStatusActions({
   id,
+  name,
   archived,
 }: {
   id: string;
+  name: string;
   archived: boolean;
 }) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
-
   if (archived) {
     return (
-      <button
-        type="button"
-        className="btn-ghost text-sm"
-        onClick={() => {
-          startTransition(async () => {
-            const fd = new FormData();
-            fd.set("id", id);
-            await restoreProgram(fd);
-            router.refresh();
-          });
-        }}
-      >
-        Restore
-      </button>
+      <ActionForm action={restoreProgram} successMessage="Program restored">
+        <input type="hidden" name="id" value={id} />
+        <SubmitButton className="btn-ghost touch-target w-full sm:w-auto">
+          <Icon name="undo" className="h-4 w-4" />
+          Restore
+        </SubmitButton>
+      </ActionForm>
     );
   }
 
   return (
-    <DeleteConfirmButton
-      title="Archive program?"
-      message="This program will be hidden from your active list. You can restore it later."
-      label="Archive"
-      confirmLabel="Archive"
-      className="btn-ghost text-sm text-slate-500 hover:text-red-500 dark:hover:text-red-400"
-      onConfirm={() => {
-        startTransition(async () => {
-          const fd = new FormData();
-          fd.set("id", id);
-          await archiveProgram(fd);
-          router.refresh();
-        });
+    <ActionForm
+      action={archiveProgram}
+      successMessage="Program archived"
+      confirm={{
+        title: `Archive “${name}”?`,
+        message: "It will be hidden from your active list. You can restore it later.",
+        confirmLabel: "Archive",
       }}
-    />
+    >
+      <input type="hidden" name="id" value={id} />
+      <SubmitButton className="btn-ghost touch-target w-full sm:w-auto">Archive</SubmitButton>
+    </ActionForm>
   );
 }

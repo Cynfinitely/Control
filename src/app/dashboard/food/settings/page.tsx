@@ -8,21 +8,24 @@ import FoodNav from "../FoodNav";
 import FoodPreferencesForm from "./FoodPreferencesForm";
 import { saveTargetForm } from "../actions";
 
+export const metadata = { title: "Food settings" };
+
 export default async function FoodSettingsPage() {
   const user = await requireUser();
   const [settings, target] = await Promise.all([getFoodSettings(user.id), getNutritionTarget(user.id)]);
 
   return (
     <div>
-      <PageHeader title="Food settings" description="Choose what the food diary focuses on." />
-      <FoodNav active="/dashboard/food/settings" />
+      <PageHeader title="Food settings" description="Choose what the food diary focuses on.">
+        <FoodNav active="/dashboard/food/settings" />
+      </PageHeader>
 
       <div className="space-y-6">
         <FoodPreferencesForm mode={settings.mode} mealLabels={settings.mealLabels} />
 
         <div className="card">
-          <CollapsibleSection title="Advanced: nutrition targets" defaultOpen={settings.mode === "optimize"}>
-            <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
+          <CollapsibleSection title="Advanced: nutrition targets" as="h2" defaultOpen={settings.mode === "optimize"}>
+            <p className="mb-3 text-sm text-muted">
               Targets are only shown on the diary in Optimize mode.
             </p>
             <FormAction

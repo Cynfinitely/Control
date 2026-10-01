@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { parseProgramText, type ParseProgramTextResult } from "@/lib/exercise/parse-program-text";
+import { parseProgramText } from "@/lib/exercise/parse-program-text";
 import { formatProgramExerciseLabel } from "@/lib/exercise/format";
+import { useToast } from "@/components/Toast";
+import Spinner from "@/components/Spinner";
 import { importProgramFromText } from "./actions";
 
 const PLACEHOLDER = `FULL BODY WORKOUT PROGRAM
@@ -19,92 +21,111 @@ const PLACEHOLDER = `FULL BODY WORKOUT PROGRAM
 
 export default function ProgramTextImport() {
   const router = useRouter();
+  const toast = useToast();
+  const id = useId();
   const [text, setText] = useState("");
-  const [preview, setPreview] = useState<ParseProgramTextResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  function handlePreview() {
-    setError(null);
-    setPreview(parseProgramText(text));
-  }
+  // Live preview: parsing is cheap, so re-parse on every edit.
+  const preview = useMemo(() => (text.trim() ? parseProgramText(text) : null), [text]);
+  const canSave = Boolean(preview && !preview.error && preview.exercises.length > 0);
 
   function handleImport() {
+    if (!canSave) return;
     startTransition(async () => {
       const fd = new FormData();
       fd.set("text", text);
-      const res = await importProgramFromText(fd);
-      if (!res.ok) {
-        setError(res.error);
-        setPreview(parseProgramText(text));
-        return;
+      try {
+        const res = await importProgramFromText(fd);
+        if (!res.ok) {
+          setError(res.error);
+          toast.error(res.error);
+          return;
+        }
+        toast.success("Program saved");
+        router.push(`/dashboard/exercise/programs/${res.programId}`);
+        router.refresh();
+      } catch {
+        const message = "Couldn't save the program. Please try again.";
+        setError(message);
+        toast.error(message);
       }
-      router.push(`/dashboard/exercise/programs/${res.programId}`);
-      router.refresh();
     });
   }
 
   return (
-    <div id="paste" className="card">
-      <h2 className="section-title">Paste from text</h2>
-      <p className="mt-1 text-xs text-slate-400">
-        First line is the program name. Then one exercise per line, e.g.{" "}
-        <code className="text-slate-500 dark:text-slate-400">1. Bench Press — 3 sets</code> or{" "}
-        <code className="text-slate-500 dark:text-slate-400">Bench Press 3x8</code>.
-      </p>
-
+    <section id="paste" className="card scroll-mt-6" aria-labelledby={`${id}-title`}>
+      <h2 id={`${id}-title`} className="section-title">
+        Paste from text
+      </h2>
+      <label htmlFor={`${id}-text`} className="label mt-3">
+        Program text
+      </label>
       <textarea
+        id={`${id}-text`}
+        aria-describedby={`${id}-hint`}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
-          setPreview(null);
           setError(null);
         }}
-        className="input mt-3 min-h-[200px] w-full font-mono text-sm"
+        className="input min-h-[200px] w-full font-mono text-sm"
         placeholder={PLACEHOLDER}
         spellCheck={false}
       />
+      <p id={`${id}-hint`} className="hint">
+        First line is the program name. Then one exercise per line, e.g.{" "}
+        <code>1. Bench Press — 3 sets</code> or <code>Bench Press 3x8</code>. The preview updates as you type.
+      </p>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={handlePreview} className="btn-ghost text-sm">
-          Preview
-        </button>
+      {error && (
+        <p className="field-error mt-3" role="alert">
+          {error}
+        </p>
+      )}
+
+      <div className="mt-4" aria-live="polite">
+        {preview && (
+          <>
+            {preview.warnings.length > 0 && (
+              <ul className="mb-3 space-y-1 text-xs text-amber-700 dark:text-amber-400">
+                {preview.warnings.map((w) => (
+                  <li key={w}>· {w}</li>
+                ))}
+              </ul>
+            )}
+
+            {!canSave ? (
+              <p className="text-sm text-muted">{preview.error ?? "No exercises found yet. Add one per line."}</p>
+            ) : (
+              <div className="tile">
+                <p className="eyebrow">Preview</p>
+                <p className="mt-1 font-medium text-slate-800 dark:text-slate-100">{preview.name}</p>
+                <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+                  {preview.exercises.map((ex) => (
+                    <li key={`${ex.lineNumber}-${ex.name}`}>{formatProgramExerciseLabel(ex)}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
-
-      {preview && (
-        <div className="mt-4">
-          {preview.warnings.length > 0 && (
-            <ul className="mb-3 space-y-1 text-xs text-amber-700 dark:text-amber-400">
-              {preview.warnings.map((w) => (
-                <li key={w}>· {w}</li>
-              ))}
-            </ul>
-          )}
-
-          {preview.error || preview.exercises.length === 0 ? (
-            <p className="text-sm text-slate-400">{preview.error ?? "No exercises found in pasted text."}</p>
-          ) : (
-            <>
-              <p className="mb-2 font-medium text-slate-800 dark:text-slate-100">{preview.name}</p>
-              <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
-                {preview.exercises.map((ex) => (
-                  <li key={`${ex.lineNumber}-${ex.name}`}>{formatProgramExerciseLabel(ex)}</li>
-                ))}
-              </ol>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={handleImport}
-                className="btn-primary mt-4 text-sm"
-              >
-                {pending ? "Saving…" : `Save ${preview.exercises.length} exercises`}
-              </button>
-            </>
-          )}
-        </div>
+      {canSave && preview && (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={handleImport}
+          className="btn-primary touch-target mt-4 w-full sm:w-auto"
+        >
+          {pending && <Spinner />}
+          {pending
+            ? "Saving…"
+            : `Save program (${preview.exercises.length} ${preview.exercises.length === 1 ? "exercise" : "exercises"})`}
+        </button>
       )}
-    </div>
+    </section>
   );
 }

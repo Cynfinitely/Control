@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
-import { parseDayParam, startOfDay } from "@/lib/date";
+import { endOfDay, parseDayParam, startOfDay } from "@/lib/date";
 import { joinItems, splitItems } from "@/lib/food/items";
 import { parseFoodMode, serializeMealLabels } from "@/lib/food/meals";
 import { instantFromLocal } from "@/lib/food/insights";
@@ -144,12 +144,13 @@ export async function updateFood(formData: FormData): Promise<ActionResult> {
 export async function deleteFood(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  await prisma.foodLogEntry.updateMany({
-    where: { id, userId },
+  const result = await prisma.foodLogEntry.updateMany({
+    where: { id, userId, deletedAt: null },
     data: { deletedAt: new Date() },
   });
+  if (result.count === 0) return failure("Entry not found");
   invalidateFood(userId);
-  return success("Deleted");
+  return success("Entry deleted");
 }
 
 export async function saveTarget(formData: FormData) {
@@ -177,6 +178,27 @@ export async function logWater(formData: FormData): Promise<ActionResult> {
   await prisma.waterLog.create({ data: { userId, date, glasses } });
   invalidateFood(userId);
   return success("Water logged");
+}
+
+/** Undo one glass for the day, never going below zero. */
+export async function removeWater(formData: FormData): Promise<ActionResult> {
+  const userId = await getUserId();
+  const day = str(formData.get("day"));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return failure("Invalid day");
+  const date = parseDayParam(day);
+  const range = { gte: startOfDay(date), lte: endOfDay(date) };
+  const latest = await prisma.waterLog.findFirst({
+    where: { userId, date: range, glasses: { gt: 0 } },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!latest) return failure("No water logged for this day");
+  if (latest.glasses > 1) {
+    await prisma.waterLog.update({ where: { id: latest.id }, data: { glasses: { decrement: 1 } } });
+  } else {
+    await prisma.waterLog.delete({ where: { id: latest.id } });
+  }
+  invalidateFood(userId);
+  return success("Removed 1 glass");
 }
 
 export async function saveFoodPreferences(formData: FormData): Promise<ActionResult> {
@@ -284,37 +306,44 @@ export async function deleteDefaultMeal(formData: FormData): Promise<ActionResul
   return success("Default Meal removed");
 }
 
-export async function logFromPlan(formData: FormData) {
+export async function logFromPlan(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const planId = str(formData.get("planId"));
   const item = await prisma.mealPlanItem.findFirst({
     where: { id: planId, userId, deletedAt: null },
     include: { ingredients: { orderBy: { createdAt: "asc" } } },
   });
-  if (!item) return;
-  await prisma.foodLogEntry.create({
-    data: {
-      userId,
-      name: item.name,
-      meal: item.meal,
-      items: item.ingredients.length > 0 ? joinItems(item.ingredients.map((i) => i.name)) : null,
-      defaultMealId: item.defaultMealId,
-      calories: item.calories,
-      protein: item.protein,
-      carbs: item.carbs,
-      fat: item.fat,
-      date: item.date,
-    },
-  });
+  if (!item) return failure("Planned meal not found");
+  if (item.loggedAt && !formData.get("again")) {
+    return failure(`“${item.name}” is already in your diary. Use “Log again” to add it twice.`);
+  }
+  await prisma.$transaction([
+    prisma.foodLogEntry.create({
+      data: {
+        userId,
+        name: item.name,
+        meal: item.meal,
+        items: item.ingredients.length > 0 ? joinItems(item.ingredients.map((i) => i.name)) : null,
+        defaultMealId: item.defaultMealId,
+        calories: item.calories,
+        protein: item.protein,
+        carbs: item.carbs,
+        fat: item.fat,
+        date: item.date,
+      },
+    }),
+    prisma.mealPlanItem.update({ where: { id: item.id }, data: { loggedAt: new Date() } }),
+  ]);
   invalidateFood(userId);
   invalidatePlanner(userId);
+  return success(`Logged “${item.name}” to your diary`);
 }
 
-export async function addPlanItem(formData: FormData) {
+export async function addPlanItem(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const defaultMeal = await ownedDefaultMeal(userId, str(formData.get("defaultMealId")));
   const name = str(formData.get("name")) || defaultMeal?.name || "";
-  if (!name) return;
+  if (!name) return failure("Pick a Default Meal or type a meal name");
   const nutrition = readNutrition(formData);
   const useDefaultNutrition = defaultMeal && nutrition.calories === 0;
   await prisma.mealPlanItem.create({
@@ -339,34 +368,38 @@ export async function addPlanItem(formData: FormData) {
     },
   });
   invalidatePlanner(userId);
+  return success(`Planned “${name}”`);
 }
 
-export async function deletePlanItem(formData: FormData) {
+export async function deletePlanItem(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  await prisma.mealPlanItem.updateMany({
-    where: { id, userId },
+  const result = await prisma.mealPlanItem.updateMany({
+    where: { id, userId, deletedAt: null },
     data: { deletedAt: new Date() },
   });
+  if (result.count === 0) return failure("Planned meal not found");
   invalidatePlanner(userId);
+  return success("Removed from plan");
 }
 
-export async function addShoppingItem(formData: FormData) {
+export async function addShoppingItem(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const mealPlanItemId = str(formData.get("mealPlanItemId"));
   const name = str(formData.get("name"));
-  if (!name) return;
+  if (!name) return failure("Enter an ingredient");
   const owns = await prisma.mealPlanItem.findFirst({
     where: { id: mealPlanItemId, userId },
   });
-  if (!owns) return;
+  if (!owns) return failure("Planned meal not found");
   await prisma.shoppingItem.create({
     data: { mealPlanItemId, name, quantity: optStr(formData.get("quantity")) },
   });
   invalidatePlanner(userId);
+  return success(`Added “${name}” to the shopping list`);
 }
 
-export async function toggleShoppingItem(formData: FormData) {
+export async function toggleShoppingItem(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const toChecked = await prisma.shoppingItem.updateMany({
@@ -374,10 +407,12 @@ export async function toggleShoppingItem(formData: FormData) {
     data: { checked: true },
   });
   if (toChecked.count === 0) {
-    await prisma.shoppingItem.updateMany({
+    const toUnchecked = await prisma.shoppingItem.updateMany({
       where: { id, checked: true, mealPlanItem: { userId } },
       data: { checked: false },
     });
+    if (toUnchecked.count === 0) return failure("Shopping item not found");
   }
   invalidatePlanner(userId);
+  return success();
 }

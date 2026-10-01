@@ -1,8 +1,12 @@
-import Link from "next/link";
 import { requireUser } from "@/lib/session";
 import { buildReport, type Period } from "@/lib/reports";
-import { formatDate } from "@/lib/date";
+import { formatDate, formatRange } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
+import SegmentedControl from "@/components/SegmentedControl";
+import StatCard from "@/components/StatCard";
+import EmptyState from "@/components/EmptyState";
+
+export const metadata = { title: "Reports" };
 
 const PERIODS: { value: Period; label: string }[] = [
   { value: "daily", label: "Daily" },
@@ -21,58 +25,56 @@ export default async function ReportsPage({
     : "daily") as Period;
 
   const report = await buildReport(user.id, period);
+  const range =
+    formatDate(report.from) === formatDate(report.to)
+      ? formatDate(report.from)
+      : formatRange(report.from, report.to);
 
   return (
     <div>
-      <PageHeader
-        title="Reports"
-        description={`${formatDate(report.from)} - ${formatDate(report.to)}`}
-      />
+      <PageHeader title="Reports" description={range}>
+        <SegmentedControl
+          aria-label="Report period"
+          value={period}
+          options={PERIODS.map((p) => ({
+            value: p.value,
+            label: p.label,
+            href: `/dashboard/reports?period=${p.value}`,
+          }))}
+        />
+      </PageHeader>
 
-      <div className="mb-6 flex overflow-x-auto rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-800">
-        {PERIODS.map((p) => (
-          <Link
-            key={p.value}
-            href={`/dashboard/reports?period=${p.value}`}
-            className={`touch-target shrink-0 flex-1 rounded-md px-4 py-1.5 text-center text-sm font-medium transition ${
-              p.value === period ? "bg-brand-600 text-white" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700"
-            }`}
-          >
-            {p.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {report.sections.map((section) => (
-          <div key={section.title} className="card">
-            <h2 className="section-title mb-3">{section.title}</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {section.stats.map((s) => {
-                const inner = (
-                  <>
-                    <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{s.value}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{s.label}</p>
-                  </>
-                );
-                return s.href ? (
-                  <Link
+      {report.sections.length === 0 ? (
+        <EmptyState
+          icon="chart"
+          title="Nothing to report yet"
+          description="Log todos, meals, workouts or prayers and your summary will appear here."
+          actionLabel="Go to Today"
+          actionHref="/dashboard"
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {report.sections.map((section) => (
+            <section key={section.title} className="card" aria-label={section.title}>
+              <h2 className="section-title mb-3">{section.title}</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {section.stats.map((s) => (
+                  <StatCard
                     key={s.label}
+                    surface="tile"
+                    size="sm"
+                    label={s.label}
+                    value={s.value}
                     href={s.href}
-                    className="rounded-lg bg-slate-50 p-3 transition hover:bg-brand-50 hover:ring-1 hover:ring-brand-200 dark:bg-slate-700 dark:hover:bg-brand-950 dark:hover:ring-brand-800"
-                  >
-                    {inner}
-                  </Link>
-                ) : (
-                  <div key={s.label} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
-                    {inner}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+                    icon={s.href ? "arrowRight" : undefined}
+                    className={s.href ? "hover:bg-brand-50 dark:hover:bg-brand-950/60" : undefined}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import FormAction from "@/components/FormAction";
 import SubmitButton from "@/components/SubmitButton";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import type { DefaultMealView } from "@/lib/queries/food";
-import { hasNutrition } from "@/lib/food/meals";
+import { displayMealLabel, hasNutrition } from "@/lib/food/meals";
 import { joinItems } from "@/lib/food/items";
 import { upsertDefaultMealForm } from "../actions";
 import { NutritionInputs } from "../QuickLog";
@@ -49,7 +49,7 @@ export default function DefaultMealForm({ meal, mealLabels, onDone }: Props) {
             <option value="">—</option>
             {labelOptions.map((label) => (
               <option key={label} value={label}>
-                {label}
+                {displayMealLabel(label)}
               </option>
             ))}
           </select>
@@ -60,12 +60,13 @@ export default function DefaultMealForm({ meal, mealLabels, onDone }: Props) {
         <textarea
           id={`${prefix}-items`}
           name="items"
+          aria-describedby={`${prefix}-items-hint`}
           rows={2}
           className="input"
           placeholder="chicken, salad, skyr, fruit"
           defaultValue={meal ? joinItems(meal.items.map((i) => i.name)) : ""}
         />
-        <p className="mt-1 text-xs text-slate-400">Separate with commas. Items go to the shopping list when you plan this meal.</p>
+        <p id={`${prefix}-items-hint`} className="hint">Separate with commas. Items go to the shopping list when you plan this meal.</p>
       </div>
       <CollapsibleSection title="Nutrition (optional)" defaultOpen={Boolean(meal && hasNutrition(meal))}>
         <NutritionInputs idPrefix={prefix} values={meal} />

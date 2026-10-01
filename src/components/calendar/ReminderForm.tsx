@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { buildRruleString } from "@/lib/calendar";
+import { buildRruleString, parseRruleParts } from "@/lib/calendar";
 import { toDatetimeLocalValue } from "@/lib/calendar/format";
-import SubmitButton from "@/components/SubmitButton";
+import Modal from "@/components/Modal";
+import Spinner from "@/components/Spinner";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useToast } from "@/components/Toast";
 import { createReminder, updateReminder, deleteReminder } from "@/app/dashboard/calendar/actions";
 
 export type ReminderFormValues = {
@@ -22,132 +25,155 @@ type Props = {
 };
 
 export default function ReminderForm({ open, mode, initial, onClose, onSaved }: Props) {
+  const toast = useToast();
   const [title, setTitle] = useState(initial.title);
   const [remindAt, setRemindAt] = useState(toDatetimeLocalValue(initial.remindAt));
   const [freq, setFreq] = useState<"NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY">(
-    initial.rrule?.includes("YEARLY")
-      ? "YEARLY"
-      : initial.rrule?.includes("MONTHLY")
-        ? "MONTHLY"
-        : initial.rrule?.includes("WEEKLY")
-          ? "WEEKLY"
-          : initial.rrule?.includes("DAILY")
-            ? "DAILY"
-            : "NONE"
+    () => parseRruleParts(initial.rrule).freq
   );
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const formId = `reminder-form-${initial.id ?? "new"}`;
 
   const rrule = useMemo(() => {
     if (freq === "NONE") return null;
     return buildRruleString({ freq });
   }, [freq]);
 
-  if (!open) return null;
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (pending) return;
     setError(null);
+    setPending(true);
     const fd = new FormData();
     if (initial.id) fd.set("id", initial.id);
     fd.set("title", title);
     fd.set("remindAt", remindAt);
     if (rrule) fd.set("rrule", rrule);
 
-    const result =
-      mode === "create" ? await createReminder(fd) : await updateReminder(fd);
-
-    if (result && "error" in result && result.error) {
-      setError(result.error);
-      return;
+    try {
+      const result = mode === "create" ? await createReminder(fd) : await updateReminder(fd);
+      if (result && "error" in result && result.error) {
+        setError(result.error);
+        return;
+      }
+      toast.success(mode === "create" ? "Reminder created" : "Reminder saved");
+      onSaved();
+      onClose();
+    } catch {
+      setError("Couldn't save the reminder. Please try again.");
+    } finally {
+      setPending(false);
     }
-    onSaved();
-    onClose();
   }
 
   async function handleDelete() {
     if (!initial.id) return;
+    setConfirmDelete(false);
+    setPending(true);
     const fd = new FormData();
     fd.set("id", initial.id);
-    await deleteReminder(fd);
-    onSaved();
-    onClose();
+    try {
+      await deleteReminder(fd);
+      toast.success("Reminder deleted");
+      onSaved();
+      onClose();
+    } catch {
+      toast.error("Couldn't delete the reminder. Please try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-[85] flex items-end justify-center sm:items-center sm:p-4">
-      <button type="button" className="absolute inset-0 bg-black/40" aria-label="Close" onClick={onClose} />
-      <form
-        onSubmit={handleSubmit}
-        className="card relative z-10 w-full max-w-md space-y-3 rounded-t-2xl shadow-xl sm:rounded-2xl"
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            {mode === "create" ? "New reminder" : "Edit reminder"}
-          </h2>
-          <button type="button" className="btn-ghost text-sm" onClick={onClose}>
-            Close
-          </button>
-        </div>
-
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-
-        <div>
-          <label className="label" htmlFor="rem-title">
-            Title
-          </label>
-          <input
-            id="rem-title"
-            className="input w-full"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            autoFocus
-          />
-        </div>
-
-        <div>
-          <label className="label" htmlFor="rem-at">
-            When
-          </label>
-          <input
-            id="rem-at"
-            type="datetime-local"
-            className="input w-full"
-            value={remindAt}
-            onChange={(e) => setRemindAt(e.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="label" htmlFor="rem-freq">
-            Repeat
-          </label>
-          <select
-            id="rem-freq"
-            className="input w-full"
-            value={freq}
-            onChange={(e) => setFreq(e.target.value as typeof freq)}
-          >
-            <option value="NONE">Does not repeat</option>
-            <option value="DAILY">Daily</option>
-            <option value="WEEKLY">Weekly</option>
-            <option value="MONTHLY">Monthly</option>
-            <option value="YEARLY">Yearly</option>
-          </select>
-        </div>
-
-        <div className="flex flex-wrap gap-2 pt-2">
-          <SubmitButton className="btn-primary touch-target">
-            {mode === "create" ? "Create" : "Save"}
-          </SubmitButton>
-          {mode === "edit" && (
-            <button type="button" className="btn-danger touch-target" onClick={handleDelete}>
-              Delete
+    <>
+      <Modal
+        open={open}
+        onClose={onClose}
+        title={mode === "create" ? "New reminder" : "Edit reminder"}
+        size="sm"
+        footer={
+          <>
+            {mode === "edit" && (
+              <button
+                type="button"
+                className="btn-danger sm:mr-auto"
+                onClick={() => setConfirmDelete(true)}
+                disabled={pending}
+              >
+                Delete
+              </button>
+            )}
+            <button type="button" className="btn-ghost" onClick={onClose}>
+              Cancel
             </button>
+            <button type="submit" form={formId} className="btn-primary" disabled={pending}>
+              {pending && <Spinner />}
+              {mode === "create" ? "Create reminder" : "Save changes"}
+            </button>
+          </>
+        }
+      >
+        <form id={formId} onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+              {error}
+            </p>
           )}
-        </div>
-      </form>
-    </div>
+          <div>
+            <label className="label" htmlFor="rem-title">
+              Title
+            </label>
+            <input
+              id="rem-title"
+              className="input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              data-autofocus
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="rem-at">
+              When
+            </label>
+            <input
+              id="rem-at"
+              type="datetime-local"
+              className="input"
+              value={remindAt}
+              onChange={(e) => setRemindAt(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="rem-freq">
+              Repeat
+            </label>
+            <select
+              id="rem-freq"
+              className="input"
+              value={freq}
+              onChange={(e) => setFreq(e.target.value as typeof freq)}
+            >
+              <option value="NONE">Does not repeat</option>
+              <option value="DAILY">Daily</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="YEARLY">Yearly</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete reminder?"
+        message={`“${initial.title || "This reminder"}” will be removed. This can't be undone.`}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
+    </>
   );
 }

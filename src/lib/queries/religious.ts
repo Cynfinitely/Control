@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { startOfDay, endOfDay, addDays, toDateInputValue } from "@/lib/date";
+import { startOfDay, endOfDay, addDays, toDateInputValue, coerceDate } from "@/lib/date";
 
 export async function getDayPrayers(userId: string, dayKey: string) {
   const day = new Date(dayKey + "T00:00:00");
@@ -48,10 +48,16 @@ export async function getPrayerStreak(userId: string, todayKey: string) {
   );
 }
 
+function reviveOptionalDate(d: Date | string | null): Date | null {
+  return d ? coerceDate(d) : null;
+}
+
 export async function getReligiousSidebarData(userId: string, todayKey: string) {
   const today = new Date(todayKey + "T00:00:00");
   const now = new Date();
-  return cachedQuery(
+  // cachedQuery JSON-serializes results, so Dates come back as strings on cache
+  // hits. Revive them after the await (see getEventsInRange in calendar.ts).
+  const data = await cachedQuery(
     ["religious-sidebar", userId, todayKey],
     [cacheTag("religious", userId)],
     async () => {
@@ -96,4 +102,24 @@ export async function getReligiousSidebarData(userId: string, todayKey: string) 
       };
     }
   );
+  return {
+    ...data,
+    pendingQaza: data.pendingQaza.map((q) => ({
+      ...q,
+      sourceDate: reviveOptionalDate(q.sourceDate),
+      fulfilledAt: reviveOptionalDate(q.fulfilledAt),
+      createdAt: coerceDate(q.createdAt),
+    })),
+    prayerDebts: data.prayerDebts.map((d) => ({
+      ...d,
+      periodStart: reviveOptionalDate(d.periodStart),
+      periodEnd: reviveOptionalDate(d.periodEnd),
+      createdAt: coerceDate(d.createdAt),
+      updatedAt: coerceDate(d.updatedAt),
+    })),
+    dhikr: data.dhikr.map((d) => ({ ...d, date: coerceDate(d.date), createdAt: coerceDate(d.createdAt) })),
+    quran: data.quran.map((q) => ({ ...q, date: coerceDate(q.date), createdAt: coerceDate(q.createdAt) })),
+    fasts: data.fasts.map((f) => ({ ...f, date: coerceDate(f.date), createdAt: coerceDate(f.createdAt) })),
+    readingEntries: data.readingEntries.map((e) => ({ ...e, date: coerceDate(e.date), createdAt: coerceDate(e.createdAt) })),
+  };
 }

@@ -1,7 +1,13 @@
 "use client";
 
+import clsx from "clsx";
 import { readingProgress, sumAmounts } from "@/lib/daily-readings";
+import ActionForm from "@/components/ActionForm";
+import CollapsibleSection from "@/components/CollapsibleSection";
+import EmptyState from "@/components/EmptyState";
+import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
 import {
   deleteDailyReadingItem,
   logDailyReading,
@@ -35,136 +41,210 @@ function unitLabel(unit: string, count: number) {
 
 export default function DailyReadingsPanel({ items, todayEntries, dayValue }: Props) {
   return (
-    <div className="card mb-6">
-      <h2 className="section-title">Daily readings</h2>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    <section className="card mb-6" aria-labelledby="readings-title">
+      <div className="flex items-center gap-2">
+        <h2 id="readings-title" className="section-title">
+          Daily readings
+        </h2>
+        <span className="badge-brand">Today</span>
+      </div>
+      <p className="mt-1 text-sm text-muted">
         Track a personal set of daily readings. Add, edit, or remove items any time.
       </p>
 
       {items.length === 0 ? (
-        <div className="mt-4 space-y-3">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            No readings yet. Start with a suggested set (Quran, Jawshan, Risale-i Nur, Gülen) or add
-            your own.
-          </p>
-          <form action={seedSuggestedReadings}>
-            <SubmitButton className="btn-primary touch-target w-full sm:w-auto">
-              Add suggested readings
-            </SubmitButton>
-          </form>
-        </div>
+        <EmptyState
+          variant="inline"
+          icon="book"
+          headingLevel="h3"
+          title="No readings yet"
+          description="Start with a suggested set (Quran, Jawshan, Risale-i Nur, Gülen) or add your own under Manage readings."
+          className="mt-4"
+        >
+          <ActionForm action={seedSuggestedReadings}>
+            <SubmitButton className="btn-primary touch-target w-full sm:w-auto">Add suggested readings</SubmitButton>
+          </ActionForm>
+        </EmptyState>
       ) : (
-        <div className="mt-4 space-y-4">
+        <ul className="mt-4 space-y-3">
           {items.map((item) => {
             const logged = sumAmounts(todayEntries.filter((entry) => entry.itemId === item.id));
             const { pct, done } = readingProgress(logged, item.dailyTarget);
             return (
-              <div
+              <li
                 key={item.id}
-                className={`rounded-lg border p-3 ${
+                className={clsx(
+                  "rounded-lg border p-3",
                   done
-                    ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20"
-                    : "border-slate-100 dark:border-slate-700"
-                }`}
+                    ? "border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20"
+                    : "border-slate-200 dark:border-slate-700"
+                )}
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium text-slate-800 dark:text-slate-100">{item.name}</p>
-                      {done && <span className="badge bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Done</span>}
-                      {item.linkKind === "quran" && (
-                        <span className="badge bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300">linked to khatm</span>
+                      <h3 className="font-medium text-slate-800 dark:text-slate-100">{item.name}</h3>
+                      {done && (
+                        <span className="badge-success">
+                          <Icon name="check" className="h-3.5 w-3.5" />
+                          Done
+                        </span>
                       )}
+                      {item.linkKind === "quran" && <span className="badge-brand">Linked to khatm</span>}
                     </div>
-                    <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                    <p className="mt-0.5 text-sm text-muted">
                       {logged}/{item.dailyTarget} {unitLabel(item.unit, item.dailyTarget)}
                     </p>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full progress-track">
-                      <div className="h-full bg-brand-500" style={{ width: `${pct}%` }} />
+                    <div
+                      className="mt-2 h-1.5 w-full overflow-hidden rounded-full progress-track"
+                      role="progressbar"
+                      aria-label={`${item.name} today`}
+                      aria-valuenow={pct}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
+                      <div className={clsx("h-full", done ? "bg-green-500" : "bg-brand-500")} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
-                    <form action={logDailyReading}>
+                    <ActionForm action={logDailyReading}>
                       <input type="hidden" name="itemId" value={item.id} />
                       <input type="hidden" name="amount" value="1" />
                       <input type="hidden" name="date" value={dayValue} />
-                      <SubmitButton className="btn-ghost touch-target text-sm">+1</SubmitButton>
-                    </form>
-                    <form action={logDailyReading}>
-                      <input type="hidden" name="itemId" value={item.id} />
-                      <input type="hidden" name="amount" value={item.dailyTarget} />
-                      <input type="hidden" name="date" value={dayValue} />
-                      <SubmitButton className="btn-primary touch-target text-sm">
-                        +{item.dailyTarget}
+                      <SubmitButton className="btn-ghost touch-target" aria-label={`Log 1 ${unitLabel(item.unit, 1)} of ${item.name}`}>
+                        +1
                       </SubmitButton>
-                    </form>
+                    </ActionForm>
+                    {item.dailyTarget > 1 && (
+                      <ActionForm action={logDailyReading}>
+                        <input type="hidden" name="itemId" value={item.id} />
+                        <input type="hidden" name="amount" value={item.dailyTarget} />
+                        <input type="hidden" name="date" value={dayValue} />
+                        <SubmitButton
+                          className="btn-primary touch-target"
+                          aria-label={`Log ${item.dailyTarget} ${unitLabel(item.unit, item.dailyTarget)} of ${item.name}`}
+                        >
+                          +{item.dailyTarget}
+                        </SubmitButton>
+                      </ActionForm>
+                    )}
                   </div>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
 
-      <details className="mt-4">
-        <summary className="cursor-pointer text-sm font-medium text-brand-700 dark:text-brand-300">Manage readings</summary>
-        <form action={saveDailyReadingItem} className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-4">
-          <input name="name" className="input sm:col-span-2" placeholder="Name" required />
-          <input
-            name="dailyTarget"
-            type="number"
-            min={1}
-            defaultValue={5}
-            className="input"
-            aria-label="Daily target"
-          />
-          <select name="unit" className="input" defaultValue="pages" aria-label="Unit">
-            <option value="pages">pages</option>
-            <option value="times">times</option>
-          </select>
-          <div className="sm:col-span-4">
-            <SubmitButton className="btn-ghost touch-target">Add reading</SubmitButton>
+      <CollapsibleSection title="Manage readings" className="mt-4">
+        <ActionForm
+          action={saveDailyReadingItem}
+          resetOnSuccess
+          className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_7rem_auto] sm:items-end"
+        >
+          <div className="col-span-2 sm:col-span-1">
+            <label className="label" htmlFor="reading-new-name">
+              Name
+            </label>
+            <input id="reading-new-name" name="name" className="input" required />
           </div>
-        </form>
+          <div>
+            <label className="label" htmlFor="reading-new-target">
+              Per day
+            </label>
+            <input
+              id="reading-new-target"
+              name="dailyTarget"
+              type="number"
+              min={1}
+              defaultValue={5}
+              inputMode="numeric"
+              className="input"
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="reading-new-unit">
+              Unit
+            </label>
+            <select id="reading-new-unit" name="unit" className="input" defaultValue="pages">
+              <option value="pages">pages</option>
+              <option value="times">times</option>
+            </select>
+          </div>
+          <SubmitButton className="btn-ghost touch-target col-span-2 sm:col-span-1">Add reading</SubmitButton>
+        </ActionForm>
 
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:items-end dark:border-slate-700"
-          >
-            <form action={saveDailyReadingItem} className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
-              <input type="hidden" name="id" value={item.id} />
-              <input name="name" className="input" defaultValue={item.name} required />
-              <input
-                name="dailyTarget"
-                type="number"
-                min={1}
-                defaultValue={item.dailyTarget}
-                className="input"
-                aria-label={`${item.name} target`}
-              />
-              {item.linkKind === "quran" ? (
-                <>
-                  <input type="hidden" name="unit" value="pages" />
-                  <p className="input flex items-center text-slate-500 dark:text-slate-400">pages</p>
-                </>
-              ) : (
-                <select name="unit" className="input" defaultValue={item.unit}>
-                  <option value="pages">pages</option>
-                  <option value="times">times</option>
-                </select>
-              )}
-              <div className="sm:col-span-3">
-                <SubmitButton className="btn-ghost touch-target text-sm">Save</SubmitButton>
-              </div>
-            </form>
-            <form action={deleteDailyReadingItem}>
-              <input type="hidden" name="id" value={item.id} />
-              <SubmitButton className="btn-ghost touch-target text-sm text-red-600 dark:text-red-400">Remove</SubmitButton>
-            </form>
-          </div>
-        ))}
-      </details>
-    </div>
+        {items.length > 0 && (
+          <ul className="mt-4 divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-slate-700">
+            {items.map((item) => (
+              <li key={item.id} className="flex items-end gap-2 py-3">
+                <ActionForm
+                  action={saveDailyReadingItem}
+                  className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_7rem_auto] sm:items-end"
+                >
+                  <input type="hidden" name="id" value={item.id} />
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="sr-only" htmlFor={`reading-${item.id}-name`}>
+                      Name
+                    </label>
+                    <input id={`reading-${item.id}-name`} name="name" className="input" defaultValue={item.name} required />
+                  </div>
+                  <div>
+                    <label className="sr-only" htmlFor={`reading-${item.id}-target`}>
+                      {item.name} per day
+                    </label>
+                    <input
+                      id={`reading-${item.id}-target`}
+                      name="dailyTarget"
+                      type="number"
+                      min={1}
+                      defaultValue={item.dailyTarget}
+                      inputMode="numeric"
+                      className="input"
+                    />
+                  </div>
+                  {item.linkKind === "quran" ? (
+                    <>
+                      <input type="hidden" name="unit" value="pages" />
+                      <p className="input flex items-center text-muted" title="Linked to khatm: always pages">
+                        pages
+                      </p>
+                    </>
+                  ) : (
+                    <div>
+                      <label className="sr-only" htmlFor={`reading-${item.id}-unit`}>
+                        {item.name} unit
+                      </label>
+                      <select id={`reading-${item.id}-unit`} name="unit" className="input" defaultValue={item.unit}>
+                        <option value="pages">pages</option>
+                        <option value="times">times</option>
+                      </select>
+                    </div>
+                  )}
+                  <SubmitButton className="btn-ghost touch-target col-span-2 sm:col-span-1" aria-label={`Save ${item.name}`}>
+                    Save
+                  </SubmitButton>
+                </ActionForm>
+                <ActionForm
+                  action={deleteDailyReadingItem}
+                  confirm={{
+                    title: `Remove “${item.name}”?`,
+                    message: "The reading and everything logged for it will be deleted.",
+                    confirmLabel: "Remove",
+                  }}
+                >
+                  <input type="hidden" name="id" value={item.id} />
+                  <SubmitIconButton
+                    className="btn-icon-danger"
+                    aria-label={`Remove ${item.name}`}
+                    icon={<Icon name="trash" className="h-4 w-4" />}
+                  />
+                </ActionForm>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CollapsibleSection>
+    </section>
   );
 }

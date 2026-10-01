@@ -32,10 +32,10 @@ async function nextSortOrder(userId: string): Promise<number> {
   return (max._max.sortOrder ?? 0) + 1;
 }
 
-export async function createProgram(formData: FormData) {
+export async function createProgram(formData: FormData): Promise<ActionResult | void> {
   const userId = await getUserId();
   const name = str(formData.get("name"));
-  if (!name) return;
+  if (!name) return failure("Enter a program name.");
   const program = await prisma.workoutProgram.create({
     data: {
       userId,
@@ -151,40 +151,43 @@ export async function updateProgramExercise(formData: FormData): Promise<ActionR
   return success("Exercise updated");
 }
 
-export async function deleteProgramExercise(formData: FormData) {
+export async function deleteProgramExercise(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const programId = str(formData.get("programId"));
-  if (!id || !programId) return;
+  if (!id || !programId) return failure("Invalid exercise");
 
   const ex = await prisma.workoutProgramExercise.findFirst({
     where: { id, program: { userId, id: programId } },
   });
-  if (!ex) return;
+  if (!ex) return failure("Exercise not found");
 
   await prisma.workoutProgramExercise.delete({ where: { id } });
   invalidateProgram(userId, programId);
+  return success("Exercise removed");
 }
 
-export async function reorderProgramExercise(formData: FormData) {
+export async function reorderProgramExercise(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const programId = str(formData.get("programId"));
   const direction = str(formData.get("direction"));
-  if (!id || !programId) return;
-  if (direction !== "up" && direction !== "down") return;
+  if (!id || !programId) return failure("Invalid exercise");
+  if (direction !== "up" && direction !== "down") return failure("Invalid direction");
 
   const owns = await prisma.workoutProgram.findFirst({ where: { id: programId, userId } });
-  if (!owns) return;
+  if (!owns) return failure("Program not found");
 
   const exercises = await prisma.workoutProgramExercise.findMany({
     where: { programId },
     orderBy: { order: "asc" },
   });
   const index = exercises.findIndex((ex) => ex.id === id);
-  if (index < 0) return;
+  if (index < 0) return failure("Exercise not found");
   const swapWith = direction === "up" ? index - 1 : index + 1;
-  if (swapWith < 0 || swapWith >= exercises.length) return;
+  if (swapWith < 0 || swapWith >= exercises.length) {
+    return failure(direction === "up" ? "Already first" : "Already last");
+  }
 
   const current = exercises[index];
   const neighbor = exercises[swapWith];
@@ -199,6 +202,7 @@ export async function reorderProgramExercise(formData: FormData) {
     }),
   ]);
   invalidateProgram(userId, programId);
+  return success(direction === "up" ? "Moved up" : "Moved down");
 }
 
 export async function archiveProgram(formData: FormData): Promise<ActionResult> {

@@ -12,10 +12,13 @@ import {
 import { repeatedMealCandidates, timeInZone, weeklyFoodSummary, weeklyObservations } from "@/lib/food/insights";
 import PageHeader from "@/components/PageHeader";
 import DayNavigator from "@/components/DayNavigator";
+import EmptyState from "@/components/EmptyState";
 import FoodNav from "./FoodNav";
 import FoodDiary from "./FoodDiary";
 import RepeatedMealsCard from "./RepeatedMealsCard";
 import type { DiaryEntry } from "./types";
+
+export const metadata = { title: "Food" };
 
 export default async function FoodPage({
   searchParams,
@@ -27,6 +30,8 @@ export default async function FoodPage({
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
   const weekStart = startOfWeek(day);
+  const weekValue = toDateInputValue(weekStart);
+  const isCurrentWeek = weekValue === toDateInputValue(startOfWeek(new Date()));
 
   const [dayData, settings, defaults, recent, timeZone, weekEntries] = await Promise.all([
     getDayFoodEntries(user.id, dayValue),
@@ -50,11 +55,13 @@ export default async function FoodPage({
   const observations = weeklyObservations(
     weeklyFoodSummary(weekEntries, { timeZone, defaultMealNames: defaultNames })
   ).slice(0, 3);
+  const weekHref = isCurrentWeek ? "/dashboard/food/week" : `/dashboard/food/week?week=${weekValue}`;
 
   return (
     <div>
-      <PageHeader title="Food" description="Make eating visible. Log what you eat, no numbers required." />
-      <FoodNav active="/dashboard/food" />
+      <PageHeader title="Food" description="Make eating visible. Log what you eat, no numbers required.">
+        <FoodNav active="/dashboard/food" />
+      </PageHeader>
 
       <div className="mb-6">
         <DayNavigator basePath="/dashboard/food" dayValue={dayValue} dayLabel={dayLabel} />
@@ -80,14 +87,21 @@ export default async function FoodPage({
         )}
 
         <section className="card">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="section-title">This week</h2>
-            <Link href="/dashboard/food/week" className="text-sm font-medium text-brand-600 dark:text-brand-400">
-              Weekly report →
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="section-title">{isCurrentWeek ? "This week so far" : "That week"}</h2>
+            <Link href={weekHref} className="link text-sm font-medium">
+              Week summary →
             </Link>
           </div>
           {observations.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-400">Observations appear once you log a few meals.</p>
+            <EmptyState
+              variant="inline"
+              headingLevel="h3"
+              icon="chart"
+              title="No patterns yet"
+              description="Observations appear once you log a few meals this week."
+              className="mt-3"
+            />
           ) : (
             <ul className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
               {observations.map((o) => (

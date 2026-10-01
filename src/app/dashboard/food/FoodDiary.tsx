@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import { useToast } from "@/components/Toast";
 import Icon from "@/components/Icon";
+import StatCard from "@/components/StatCard";
 import type { DefaultMealView, NutritionTargetView, RecentFood } from "@/lib/queries/food";
 import type { FoodMode } from "@/lib/food/meals";
-import { logWater } from "./actions";
+import type { ActionResult } from "@/lib/action-result";
+import { logWater, removeWater } from "./actions";
 import QuickLog from "./QuickLog";
 import FoodTimeline from "./FoodTimeline";
 import type { DiaryEntry } from "./types";
@@ -29,11 +31,14 @@ export default function FoodDiary(props: Props) {
   const [logOpen, setLogOpen] = useState(props.autoOpen);
   const [logKey, setLogKey] = useState(0);
   const [initialTime, setInitialTime] = useState(props.nowTime);
+  // Deep links (?focus=log) always focus the name field; manual opens only on desktop.
+  const [forceFocus, setForceFocus] = useState(props.autoOpen);
 
   function openLog() {
     const now = new Date();
     setInitialTime(`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
     setLogKey((k) => k + 1);
+    setForceFocus(false);
     setLogOpen(true);
   }
 
@@ -49,9 +54,11 @@ export default function FoodDiary(props: Props) {
             mealLabels={props.mealLabels}
             defaults={props.defaults}
             recent={props.recent}
+            forceFocus={forceFocus}
             onLogged={() => setLogOpen(false)}
           />
-          <button type="button" onClick={() => setLogOpen(false)} className="btn-ghost text-xs">
+          <button type="button" onClick={() => setLogOpen(false)} className="btn-ghost touch-target">
+            <Icon name="x" className="h-4 w-4" />
             Close
           </button>
         </div>
@@ -65,8 +72,8 @@ export default function FoodDiary(props: Props) {
       {mode === "optimize" ? (
         <NutritionSummary entries={entries} target={props.target} waterGlasses={props.waterGlasses} dayValue={dayValue} />
       ) : (
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard label="Logged" value={String(entries.length)} />
+        <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+          <StatCard label="Meals logged" value={entries.length} size="sm" />
           <WaterCard glasses={props.waterGlasses} dayValue={dayValue} />
         </div>
       )}
@@ -79,39 +86,50 @@ export default function FoodDiary(props: Props) {
   );
 }
 
-function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="card py-3 text-center">
-      <p className="text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">{value}</p>
-      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{label}</p>
-      {hint && <p className="text-xs text-slate-400">{hint}</p>}
-    </div>
-  );
-}
-
 function WaterCard({ glasses, dayValue }: { glasses: number; dayValue: string }) {
-  const { error } = useToast();
+  const { success, error } = useToast();
   const [pending, startTransition] = useTransition();
+
+  function run(action: (fd: FormData) => Promise<ActionResult>, message: string) {
+    const fd = new FormData();
+    fd.set("day", dayValue);
+    fd.set("glasses", "1");
+    startTransition(async () => {
+      const result = await action(fd);
+      if (result.ok) success(message);
+      else error(result.error);
+    });
+  }
+
   return (
-    <div className="card flex flex-col items-center justify-center py-3 text-center">
-      <p className="text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">{glasses}</p>
-      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Glasses of water</p>
-      <button
-        type="button"
-        disabled={pending}
-        className="btn-ghost mt-1 text-xs disabled:opacity-50"
-        onClick={() => {
-          const fd = new FormData();
-          fd.set("day", dayValue);
-          fd.set("glasses", "1");
-          startTransition(async () => {
-            const result = await logWater(fd);
-            if (!result.ok) error(result.error);
-          });
-        }}
-      >
-        +1 glass
-      </button>
+    <div className="card min-w-0 p-4">
+      <p className="text-xs text-slate-600 dark:text-slate-400">Glasses of water</p>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <p className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100" aria-live="polite">
+          {glasses}
+        </p>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            disabled={pending || glasses <= 0}
+            onClick={() => run(removeWater, "Removed 1 glass")}
+            className="btn-icon ring-1 ring-inset ring-slate-200 disabled:opacity-40 dark:ring-slate-700"
+            aria-label="Remove 1 glass of water"
+            title="Remove 1 glass"
+          >
+            <Icon name="minus" className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => run(logWater, "Added 1 glass")}
+            className="btn-ghost touch-target"
+          >
+            <Icon name="plus" className="h-4 w-4" />
+            1 glass
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -136,39 +154,34 @@ function NutritionSummary({
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
-  const calPct = Math.min(100, Math.round((totals.calories / (target.calories || 1)) * 100));
-  const proteinPct = Math.min(100, Math.round((totals.protein / (target.protein || 1)) * 100));
+  const calPct = (totals.calories / (target.calories || 1)) * 100;
+  const proteinPct = (totals.protein / (target.protein || 1)) * 100;
+  const overCalories = totals.calories > target.calories;
+  const proteinReached = target.protein > 0 && totals.protein >= target.protein;
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="card">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Calories</p>
-        <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{Math.round(totals.calories)}</p>
-        <p className="text-xs text-slate-400">of {Math.round(target.calories)} kcal</p>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full progress-track">
-          <div
-            className={`h-full ${totals.calories > target.calories ? "bg-red-500" : "bg-brand-500"}`}
-            style={{ width: `${calPct}%` }}
-          />
-        </div>
-      </div>
-      <div className="card">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Protein</p>
-        <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{Math.round(totals.protein)}g</p>
-        <p className="text-xs text-slate-400">of {Math.round(target.protein)}g</p>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full progress-track">
-          <div className="h-full bg-emerald-500" style={{ width: `${proteinPct}%` }} />
-        </div>
-      </div>
-      <div className="card">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Carbs / Fat</p>
-        <p className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">
-          {Math.round(totals.carbs)}g / {Math.round(totals.fat)}g
-        </p>
-        <p className="text-xs text-slate-400">
-          target {Math.round(target.carbs)}g / {Math.round(target.fat)}g
-        </p>
-      </div>
+      <StatCard
+        label="Calories"
+        value={Math.round(totals.calories)}
+        hint={`of ${Math.round(target.calories)} kcal`}
+        progress={calPct}
+        tone={overCalories ? "bad" : "default"}
+        status={overCalories ? `Over by ${Math.round(totals.calories - target.calories)} kcal` : undefined}
+      />
+      <StatCard
+        label="Protein"
+        value={`${Math.round(totals.protein)}g`}
+        hint={`of ${Math.round(target.protein)}g`}
+        progress={proteinPct}
+        tone={proteinReached ? "good" : "default"}
+        status={proteinReached ? "Target reached" : undefined}
+      />
+      <StatCard
+        label="Carbs / Fat"
+        value={`${Math.round(totals.carbs)}g / ${Math.round(totals.fat)}g`}
+        hint={`target ${Math.round(target.carbs)}g / ${Math.round(target.fat)}g`}
+      />
       <WaterCard glasses={waterGlasses} dayValue={dayValue} />
     </div>
   );

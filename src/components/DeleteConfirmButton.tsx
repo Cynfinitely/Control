@@ -12,16 +12,21 @@ type Props = {
   label?: string;
   confirmLabel?: string;
   disabled?: boolean;
+  /** "icon" = trash icon button (default); "text" = small labelled danger button */
+  appearance?: "icon" | "text";
+  icon?: string;
 };
 
 export default function DeleteConfirmButton({
   onConfirm,
   title = "Delete item?",
-  message = "This action cannot be undone.",
-  className = "touch-target shrink-0 text-slate-300 hover:text-red-500 disabled:opacity-50 dark:hover:text-red-400",
+  message = "This can't be undone.",
+  className,
   label = "Delete",
   confirmLabel = "Delete",
   disabled,
+  appearance = "icon",
+  icon = "trash",
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -31,11 +36,12 @@ export default function DeleteConfirmButton({
         type="button"
         disabled={disabled}
         onClick={() => setOpen(true)}
-        className={className}
-        aria-label={label}
-        title={label}
+        className={className ?? (appearance === "icon" ? "btn-icon-danger" : "btn-danger btn-sm")}
+        aria-label={appearance === "icon" ? label : undefined}
+        title={appearance === "icon" ? label : undefined}
       >
-        <Icon name="trash" className="h-4 w-4" />
+        <Icon name={icon} className="h-4 w-4" />
+        {appearance === "text" && label}
       </button>
       <ConfirmDialog
         open={open}

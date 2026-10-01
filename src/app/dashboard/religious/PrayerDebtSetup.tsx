@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { PRAYERS, estimatePrayerDebtDays } from "@/lib/prayer-debt";
+import { prayerLabel } from "@/lib/religious/day-prayers";
+import ActionForm from "@/components/ActionForm";
 import SubmitButton from "@/components/SubmitButton";
 import { savePrayerDebt } from "./actions";
 
@@ -19,6 +21,7 @@ type PrayerDebtSetupProps = {
 };
 
 export default function PrayerDebtSetup({ existingDebts }: PrayerDebtSetupProps) {
+  const id = useId();
   const first = existingDebts[0];
   const [periodStart, setPeriodStart] = useState(
     first?.periodStart ? new Date(first.periodStart).toISOString().slice(0, 10) : ""
@@ -53,15 +56,18 @@ export default function PrayerDebtSetup({ existingDebts }: PrayerDebtSetupProps)
   }
 
   return (
-    <form action={savePrayerDebt} className="mt-4 space-y-4">
-      <p className="text-sm text-slate-500 dark:text-slate-400">
+    <ActionForm action={savePrayerDebt} successMessage="Historical debt saved" className="space-y-4">
+      <p className="text-sm text-muted">
         If you started praying later in life, enter the period you owe prayers for. The calculator
         estimates one prayer per day per salah; adjust the counts before saving.
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="label">Period start</label>
+          <label className="label" htmlFor={`${id}-start`}>
+            Period start
+          </label>
           <input
+            id={`${id}-start`}
             name="periodStart"
             type="date"
             className="input"
@@ -70,9 +76,13 @@ export default function PrayerDebtSetup({ existingDebts }: PrayerDebtSetupProps)
           />
         </div>
         <div>
-          <label className="label">Period end</label>
+          <label className="label" htmlFor={`${id}-end`}>
+            Period end
+          </label>
           <input
+            id={`${id}-end`}
             name="periodEnd"
+            min={periodStart || undefined}
             type="date"
             className="input"
             value={periodEnd}
@@ -86,7 +96,7 @@ export default function PrayerDebtSetup({ existingDebts }: PrayerDebtSetupProps)
             Estimated <strong>{estimatedDays}</strong> days × 5 prayers ={" "}
             <strong>{estimatedDays * 5}</strong> total
           </span>
-          <button type="button" onClick={applyEstimate} className="btn-ghost py-1 text-xs">
+          <button type="button" onClick={applyEstimate} className="btn-ghost btn-sm">
             Apply to all prayers
           </button>
         </div>
@@ -94,9 +104,13 @@ export default function PrayerDebtSetup({ existingDebts }: PrayerDebtSetupProps)
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {PRAYERS.map((prayer) => (
           <div key={prayer}>
-            <label className="label capitalize">{prayer}</label>
+            <label className="label" htmlFor={`${id}-owed-${prayer}`}>
+              {prayerLabel(prayer)}
+            </label>
             <input
+              id={`${id}-owed-${prayer}`}
               name={`owed_${prayer}`}
+              inputMode="numeric"
               type="number"
               min={0}
               className="input"
@@ -112,10 +126,13 @@ export default function PrayerDebtSetup({ existingDebts }: PrayerDebtSetupProps)
         ))}
       </div>
       <div>
-        <label className="label">Note (optional)</label>
-        <input name="note" className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Before I started praying regularly" />
+        <label className="label" htmlFor={`${id}-note`}>
+          Note <span className="font-normal text-muted">(optional)</span>
+        </label>
+        <input id={`${id}-note`} name="note" className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Before I started praying regularly" />
       </div>
+      <p className="hint">Set a prayer to 0 to remove its historical debt.</p>
       <SubmitButton className="btn-primary touch-target">Save historical debt</SubmitButton>
-    </form>
+    </ActionForm>
   );
 }

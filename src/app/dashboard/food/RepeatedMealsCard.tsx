@@ -1,5 +1,6 @@
 import FormAction from "@/components/FormAction";
 import SubmitButton from "@/components/SubmitButton";
+import EmptyState from "@/components/EmptyState";
 import type { RepeatedMealCandidate } from "@/lib/food/insights";
 import { upsertDefaultMealForm } from "./actions";
 
@@ -11,14 +12,21 @@ export default function RepeatedMealsCard({ candidates }: { candidates: Repeated
         Logged three or more times in the last four weeks. Save the ones that work for you as Default Meals to log them in one tap.
       </p>
       {candidates.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-400">No repeated meals yet. Keep logging and they will show up here.</p>
+        <EmptyState
+          variant="inline"
+          headingLevel="h3"
+          icon="sparkles"
+          title="No repeated meals yet"
+          description="Keep logging and they will show up here."
+          className="mt-3"
+        />
       ) : (
         <ul className="mt-3 divide-y divide-slate-100 dark:divide-slate-700">
           {candidates.map((c) => (
             <li key={c.name} className="flex items-center gap-3 py-2">
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-slate-800 dark:text-slate-100">
-                  {c.name} <span className="text-sm font-normal text-slate-400">· {c.count}×</span>
+                  {c.name} <span className="text-sm font-normal text-muted">· {c.count}×</span>
                 </p>
                 {c.items && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{c.items}</p>}
               </div>

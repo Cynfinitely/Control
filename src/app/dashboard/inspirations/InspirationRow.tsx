@@ -1,11 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
-import FormAction from "@/components/FormAction";
+import { useState } from "react";
+import ActionForm from "@/components/ActionForm";
 import SubmitButton from "@/components/SubmitButton";
-import DeleteConfirmButton from "@/components/DeleteConfirmButton";
-import { deleteInspiration, updateInspirationForm } from "./actions";
+import SubmitIconButton from "@/components/SubmitIconButton";
+import Icon from "@/components/Icon";
+import { deleteInspiration, updateInspiration } from "./actions";
 
 type Props = {
   id: string;
@@ -13,17 +13,57 @@ type Props = {
   author: string | null;
 };
 
+function excerpt(text: string) {
+  return text.length > 40 ? `${text.slice(0, 40)}…` : text;
+}
+
 export default function InspirationRow({ id, text, author }: Props) {
-  const [, startTransition] = useTransition();
-  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const short = excerpt(text);
 
   return (
-    <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
-      <blockquote className="text-slate-700 dark:text-slate-200">&ldquo;{text}&rdquo;</blockquote>
-      {author && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">— {author}</p>}
-      <details className="mt-3">
-        <summary className="cursor-pointer text-xs text-brand-600">Edit</summary>
-        <FormAction action={updateInspirationForm} successMessage="Inspiration updated" className="mt-3 space-y-3">
+    <li className="px-5 py-4">
+      <div className="flex items-start gap-3">
+        <figure className="min-w-0 flex-1">
+          <blockquote className="break-words text-slate-800 dark:text-slate-100">&ldquo;{text}&rdquo;</blockquote>
+          {author && <figcaption className="mt-1.5 text-sm text-muted">— {author}</figcaption>}
+        </figure>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            className="btn-icon"
+            aria-expanded={editing}
+            aria-controls={`inspiration-edit-${id}`}
+            aria-label={editing ? `Close editor for “${short}”` : `Edit “${short}”`}
+            title={editing ? "Close editor" : "Edit"}
+          >
+            <Icon name={editing ? "x" : "pencil"} className="h-4 w-4" />
+          </button>
+          <ActionForm
+            action={deleteInspiration}
+            confirm={{
+              title: "Delete this inspiration?",
+              message: `“${short}” will be removed from your library.`,
+            }}
+          >
+            <input type="hidden" name="id" value={id} />
+            <SubmitIconButton
+              className="btn-icon-danger"
+              icon={<Icon name="trash" className="h-4 w-4" />}
+              aria-label={`Delete “${short}”`}
+            />
+          </ActionForm>
+        </div>
+      </div>
+
+      {editing && (
+        <ActionForm
+          id={`inspiration-edit-${id}`}
+          action={updateInspiration}
+          onSuccess={() => setEditing(false)}
+          className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 dark:border-slate-700"
+        >
           <input type="hidden" name="id" value={id} />
           <div>
             <label htmlFor={`inspiration-text-${id}`} className="label">
@@ -50,25 +90,16 @@ export default function InspirationRow({ id, text, author }: Props) {
               defaultValue={author ?? ""}
             />
           </div>
-          <SubmitButton className="btn-primary">Save changes</SubmitButton>
-        </FormAction>
-      </details>
-      <div className="mt-2">
-        <DeleteConfirmButton
-          title="Delete inspiration?"
-          message="This quote or note will be removed from your library."
-          label="Delete inspiration"
-          className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400"
-          onConfirm={() => {
-            startTransition(async () => {
-              const fd = new FormData();
-              fd.set("id", id);
-              await deleteInspiration(fd);
-              router.refresh();
-            });
-          }}
-        />
-      </div>
-    </div>
+          <div className="flex flex-wrap gap-2">
+            <SubmitButton className="btn-primary" pendingLabel="Saving…">
+              Save changes
+            </SubmitButton>
+            <button type="button" className="btn-ghost" onClick={() => setEditing(false)}>
+              Cancel
+            </button>
+          </div>
+        </ActionForm>
+      )}
+    </li>
   );
 }

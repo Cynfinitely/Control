@@ -80,6 +80,7 @@ model User {
   calendarEvents       CalendarEvent[]
   reminders            Reminder[]
   notifications        Notification[]
+  weeklyReviews        WeeklyReview[]
 }
 
 model VerificationToken {
@@ -388,6 +389,8 @@ model MealPlanItem {
   fat       Float     @default(0)
   defaultMeal   DefaultMeal? @relation(fields: [defaultMealId], references: [id], onDelete: SetNull)
   defaultMealId String?
+  /// Set when the planned meal was logged to the food diary
+  loggedAt  DateTime?
   deletedAt DateTime?
   createdAt DateTime  @default(now())
 
@@ -424,12 +427,16 @@ model Workout {
   date         DateTime
   distanceM    Float?
   durationMin  Int?
+  /// Program this session was started from (null for ad-hoc workouts)
+  programId    String?
+  program      WorkoutProgram?   @relation(fields: [programId], references: [id], onDelete: SetNull)
   deletedAt    DateTime?
   createdAt    DateTime          @default(now())
 
   exercises WorkoutExercise[]
 
   @@index([userId, date])
+  @@index([programId])
 }
 
 model WorkoutProgram {
@@ -444,6 +451,7 @@ model WorkoutProgram {
   updatedAt  DateTime  @updatedAt
 
   exercises WorkoutProgramExercise[]
+  workouts  Workout[]
 
   @@index([userId, archivedAt])
 }
@@ -461,11 +469,14 @@ model WorkoutProgramExercise {
 }
 
 model WorkoutExercise {
-  id        String        @id @default(cuid())
-  workoutId String
-  workout   Workout       @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-  name      String
-  order     Int           @default(0)
+  id          String        @id @default(cuid())
+  workoutId   String
+  workout     Workout       @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  name        String
+  order       Int           @default(0)
+  /// Targets copied from the program when the session was started from one
+  plannedSets Int?
+  plannedReps Int?
 
   sets ExerciseSet[]
 
@@ -1100,4 +1111,23 @@ model Notification {
   @@unique([userId, dedupeKey])
   @@index([userId, readAt, dueAt])
   @@index([userId, dueAt])
+}
+
+// ----------------------------------------------------------------------------
+// Weekly review
+// ----------------------------------------------------------------------------
+
+model WeeklyReview {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekKey        String // period key, e.g. "2026-W40"
+  completedSteps String    @default("") // comma-separated step ids
+  notes          String?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, weekKey])
+  @@index([userId, completedAt])
 }

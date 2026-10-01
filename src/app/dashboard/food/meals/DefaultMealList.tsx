@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Icon from "@/components/Icon";
+import IconButton from "@/components/IconButton";
+import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/components/Toast";
 import type { DefaultMealView } from "@/lib/queries/food";
@@ -23,9 +24,12 @@ export default function DefaultMealList({ meals, mealLabels, usage }: Props) {
 
   if (meals.length === 0) {
     return (
-      <p className="text-sm text-slate-400">
-        No Default Meals yet. Create one below, or open a diary entry and choose “Save as Default Meal”.
-      </p>
+      <EmptyState
+        variant="inline"
+        icon="food"
+        title="No Default Meals yet"
+        description="Create one above, or open a diary entry and choose “Save as Default Meal”."
+      />
     );
   }
 
@@ -47,7 +51,7 @@ export default function DefaultMealList({ meals, mealLabels, usage }: Props) {
             {editingId === meal.id ? (
               <div className="space-y-2">
                 <DefaultMealForm meal={meal} mealLabels={mealLabels} onDone={() => setEditingId(null)} />
-                <button type="button" className="btn-ghost text-xs" onClick={() => setEditingId(null)}>
+                <button type="button" className="btn-ghost touch-target" onClick={() => setEditingId(null)}>
                   Cancel
                 </button>
               </div>
@@ -63,27 +67,20 @@ export default function DefaultMealList({ meals, mealLabels, usage }: Props) {
                       {meal.items.map((i) => i.name).join(", ")}
                     </p>
                   )}
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-xs text-muted">
                     Logged {usage[meal.id] ?? 0}× in the last 4 weeks
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setEditingId(meal.id)}
-                  className="touch-target px-2 text-slate-400 hover:text-brand-600"
-                  aria-label={`Edit ${meal.name}`}
-                >
-                  <Icon name="pencil" className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => setConfirmId(meal.id)}
-                  className="touch-target px-2 text-slate-300 hover:text-red-500 disabled:opacity-50"
-                  aria-label={`Remove ${meal.name}`}
-                >
-                  <Icon name="trash" className="h-4 w-4" />
-                </button>
+                <div className="-mr-2 -mt-2 flex shrink-0">
+                  <IconButton icon="pencil" onClick={() => setEditingId(meal.id)} aria-label={`Edit ${meal.name}`} />
+                  <IconButton
+                    icon="trash"
+                    tone="danger"
+                    disabled={pending}
+                    onClick={() => setConfirmId(meal.id)}
+                    aria-label={`Remove ${meal.name}`}
+                  />
+                </div>
               </div>
             )}
           </li>
@@ -91,7 +88,7 @@ export default function DefaultMealList({ meals, mealLabels, usage }: Props) {
       </ul>
       <ConfirmDialog
         open={confirmId !== null}
-        title="Remove this Default Meal?"
+        title={`Remove “${meals.find((m) => m.id === confirmId)?.name ?? "this Default Meal"}”?`}
         message="Past diary entries and planned meals stay as they are."
         confirmLabel="Remove"
         onConfirm={() => {

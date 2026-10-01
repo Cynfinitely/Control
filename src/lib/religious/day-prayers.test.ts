@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { summarizeDayPrayers } from "./day-prayers";
+import { groupPendingQaza, prayerLabel, prayersToMarkOnTime, summarizeDayPrayers } from "./day-prayers";
 
 describe("summarizeDayPrayers", () => {
   it("treats unlogged prayers as not on time", () => {
@@ -59,5 +59,44 @@ describe("summarizeDayPrayers", () => {
       unlogged: 5,
       total: 5,
     });
+  });
+});
+
+describe("prayerLabel", () => {
+  it("capitalises prayer keys", () => {
+    expect(prayerLabel("fajr")).toBe("Fajr");
+    expect(prayerLabel("isha")).toBe("Isha");
+    expect(prayerLabel("witr")).toBe("Witr");
+  });
+});
+
+describe("prayersToMarkOnTime", () => {
+  it("only fills prayers without a status and never overwrites missed", () => {
+    expect(prayersToMarkOnTime({ fajr: "missed", dhuhr: "ontime" })).toEqual(["asr", "maghrib", "isha"]);
+    expect(prayersToMarkOnTime({})).toEqual(["fajr", "dhuhr", "asr", "maghrib", "isha"]);
+    expect(
+      prayersToMarkOnTime({ fajr: "ontime", dhuhr: "ontime", asr: "missed", maghrib: "ontime", isha: "ontime" })
+    ).toEqual([]);
+  });
+});
+
+describe("groupPendingQaza", () => {
+  it("groups by prayer in canonical order, oldest first", () => {
+    const groups = groupPendingQaza([
+      { id: "a", prayer: "isha", sourceDate: "2026-09-03T00:00:00.000Z" },
+      { id: "b", prayer: "fajr", sourceDate: new Date("2026-09-05T00:00:00Z") },
+      { id: "c", prayer: "fajr", sourceDate: new Date("2026-09-01T00:00:00Z") },
+    ]);
+    expect(groups.map((g) => [g.prayer, g.count])).toEqual([
+      ["fajr", 2],
+      ["isha", 1],
+    ]);
+    expect(groups[0]!.items.map((q) => q.id)).toEqual(["c", "b"]);
+    expect(groups[0]!.oldest).toEqual(new Date("2026-09-01T00:00:00Z"));
+    expect(groups[0]!.newest).toEqual(new Date("2026-09-05T00:00:00Z"));
+  });
+
+  it("returns nothing when there is no pending qaza", () => {
+    expect(groupPendingQaza([])).toEqual([]);
   });
 });

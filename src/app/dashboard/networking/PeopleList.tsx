@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatDaysAgo } from "@/lib/date";
 import { relationshipLabel, isPersonalRelationship } from "@/lib/contacts";
+import EmptyState from "@/components/EmptyState";
 import type { PersonRow } from "@/lib/queries/networking";
 
 export default function PeopleList({ people }: { people: PersonRow[] }) {
   const [query, setQuery] = useState("");
+  const searchId = useId();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -23,16 +25,30 @@ export default function PeopleList({ people }: { people: PersonRow[] }) {
 
   return (
     <div>
-      <input
-        className="input mb-4"
-        placeholder="Search people"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      <div className="mb-4">
+        <label htmlFor={searchId} className="label">
+          Search people
+        </label>
+        <input
+          id={searchId}
+          type="search"
+          className="input"
+          placeholder="Name, organisation, role or tag"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
       {filtered.length === 0 ? (
-        <p className="text-sm text-slate-400">No people match.</p>
+        <EmptyState
+          variant="inline"
+          icon="search"
+          title={query.trim() ? `No people match “${query.trim()}”` : "No people in this group"}
+          description={query.trim() ? "Try a different name, organisation or tag." : undefined}
+          onAction={query.trim() ? () => setQuery("") : undefined}
+          actionLabel={query.trim() ? "Clear search" : undefined}
+        />
       ) : (
-        <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-800">
+        <div className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
           {filtered.map((p) => {
             const relLabel = relationshipLabel(p.relationship);
             const showWork = !isPersonalRelationship(p.relationship) && (p.role || p.org);
@@ -44,7 +60,7 @@ export default function PeopleList({ people }: { people: PersonRow[] }) {
               >
                 <div className="min-w-0">
                   <p className="font-medium text-slate-800 dark:text-slate-100">{p.name}</p>
-                  <p className="truncate text-xs text-slate-400">
+                  <p className="truncate text-xs text-muted">
                     {showWork
                       ? [p.role, p.org].filter(Boolean).join(" · ")
                       : relLabel ?? "Person"}

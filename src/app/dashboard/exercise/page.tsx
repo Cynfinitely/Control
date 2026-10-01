@@ -2,51 +2,33 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { toDateInputValue, formatDate } from "@/lib/date";
+import { activityLabel, formatWorkoutSummary } from "@/lib/exercise/session";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import ActionForm from "@/components/ActionForm";
+import EmptyState from "@/components/EmptyState";
+import FocusTarget from "@/components/FocusTarget";
+import FormField from "@/components/FormField";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
-import {
-  createGymWorkout,
-  createCardioWorkout,
-  deleteWorkout,
-  logWeight,
-  logMeasurement,
-  deleteWeight,
-  deleteMeasurement,
-} from "./actions";
+import { deleteWorkout, logWeight, logMeasurement, deleteWeight, deleteMeasurement } from "./actions";
 import ProgramsSection from "./ProgramsSection";
+import LogActivityCard from "./LogActivityCard";
 
-const ACTIVITY_LABELS: Record<string, string> = {
-  run: "Run",
-  swim: "Swim",
-  walk: "Walk",
-  gym: "Gym",
-  other: "Other",
+export const metadata = { title: "Exercise" };
+
+const ACTIVITY_ICONS: Record<string, string> = {
+  gym: "dumbbell",
+  run: "heart",
+  walk: "heart",
+  swim: "heart",
+  other: "sparkles",
 };
-
-function formatWorkoutSummary(w: {
-  activityType: string;
-  walkKind?: string | null;
-  distanceM: number | null;
-  durationMin: number | null;
-  _count: { exercises: number };
-}): string {
-  const parts: string[] = [];
-  if (w.activityType === "walk" && w.walkKind) {
-    parts.push(w.walkKind === "indoor" ? "Indoor" : "Outdoor");
-  }
-  if (w.distanceM) {
-    parts.push(w.activityType === "run" || w.activityType === "walk" ? `${(w.distanceM / 1000).toFixed(1)} km` : `${w.distanceM} m`);
-  }
-  if (w.durationMin) parts.push(`${w.durationMin} min`);
-  if (w.activityType === "gym") parts.push(`${w._count.exercises} exercises`);
-  return parts.join(" · ") || (ACTIVITY_LABELS[w.activityType] ?? w.activityType);
-}
 
 export default async function ExercisePage() {
   const user = await requireUser();
   const now = new Date();
+  const todayValue = toDateInputValue(now);
   const [workouts, weights, measurements, programs] = await Promise.all([
     prisma.workout.findMany({
       where: { userId: user.id, deletedAt: null },
@@ -79,180 +61,80 @@ export default async function ExercisePage() {
     <div>
       <PageHeader title="Exercise" description="Log runs, walks, swims, gym sessions, and body metrics." />
 
-      <ProgramsSection programs={programs} />
+      <ProgramsSection programs={programs} todayValue={todayValue} />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <details className="card" open>
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Run</summary>
-          <form action={createCardioWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input type="hidden" name="activityType" value="run" />
-            <div>
-              <label className="label">Distance (km)</label>
-              <input name="distanceKm" type="number" step="any" className="input" placeholder="5" />
-            </div>
-            <div>
-              <label className="label">Duration (min)</label>
-              <input name="durationMin" type="number" className="input" placeholder="28" />
-            </div>
-            <div>
-              <label className="label">Date</label>
-              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
-            </div>
-            <div>
-              <label className="label">Notes</label>
-              <input name="notes" className="input" placeholder="optional" />
-            </div>
-            <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary touch-target">Log run</SubmitButton>
-            </div>
-          </form>
-        </details>
-
-        <details className="card">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Swim</summary>
-          <form action={createCardioWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input type="hidden" name="activityType" value="swim" />
-            <div>
-              <label className="label">Distance (m)</label>
-              <input name="distanceM" type="number" className="input" placeholder="1500" />
-            </div>
-            <div>
-              <label className="label">Duration (min)</label>
-              <input name="durationMin" type="number" className="input" placeholder="35" />
-            </div>
-            <div>
-              <label className="label">Date</label>
-              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
-            </div>
-            <div>
-              <label className="label">Notes</label>
-              <input name="notes" className="input" placeholder="optional" />
-            </div>
-            <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary touch-target">Log swim</SubmitButton>
-            </div>
-          </form>
-        </details>
-
-        <details className="card">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Walk</summary>
-          <form action={createCardioWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input type="hidden" name="activityType" value="walk" />
-            <div>
-              <label className="label">Type</label>
-              <select name="walkKind" className="input" defaultValue="outdoor">
-                <option value="outdoor">Outdoor</option>
-                <option value="indoor">Indoor</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Duration (min)</label>
-              <input name="durationMin" type="number" className="input" placeholder="30" />
-            </div>
-            <div>
-              <label className="label">Distance (km, optional)</label>
-              <input name="distanceKm" type="number" step="any" className="input" placeholder="3" />
-            </div>
-            <div>
-              <label className="label">Date</label>
-              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label">Notes</label>
-              <input name="notes" className="input" placeholder="optional" />
-            </div>
-            <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary touch-target">Log walk</SubmitButton>
-            </div>
-          </form>
-        </details>
-
-        <details className="card">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Gym session</summary>
-          <form action={createGymWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="label">Session name</label>
-              <input name="name" className="input" placeholder="e.g. Push day" required />
-            </div>
-            <div>
-              <label className="label">Date</label>
-              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
-            </div>
-            <div>
-              <label className="label">Notes</label>
-              <input name="notes" className="input" placeholder="optional" />
-            </div>
-            <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary touch-target">Create & add exercises</SubmitButton>
-            </div>
-          </form>
-        </details>
-
-        <details className="card">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-300">Other</summary>
-          <form action={createCardioWorkout} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input type="hidden" name="activityType" value="other" />
-            <div className="sm:col-span-2">
-              <label className="label">Activity</label>
-              <input name="description" className="input" placeholder="e.g. Yoga" required />
-            </div>
-            <div>
-              <label className="label">Duration (min)</label>
-              <input name="durationMin" type="number" className="input" placeholder="45" />
-            </div>
-            <div>
-              <label className="label">Date</label>
-              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
-            </div>
-            <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary touch-target">Log activity</SubmitButton>
-            </div>
-          </form>
-        </details>
+      <div className="mb-8">
+        <FocusTarget value="log">
+          <LogActivityCard todayValue={todayValue} />
+        </FocusTarget>
       </div>
 
-      <h2 className="section-title mb-3">Recent workouts</h2>
-      <div className="space-y-2">
-        {workouts.length === 0 && <p className="text-sm text-slate-400">No workouts logged yet.</p>}
-        {workouts.map((w) => (
-          <div key={w.id} className="card flex items-start gap-3 py-3">
-            <Icon name="dumbbell" className="h-5 w-5 shrink-0 text-brand-500 dark:text-brand-400" />
-            {w.activityType === "gym" ? (
-              <Link href={`/dashboard/exercise/${w.id}`} className="min-w-0 flex-1">
-                <p className="font-medium text-slate-800 dark:text-slate-100">{w.name}</p>
-                <p className="text-xs text-slate-400">
-                  {ACTIVITY_LABELS[w.activityType]} · {formatDate(w.date)} · {formatWorkoutSummary(w)}
-                </p>
-              </Link>
-            ) : (
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-slate-800 dark:text-slate-100">{w.name}</p>
-                <p className="text-xs text-slate-400">
-                  {ACTIVITY_LABELS[w.activityType]} · {formatDate(w.date)} · {formatWorkoutSummary(w)}
-                </p>
-              </div>
-            )}
-            <form action={deleteWorkout}>
-              <input type="hidden" name="id" value={w.id} />
-              <SubmitIconButton
-                className="touch-target text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-                title="Delete"
-                icon={<Icon name="trash" className="h-4 w-4" />}
-              />
-            </form>
-          </div>
-        ))}
-      </div>
+      <section aria-labelledby="recent-workouts-title" className="mb-8">
+        <h2 id="recent-workouts-title" className="section-title mb-3">
+          Recent workouts
+        </h2>
+        {workouts.length === 0 ? (
+          <EmptyState
+            icon="dumbbell"
+            title="No workouts logged yet"
+            description="Log a run, walk, swim or gym session above and it will show up here."
+          />
+        ) : (
+          <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
+            {workouts.map((w) => {
+              const summary = formatWorkoutSummary({ ...w, exerciseCount: w._count.exercises });
+              return (
+                <li key={w.id} className="flex items-center gap-3 px-4 py-2 sm:px-5">
+                  <Icon
+                    name={ACTIVITY_ICONS[w.activityType] ?? "dumbbell"}
+                    className="h-5 w-5 shrink-0 text-brand-500 dark:text-brand-400"
+                  />
+                  <Link
+                    href={`/dashboard/exercise/${w.id}`}
+                    className="group min-w-0 flex-1 rounded-md py-1.5"
+                  >
+                    <p className="truncate font-medium text-slate-800 group-hover:text-brand-700 dark:text-slate-100 dark:group-hover:text-brand-300">
+                      {w.name}
+                    </p>
+                    <p className="text-xs text-muted">
+                      {activityLabel(w.activityType)} · {formatDate(w.date)} · {summary}
+                    </p>
+                  </Link>
+                  <ActionForm
+                    action={deleteWorkout}
+                    confirm={{
+                      title: `Delete “${w.name}”?`,
+                      message:
+                        w.activityType === "gym"
+                          ? "The session and all its exercises and sets will be removed."
+                          : "This workout will be removed from your log.",
+                    }}
+                  >
+                    <input type="hidden" name="id" value={w.id} />
+                    <SubmitIconButton
+                      className="btn-icon-danger"
+                      aria-label={`Delete ${w.name}`}
+                      icon={<Icon name="trash" className="h-4 w-4" />}
+                    />
+                  </ActionForm>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="card">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <section className="card" aria-labelledby="body-weight-title">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="section-title">Body weight</h2>
+            <h2 id="body-weight-title" className="section-title">
+              Body weight
+            </h2>
             {latestWeight && (
-              <span className="text-sm text-slate-500 dark:text-slate-400">
-                {latestWeight.weightKg} kg
+              <span className="text-sm text-muted">
+                Latest {latestWeight.weightKg} kg
                 {delta !== null && (
-                  <span className={delta <= 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}>
+                  <span className={delta <= 0 ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}>
                     {" "}
                     ({delta > 0 ? "+" : ""}
                     {delta.toFixed(1)})
@@ -261,73 +143,100 @@ export default async function ExercisePage() {
               </span>
             )}
           </div>
-          <form action={logWeight} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-            <div className="min-w-0 flex-1 sm:flex-none">
-              <label className="label">Weight (kg)</label>
-              <input name="weightKg" type="number" step="any" className="input sm:w-28" required />
-            </div>
-            <div>
-              <label className="label">Date</label>
-              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
-            </div>
+          <ActionForm
+            action={logWeight}
+            successMessage="Weight logged"
+            resetOnSuccess
+            className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+          >
+            <FormField label="Weight (kg)" className="min-w-0 flex-1 sm:flex-none">
+              {(_id, aria) => (
+                <input {...aria} name="weightKg" type="number" step="any" min={0} inputMode="decimal" className="input sm:w-28" required />
+              )}
+            </FormField>
+            <FormField label="Date">
+              {(_id, aria) => <input {...aria} name="date" type="date" className="input" defaultValue={todayValue} />}
+            </FormField>
             <SubmitButton className="btn-ghost touch-target">Log</SubmitButton>
-          </form>
-          <div className="mt-4 space-y-1">
-            {weights.map((w) => (
-              <div key={w.id} className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                <span>{formatDate(w.date)}</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-slate-700 dark:text-slate-100">{w.weightKg} kg</span>
-                  <form action={deleteWeight}>
-                    <input type="hidden" name="id" value={w.id} />
-                    <SubmitIconButton
-                      className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-                      icon={<Icon name="trash" className="h-3 w-3" />}
-                    />
-                  </form>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+          </ActionForm>
+          {weights.length === 0 ? (
+            <p className="mt-4 text-sm text-muted">No weigh-ins yet.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-slate-100 dark:divide-slate-700">
+              {weights.map((w) => (
+                <li key={w.id} className="flex items-center justify-between gap-2 text-sm text-muted">
+                  <span>{formatDate(w.date)}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-slate-700 dark:text-slate-100">{w.weightKg} kg</span>
+                    <ActionForm
+                      action={deleteWeight}
+                      confirm={{ title: `Delete ${w.weightKg} kg from ${formatDate(w.date)}?` }}
+                    >
+                      <input type="hidden" name="id" value={w.id} />
+                      <SubmitIconButton
+                        className="btn-icon-danger"
+                        aria-label={`Delete weight entry ${w.weightKg} kg, ${formatDate(w.date)}`}
+                        icon={<Icon name="trash" className="h-4 w-4" />}
+                      />
+                    </ActionForm>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-        <div className="card">
-          <h2 className="section-title">Body measurements</h2>
-          <form action={logMeasurement} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-            <div className="min-w-0 flex-1 sm:flex-none">
-              <label className="label">Label</label>
-              <input name="label" className="input sm:w-28" placeholder="waist" required />
-            </div>
-            <div>
-              <label className="label">cm</label>
-              <input name="valueCm" type="number" step="any" className="input sm:w-24" required />
-            </div>
-            <div>
-              <label className="label">Date</label>
-              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
-            </div>
+        <section className="card" aria-labelledby="body-measurements-title">
+          <h2 id="body-measurements-title" className="section-title">
+            Body measurements
+          </h2>
+          <ActionForm
+            action={logMeasurement}
+            successMessage="Measurement logged"
+            resetOnSuccess
+            className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+          >
+            <FormField label="Measurement" className="min-w-0 flex-1 sm:flex-none">
+              {(_id, aria) => <input {...aria} name="label" className="input sm:w-28" placeholder="waist" required />}
+            </FormField>
+            <FormField label="cm">
+              {(_id, aria) => (
+                <input {...aria} name="valueCm" type="number" step="any" min={0} inputMode="decimal" className="input sm:w-24" required />
+              )}
+            </FormField>
+            <FormField label="Date">
+              {(_id, aria) => <input {...aria} name="date" type="date" className="input" defaultValue={todayValue} />}
+            </FormField>
             <SubmitButton className="btn-ghost touch-target">Log</SubmitButton>
-          </form>
-          <div className="mt-4 space-y-1">
-            {measurements.map((m) => (
-              <div key={m.id} className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                <span className="capitalize">
-                  {m.label} <span className="text-slate-300 dark:text-slate-600">· {formatDate(m.date)}</span>
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-slate-700 dark:text-slate-100">{m.valueCm} cm</span>
-                  <form action={deleteMeasurement}>
-                    <input type="hidden" name="id" value={m.id} />
-                    <SubmitIconButton
-                      className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-                      icon={<Icon name="trash" className="h-3 w-3" />}
-                    />
-                  </form>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+          </ActionForm>
+          {measurements.length === 0 ? (
+            <p className="mt-4 text-sm text-muted">No measurements yet.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-slate-100 dark:divide-slate-700">
+              {measurements.map((m) => (
+                <li key={m.id} className="flex items-center justify-between gap-2 text-sm text-muted">
+                  <span className="min-w-0">
+                    <span className="capitalize">{m.label}</span> · {formatDate(m.date)}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-slate-700 dark:text-slate-100">{m.valueCm} cm</span>
+                    <ActionForm
+                      action={deleteMeasurement}
+                      confirm={{ title: `Delete ${m.label} ${m.valueCm} cm from ${formatDate(m.date)}?` }}
+                    >
+                      <input type="hidden" name="id" value={m.id} />
+                      <SubmitIconButton
+                        className="btn-icon-danger"
+                        aria-label={`Delete ${m.label} measurement, ${formatDate(m.date)}`}
+                        icon={<Icon name="trash" className="h-4 w-4" />}
+                      />
+                    </ActionForm>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
   );

@@ -33,9 +33,9 @@ export default function ErrorRecovery({ error, reset, homeHref, autoRecover }: P
   }, [error, network, autoRecover, reset]);
 
   return (
-    <div className="card mx-auto max-w-md text-center">
-      <h2 className="section-title">{network ? "Connection lost" : "Something went wrong"}</h2>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+    <div role="alert" className="card mx-auto mt-8 max-w-md text-center">
+      <h1 className="section-title">{network ? "Connection lost" : "Something went wrong"}</h1>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
         {network
           ? "The app couldn't reach the server. Check your network and try again."
           : "An unexpected error occurred. You can try again or return to the dashboard."}

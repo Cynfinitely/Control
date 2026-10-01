@@ -8,6 +8,9 @@ import {
   type LedgerPeriod,
 } from "@/lib/budget-range";
 import { toDateInputValue } from "@/lib/date";
+import SegmentedControl from "@/components/SegmentedControl";
+import StepNavigator from "@/components/StepNavigator";
+import DateRangePicker from "@/components/DateRangePicker";
 
 const PERIODS: { value: LedgerPeriod; label: string }[] = [
   { value: "week", label: "Week" },
@@ -44,7 +47,7 @@ export default function LedgerRangeNavigator({
     period === "month" && monthKey === toDateInputValue(new Date()).slice(0, 7);
 
   function navigate(updates: Partial<BudgetSearchParams>) {
-    router.push(buildBudgetUrl(basePath, searchParams, updates));
+    router.push(buildBudgetUrl(basePath, searchParams, updates), { scroll: false });
   }
 
   function setPeriod(next: LedgerPeriod) {
@@ -60,107 +63,48 @@ export default function LedgerRangeNavigator({
     navigate({ ledger: next });
   }
 
+  function goCurrentMonth() {
+    const params = new URLSearchParams();
+    if (searchParams.day && searchParams.day !== todayValue) {
+      params.set("day", searchParams.day);
+    }
+    params.set("ledger", "month");
+    router.push(`${basePath}?${params.toString()}`, { scroll: false });
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="section-title">Spending log</h2>
-        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
-          {PERIODS.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              onClick={() => setPeriod(p.value)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                p.value === period
-                  ? "bg-brand-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          aria-label="Ledger period"
+          options={PERIODS}
+          value={period}
+          onChange={setPeriod}
+        />
       </div>
 
       {period === "custom" ? (
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="label">From</label>
-            <input
-              type="date"
-              value={fromValue}
-              onChange={(e) => {
-                if (e.target.value) {
-                  navigate({ ledger: "custom", from: e.target.value });
-                }
-              }}
-              className="input"
-            />
-          </div>
-          <div>
-            <label className="label">To</label>
-            <input
-              type="date"
-              value={toValue}
-              onChange={(e) => {
-                if (e.target.value) {
-                  navigate({ ledger: "custom", to: e.target.value });
-                }
-              }}
-              className="input"
-            />
-          </div>
-          <p className="pb-2 text-sm text-slate-500 dark:text-slate-400">{label}</p>
-        </div>
+        <DateRangePicker
+          from={fromValue}
+          to={toValue}
+          summary={label}
+          onChange={(from, to) => navigate({ ledger: "custom", from, to })}
+        />
       ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => navigate(shiftLedgerPeriod(period, -1, refDay, monthKey))}
-            className="btn-ghost touch-target px-3"
-            aria-label={`Previous ${period}`}
-          >
-            ←
-          </button>
-          <div>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{label}</p>
-            <p className="text-xs capitalize text-slate-400">{period} view</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(shiftLedgerPeriod(period, 1, refDay, monthKey))}
-            className="btn-ghost touch-target px-3"
-            aria-label={`Next ${period}`}
-          >
-            →
-          </button>
-          {period === "week" && !isCurrentWeek && (
-            <button
-              type="button"
-              onClick={() => navigate({ day: todayValue, ledger: "week" })}
-              className="btn-ghost text-xs"
-            >
-              This week
-            </button>
-          )}
-          {period === "month" && !isCurrentMonth && (
-            <button
-              type="button"
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (searchParams.day && searchParams.day !== todayValue) {
-                  params.set("day", searchParams.day);
-                }
-                params.set("ledger", "month");
-                const qs = params.toString();
-                router.push(qs ? `${basePath}?${qs}` : basePath);
-              }}
-              className="btn-ghost text-xs"
-            >
-              This month
-            </button>
-          )}
-        </div>
+        <StepNavigator
+          label={label}
+          sublabel={period === "week" ? "Week" : "Month"}
+          prev={{ onClick: () => navigate(shiftLedgerPeriod(period, -1, refDay, monthKey)), label: `Previous ${period}` }}
+          next={{ onClick: () => navigate(shiftLedgerPeriod(period, 1, refDay, monthKey)), label: `Next ${period}` }}
+          reset={
+            period === "week" && !isCurrentWeek
+              ? { onClick: () => navigate({ day: todayValue, ledger: "week" }), label: "Go to this week", text: "This week" }
+              : period === "month" && !isCurrentMonth
+                ? { onClick: goCurrentMonth, label: "Go to this month", text: "This month" }
+                : undefined
+          }
+        />
       )}
     </div>
   );

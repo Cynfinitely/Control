@@ -13,10 +13,12 @@ import {
   toDateInputValue,
   toMonthKey,
 } from "@/lib/date";
-import { getOccurrencesInRange, getStandaloneReminders } from "@/lib/queries/calendar";
+import { getOccurrencesInRange, getReminder, getStandaloneReminders } from "@/lib/queries/calendar";
 import PageHeader from "@/components/PageHeader";
 import CalendarShell from "@/components/calendar/CalendarShell";
 import { expandRruleStarts } from "@/lib/calendar";
+
+export const metadata = { title: "Calendar" };
 
 export default async function CalendarPage({
   searchParams,
@@ -27,6 +29,7 @@ export default async function CalendarPage({
     day?: string;
     event?: string;
     reminder?: string;
+    at?: string;
     new?: string;
   };
 }) {
@@ -37,13 +40,24 @@ export default async function CalendarPage({
   });
   const timezone = profile?.timezone ?? "Europe/Istanbul";
 
-  const viewRaw = searchParams.view ?? "month";
+  // Notification deep links: open the day that contains the event occurrence / reminder.
+  const focusAt = searchParams.event && searchParams.at ? new Date(searchParams.at) : null;
+  const focusReminder = searchParams.reminder ? await getReminder(user.id, searchParams.reminder) : null;
+  const focusDate =
+    focusAt && !Number.isNaN(focusAt.getTime())
+      ? focusAt
+      : focusReminder?.remindAt && !focusReminder.rrule
+        ? focusReminder.remindAt
+        : null;
+  const hasFocus = Boolean(searchParams.event || focusReminder);
+
+  const viewRaw = searchParams.view ?? (hasFocus ? "day" : "month");
   const view =
     viewRaw === "week" || viewRaw === "day" || viewRaw === "agenda" || viewRaw === "month"
       ? viewRaw
       : "month";
 
-  const day = parseDayParam(searchParams.day);
+  const day = searchParams.day || !focusDate ? parseDayParam(searchParams.day) : startOfDay(focusDate);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
   const monthDate = searchParams.month ? parseMonthParam(searchParams.month) : startOfMonth(day);
@@ -120,10 +134,21 @@ export default async function CalendarPage({
           isException: o.isException,
           isRecurring: o.isRecurring,
           rrule: o.rrule,
+          reminderOffsets: o.reminderOffsets ?? [],
         }))}
         reminders={reminderChips}
         focusEventId={searchParams.event}
-        focusReminderId={searchParams.reminder}
+        focusAt={focusAt && !Number.isNaN(focusAt.getTime()) ? focusAt.toISOString() : undefined}
+        focusReminder={
+          focusReminder && focusReminder.remindAt
+            ? {
+                id: focusReminder.id,
+                title: focusReminder.title,
+                remindAt: focusReminder.remindAt.toISOString(),
+                rrule: focusReminder.rrule,
+              }
+            : undefined
+        }
         initialCreate={
           searchParams.new === "event" || searchParams.new === "reminder"
             ? searchParams.new

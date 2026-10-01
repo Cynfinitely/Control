@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import Icon from "@/components/Icon";
+import EmptyState from "@/components/EmptyState";
+import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 import { useToast } from "@/components/Toast";
 import { displayMealLabel, hasNutrition, type FoodMode } from "@/lib/food/meals";
 import type { ActionResult } from "@/lib/action-result";
@@ -26,7 +28,15 @@ export default function FoodTimeline({ entries, dayValue, mode, mealLabels }: Pr
   const sorted = [...entries].sort((a, b) => sortKey(a) - sortKey(b));
 
   if (sorted.length === 0) {
-    return <p className="text-sm text-slate-400">Nothing logged yet for this day.</p>;
+    return (
+      <EmptyState
+        variant="inline"
+        headingLevel="h3"
+        icon="food"
+        title="Nothing logged yet for this day"
+        description="Use “Log food” above. A name is enough."
+      />
+    );
   }
 
   return (
@@ -47,28 +57,42 @@ export default function FoodTimeline({ entries, dayValue, mode, mealLabels }: Pr
             <button
               type="button"
               onClick={() => setEditingId(entry.id)}
-              className="card flex w-full items-start gap-4 py-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-700/60"
-              aria-label={`Edit ${entry.name}`}
+              className="card flex w-full items-start gap-3 py-3 text-left transition hover:bg-slate-50 sm:gap-4 dark:hover:bg-slate-700/60"
+              aria-labelledby={`entry-${entry.id}-name entry-${entry.id}-edit`}
+              aria-describedby={`entry-${entry.id}-time entry-${entry.id}-details`}
             >
-              <span className="w-12 shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-slate-500 dark:text-slate-400">
-                {entry.timeLabel ?? "--:--"}
+              <span
+                id={`entry-${entry.id}-time`}
+                className="w-12 shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-slate-600 dark:text-slate-400"
+              >
+                {entry.timeLabel ?? <span aria-label="No time">--:--</span>}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-slate-800 dark:text-slate-100">{entry.name}</span>
-                  {entry.meal && <span className="badge-muted">{displayMealLabel(entry.meal)}</span>}
-                  {entry.defaultMealId && <span className="badge-muted">Default</span>}
-                </span>
-                {entry.items && <span className="mt-0.5 block text-sm text-slate-500 dark:text-slate-400">{entry.items}</span>}
-                {entry.note && <span className="mt-0.5 block text-xs italic text-slate-400">{entry.note}</span>}
-                {mode === "optimize" && hasNutrition(entry) && (
-                  <span className="mt-0.5 block text-xs text-slate-400">
-                    {Math.round(entry.calories)} kcal · P{Math.round(entry.protein)} C{Math.round(entry.carbs)} F
-                    {Math.round(entry.fat)}
+                  <span id={`entry-${entry.id}-name`} className="break-words font-medium text-slate-800 dark:text-slate-100">
+                    {entry.name}
                   </span>
-                )}
+                  {entry.meal && <span className="badge-muted">{displayMealLabel(entry.meal)}</span>}
+                  {entry.defaultMealId && <span className="badge-brand">Default</span>}
+                </span>
+                <span id={`entry-${entry.id}-details`}>
+                  {entry.items && <span className="mt-0.5 block text-sm text-muted">{entry.items}</span>}
+                  {entry.note && <span className="mt-0.5 block text-xs italic text-muted">{entry.note}</span>}
+                  {mode === "optimize" && hasNutrition(entry) && (
+                    <span className="mt-0.5 block text-xs text-muted">
+                      {Math.round(entry.calories)} kcal · P{Math.round(entry.protein)} C{Math.round(entry.carbs)} F
+                      {Math.round(entry.fat)}
+                    </span>
+                  )}
+                </span>
               </span>
-              <Icon name="pencil" className="mt-1 h-4 w-4 shrink-0 text-slate-300" />
+              <span
+                id={`entry-${entry.id}-edit`}
+                className="mt-0.5 inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 dark:text-brand-400"
+              >
+                <Icon name="pencil" className="h-3.5 w-3.5" />
+                Edit
+              </span>
             </button>
           </li>
         )
@@ -144,8 +168,8 @@ function EntryEditor({
         </div>
       </div>
 
-      <div>
-        <p className="label">Meal</p>
+      <fieldset>
+        <legend className="label">Meal</legend>
         <div className="flex flex-wrap gap-2">
           {labelOptions.map((label) => (
             <ToggleChip key={label} active={meal === label} onClick={() => setMeal(meal === label ? null : label)}>
@@ -153,7 +177,7 @@ function EntryEditor({
             </ToggleChip>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       <div>
         <label htmlFor={`edit-items-${entry.id}`} className="label">What was in it</label>
@@ -162,8 +186,8 @@ function EntryEditor({
 
       <CollapsibleSection title="More" defaultOpen={Boolean(entry.note || entry.hunger)}>
         <div className="space-y-4">
-          <div>
-            <p className="label">Hunger before eating</p>
+          <fieldset>
+            <legend className="label">Hunger before eating</legend>
             <div className="flex flex-wrap gap-2">
               {HUNGER_LEVELS.map((h) => (
                 <ToggleChip key={h.value} active={hunger === h.value} onClick={() => setHunger(hunger === h.value ? null : h.value)}>
@@ -171,7 +195,7 @@ function EntryEditor({
                 </ToggleChip>
               ))}
             </div>
-          </div>
+          </fieldset>
           <div>
             <label htmlFor={`edit-note-${entry.id}`} className="label">Note</label>
             <input id={`edit-note-${entry.id}`} name="note" className="input" maxLength={500} defaultValue={entry.note ?? ""} />
@@ -200,15 +224,16 @@ function EntryEditor({
             Save as Default Meal
           </button>
         )}
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => run(deleteFood, idOnly())}
-          className="touch-target ml-auto inline-flex items-center gap-1 px-2 text-sm text-slate-400 hover:text-red-500 disabled:opacity-50"
-        >
-          <Icon name="trash" className="h-4 w-4" />
-          Delete
-        </button>
+        <div className="ml-auto">
+          <DeleteConfirmButton
+            appearance="text"
+            disabled={pending}
+            className="btn-danger touch-target"
+            title={`Delete “${entry.name}”?`}
+            message="This removes the entry from your diary."
+            onConfirm={() => run(deleteFood, idOnly())}
+          />
+        </div>
       </div>
     </form>
   );

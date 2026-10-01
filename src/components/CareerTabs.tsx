@@ -1,9 +1,6 @@
-"use client";
+import TabNav from "@/components/TabNav";
 
-import { useState } from "react";
-import clsx from "clsx";
-
-const TABS = [
+export const CAREER_TABS = [
   { id: "goals", label: "Goals" },
   { id: "skills", label: "Skills & Certs" },
   { id: "work", label: "Work History" },
@@ -11,41 +8,28 @@ const TABS = [
   { id: "applications", label: "Applications" },
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+export type CareerTabId = (typeof CAREER_TABS)[number]["id"];
 
-export default function CareerTabs({
-  panels,
-}: {
-  panels: Record<TabId, React.ReactNode>;
-}) {
-  const [active, setActive] = useState<TabId>("goals");
+export function parseCareerTab(value: string | string[] | undefined): CareerTabId {
+  const v = Array.isArray(value) ? value[0] : value;
+  return CAREER_TABS.find((t) => t.id === v)?.id ?? "goals";
+}
 
+export function careerTabHref(tab: CareerTabId) {
+  return tab === "goals" ? "/dashboard/career" : `/dashboard/career?tab=${tab}`;
+}
+
+/**
+ * Career section navigation. The active tab lives in `?tab=` so it survives
+ * server-action revalidation and can be linked; links expose aria-current.
+ */
+export default function CareerTabs({ active }: { active: CareerTabId }) {
   return (
-    <div>
-      <div
-        role="tablist"
-        aria-label="Career sections"
-        className="mb-6 flex flex-nowrap gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-700"
-      >
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={active === tab.id}
-            onClick={() => setActive(tab.id)}
-            className={clsx(
-              "touch-target shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium transition",
-              active === tab.id
-                ? "border-b-2 border-brand-600 text-brand-700 dark:text-brand-400"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <div role="tabpanel">{panels[active]}</div>
-    </div>
+    <TabNav
+      aria-label="Career sections"
+      active={active}
+      className="mb-0"
+      items={CAREER_TABS.map((t) => ({ id: t.id, label: t.label, href: careerTabHref(t.id) }))}
+    />
   );
 }

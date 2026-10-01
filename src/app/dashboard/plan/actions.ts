@@ -8,6 +8,13 @@ import { isValidTimeRange } from "@/lib/plan/time";
 import { findOverlappingBlock } from "@/lib/plan/overlap";
 import { parsePlanText } from "@/lib/plan/parse-text";
 import { getDayPlanBlocks } from "@/lib/queries/plan";
+import { success, failure, type ActionResult } from "@/lib/action-result";
+
+const INVALID_RANGE = "End time must be after the start time (blocks can be up to 12 hours).";
+
+function overlapMessage(block: { title: string; startTime: string; endTime: string }) {
+  return `That time overlaps “${block.title}” (${block.startTime}–${block.endTime}). Pick another time.`;
+}
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "plan", "dashboard", "todos");
@@ -24,11 +31,17 @@ async function getExistingBlocks(userId: string, dayDate: Date) {
       deletedAt: null,
       planDate: { gte: startOfDay(dayDate), lte: endOfDay(dayDate) },
     },
-    select: { id: true, startTime: true, endTime: true },
+    select: { id: true, title: true, startTime: true, endTime: true },
   });
 }
 
-export async function createPlanBlock(formData: FormData) {
+async function findOverlap(userId: string, dayDate: Date, candidate: { startTime: string; endTime: string }, excludeId?: string) {
+  const existing = await getExistingBlocks(userId, dayDate);
+  const hit = findOverlappingBlock(existing, candidate, excludeId);
+  return hit ? existing.find((b) => b.id === hit.id) ?? null : null;
+}
+
+export async function createPlanBlock(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const title = str(formData.get("title"));
   const startTime = str(formData.get("startTime"));
@@ -39,10 +52,11 @@ export async function createPlanBlock(formData: FormData) {
   const linkId = optStr(formData.get("linkId"));
   const notes = optStr(formData.get("notes"));
 
-  if (!title || !isValidTimeRange(startTime, endTime)) return;
+  if (!title) return failure("Give the block a title.");
+  if (!isValidTimeRange(startTime, endTime)) return failure(INVALID_RANGE);
 
-  const existing = await getExistingBlocks(userId, planDate);
-  if (findOverlappingBlock(existing, { startTime, endTime })) return;
+  const overlap = await findOverlap(userId, planDate, { startTime, endTime });
+  if (overlap) return failure(overlapMessage(overlap));
 
   const maxOrder = await prisma.planBlock.aggregate({
     where: { userId, deletedAt: null, planDate: { gte: startOfDay(planDate), lte: endOfDay(planDate) } },
@@ -64,9 +78,10 @@ export async function createPlanBlock(formData: FormData) {
     },
   });
   invalidate(userId);
+  return success("Block added");
 }
 
-export async function updatePlanBlock(formData: FormData) {
+export async function updatePlanBlock(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const title = str(formData.get("title"));
@@ -75,32 +90,35 @@ export async function updatePlanBlock(formData: FormData) {
   const kind = str(formData.get("kind")) || "custom";
   const notes = optStr(formData.get("notes"));
 
-  if (!id || !title || !isValidTimeRange(startTime, endTime)) return;
+  if (!id) return failure("Block not found.");
+  if (!title) return failure("Give the block a title.");
+  if (!isValidTimeRange(startTime, endTime)) return failure(INVALID_RANGE);
 
   const block = await prisma.planBlock.findFirst({
     where: { id, userId, deletedAt: null },
     select: { planDate: true },
   });
-  if (!block) return;
+  if (!block) return failure("Block not found — it may have been deleted.");
 
-  const existing = await getExistingBlocks(userId, block.planDate);
-  if (findOverlappingBlock(existing, { startTime, endTime }, id)) return;
+  const overlap = await findOverlap(userId, block.planDate, { startTime, endTime }, id);
+  if (overlap) return failure(overlapMessage(overlap));
 
   await prisma.planBlock.updateMany({
     where: { id, userId },
     data: { title, startTime, endTime, kind, notes },
   });
   invalidate(userId);
+  return success("Block updated");
 }
 
-export async function togglePlanBlockStatus(formData: FormData) {
+export async function togglePlanBlockStatus(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const block = await prisma.planBlock.findFirst({
     where: { id, userId, deletedAt: null },
     select: { status: true, linkType: true, linkId: true },
   });
-  if (!block) return;
+  if (!block) return failure("Block not found — it may have been deleted.");
 
   const nextStatus = block.status === "done" ? "planned" : "done";
 
@@ -122,14 +140,12 @@ export async function togglePlanBlockStatus(formData: FormData) {
       data: { done: true },
     });
     invalidateNetworking(userId);
-    return;
   } else if (nextStatus === "planned" && block.linkType === "followup" && block.linkId) {
     await prisma.followUp.updateMany({
       where: { id: block.linkId, userId, done: true },
       data: { done: false },
     });
     invalidateNetworking(userId);
-    return;
   }
 
   await prisma.planBlock.updateMany({
@@ -137,9 +153,10 @@ export async function togglePlanBlockStatus(formData: FormData) {
     data: { status: nextStatus },
   });
   invalidate(userId);
+  return success();
 }
 
-export async function skipPlanBlock(formData: FormData) {
+export async function skipPlanBlock(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   await prisma.planBlock.updateMany({
@@ -147,9 +164,10 @@ export async function skipPlanBlock(formData: FormData) {
     data: { status: "skipped" },
   });
   invalidate(userId);
+  return success("Block skipped");
 }
 
-export async function deletePlanBlock(formData: FormData) {
+export async function deletePlanBlock(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   await prisma.planBlock.updateMany({
@@ -157,9 +175,10 @@ export async function deletePlanBlock(formData: FormData) {
     data: { deletedAt: new Date() },
   });
   invalidate(userId);
+  return success("Block deleted");
 }
 
-export async function acceptPlanSuggestion(formData: FormData) {
+export async function acceptPlanSuggestion(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const planDate = startOfDay(parseDate(formData.get("planDate")));
   const title = str(formData.get("title"));
@@ -170,10 +189,10 @@ export async function acceptPlanSuggestion(formData: FormData) {
   const linkId = optStr(formData.get("linkId"));
   const suggestionKey = str(formData.get("suggestionKey"));
 
-  if (!title || !isValidTimeRange(startTime, endTime)) return;
+  if (!title || !isValidTimeRange(startTime, endTime)) return failure("This suggestion is no longer valid.");
 
-  const existing = await getExistingBlocks(userId, planDate);
-  if (findOverlappingBlock(existing, { startTime, endTime })) return;
+  const overlap = await findOverlap(userId, planDate, { startTime, endTime });
+  if (overlap) return failure(overlapMessage(overlap));
 
   const maxOrder = await prisma.planBlock.aggregate({
     where: { userId, deletedAt: null, planDate: { gte: startOfDay(planDate), lte: endOfDay(planDate) } },
@@ -209,13 +228,14 @@ export async function acceptPlanSuggestion(formData: FormData) {
   }
 
   invalidate(userId);
+  return success(`Added “${title}”`);
 }
 
-export async function dismissPlanSuggestion(formData: FormData) {
+export async function dismissPlanSuggestion(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const planDate = startOfDay(parseDate(formData.get("planDate")));
   const suggestionKey = str(formData.get("suggestionKey"));
-  if (!suggestionKey) return;
+  if (!suggestionKey) return failure("This suggestion is no longer valid.");
 
   await prisma.planSuggestionDismissal.upsert({
     where: {
@@ -225,9 +245,10 @@ export async function dismissPlanSuggestion(formData: FormData) {
     update: {},
   });
   invalidate(userId);
+  return success("Suggestion dismissed");
 }
 
-export async function copyPlanFromDay(formData: FormData) {
+export async function copyPlanFromDay(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const targetDate = startOfDay(parseDate(formData.get("planDate")));
   const sourceDate = startOfDay(parseDate(formData.get("sourceDate")));
@@ -242,7 +263,7 @@ export async function copyPlanFromDay(formData: FormData) {
     orderBy: [{ sortOrder: "asc" }, { startTime: "asc" }],
   });
 
-  if (sourceBlocks.length === 0) return;
+  if (sourceBlocks.length === 0) return failure("Nothing to copy — that day has no blocks.");
 
   if (replace) {
     await prisma.planBlock.updateMany({
@@ -272,19 +293,20 @@ export async function copyPlanFromDay(formData: FormData) {
     })),
   });
   invalidate(userId);
+  return success(`Copied ${sourceBlocks.length} block${sourceBlocks.length === 1 ? "" : "s"}`);
 }
 
-export async function savePlanAsTemplate(formData: FormData) {
+export async function savePlanAsTemplate(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const planDate = startOfDay(parseDate(formData.get("planDate")));
   const name = str(formData.get("name"));
   const dayOfWeekRaw = str(formData.get("dayOfWeek"));
   const isDefault = str(formData.get("isDefault")) === "true";
 
-  if (!name) return;
+  if (!name) return failure("Give the template a name.");
 
   const blocks = await getDayPlanBlocks(userId, toDateInputValue(planDate));
-  if (blocks.length === 0) return;
+  if (blocks.length === 0) return failure("Add some blocks before saving a template.");
 
   const dayOfWeek = dayOfWeekRaw === "" ? null : Number(dayOfWeekRaw);
 
@@ -317,9 +339,10 @@ export async function savePlanAsTemplate(formData: FormData) {
     })),
   });
   invalidate(userId);
+  return success(`Template “${name}” saved`);
 }
 
-export async function applyPlanTemplate(formData: FormData) {
+export async function applyPlanTemplate(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const planDate = startOfDay(parseDate(formData.get("planDate")));
   const templateId = str(formData.get("templateId"));
@@ -329,7 +352,8 @@ export async function applyPlanTemplate(formData: FormData) {
     where: { id: templateId, userId },
     include: { blocks: { orderBy: { sortOrder: "asc" } } },
   });
-  if (!template || template.blocks.length === 0) return;
+  if (!template) return failure("Template not found.");
+  if (template.blocks.length === 0) return failure("That template has no blocks.");
 
   if (replace) {
     await prisma.planBlock.updateMany({
@@ -357,16 +381,19 @@ export async function applyPlanTemplate(formData: FormData) {
     })),
   });
   invalidate(userId);
+  return success(replace ? `Day replaced with “${template.name}”` : `Applied “${template.name}”`);
 }
 
-export async function deletePlanTemplate(formData: FormData) {
+export async function deletePlanTemplate(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  await prisma.planTemplate.deleteMany({ where: { id, userId } });
+  const result = await prisma.planTemplate.deleteMany({ where: { id, userId } });
+  if (result.count === 0) return failure("Template not found.");
   invalidate(userId);
+  return success("Template deleted");
 }
 
-export async function copyYesterdayPlan(formData: FormData) {
+export async function copyYesterdayPlan(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const planDate = startOfDay(parseDate(formData.get("planDate")));
   const sourceDate = addDays(planDate, -1);
@@ -374,7 +401,9 @@ export async function copyYesterdayPlan(formData: FormData) {
   fd.set("planDate", toDateInputValue(planDate));
   fd.set("sourceDate", toDateInputValue(sourceDate));
   fd.set("replace", str(formData.get("replace")) || "false");
-  await copyPlanFromDay(fd);
+  const result = await copyPlanFromDay(fd);
+  if (!result.ok) return failure("Nothing to copy — the previous day has no blocks.");
+  return result;
 }
 
 export type ImportPlanFromTextResult = {
@@ -387,7 +416,7 @@ export async function importPlanFromText(formData: FormData): Promise<ImportPlan
   const userId = await getUserId();
   const planDate = startOfDay(parseDate(formData.get("planDate")));
   const text = str(formData.get("text"));
-  const mode = str(formData.get("mode")) || "replace";
+  const mode = str(formData.get("mode")) === "replace" ? "replace" : "merge";
 
   const empty: ImportPlanFromTextResult = { imported: 0, skipped: 0, warnings: [] };
   if (!text) return empty;
@@ -458,6 +487,7 @@ export async function importPlanFromText(formData: FormData): Promise<ImportPlan
     if (mode === "merge") {
       existing.push({
         id: `import-${i}`,
+        title: entry.title,
         startTime: entry.startTime,
         endTime: entry.endTime,
       });

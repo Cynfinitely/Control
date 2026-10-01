@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coerceDate, formatDate, startOfDay } from "./date";
+import { coerceDate, formatDate, startOfDay, startOfWeek } from "./date";
 
 describe("date helpers", () => {
   it("coerceDate accepts ISO strings from unstable_cache round-trip", () => {
@@ -17,5 +17,14 @@ describe("date helpers", () => {
     const day = startOfDay("2026-01-15T12:30:00.000Z");
     expect(day.getHours()).toBe(0);
     expect(day.getMinutes()).toBe(0);
+  });
+
+  it("startOfDay / startOfWeek never mutate their input", () => {
+    const input = new Date(2026, 9, 1, 15, 30);
+    const before = input.getTime();
+    startOfDay(input);
+    startOfWeek(input);
+    expect(input.getTime()).toBe(before);
+    expect(coerceDate(input)).not.toBe(input);
   });
 });

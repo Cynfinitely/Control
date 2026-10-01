@@ -9,6 +9,9 @@ import {
   type FoodRangePreset,
   type FoodRangeSearchParams,
 } from "@/lib/food/range";
+import SegmentedControl from "@/components/SegmentedControl";
+import StepNavigator from "@/components/StepNavigator";
+import DateRangePicker from "@/components/DateRangePicker";
 
 const PRESETS: { value: FoodRangePreset; label: string }[] = [
   { value: "7d", label: "Last 7 days" },
@@ -66,7 +69,7 @@ export default function FoodRangeNavigator({
   }
 
   function navigate(updates: Partial<FoodRangeSearchParams>) {
-    router.push(buildFoodReportUrl("/dashboard/food/report", searchParams, updates));
+    router.push(buildFoodReportUrl("/dashboard/food/report", searchParams, updates), { scroll: false });
   }
 
   function setPreset(next: FoodRangePreset) {
@@ -89,94 +92,59 @@ export default function FoodRangeNavigator({
     navigate({ ...shiftFoodRange(range, offset), from: undefined, to: undefined });
   }
 
+  const activePreset = PRESETS.find((item) => chipActive(item.value))?.value ?? null;
+
   return (
     <div className="min-w-0 flex-1 space-y-3">
-      <div className="flex flex-wrap gap-1">
-        {PRESETS.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            onClick={() => setPreset(item.value)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-              chipActive(item.value)
-                ? "bg-brand-600 text-white shadow-sm"
-                : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className="sm:hidden">
+        <label htmlFor="food-range-preset" className="sr-only">
+          Range
+        </label>
+        <select
+          id="food-range-preset"
+          className="input"
+          value={activePreset ?? preset}
+          onChange={(e) => setPreset(e.target.value as FoodRangePreset)}
+        >
+          {PRESETS.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
       </div>
+      <SegmentedControl
+        aria-label="Report range"
+        className="hidden sm:inline-flex"
+        options={PRESETS}
+        value={activePreset}
+        onChange={setPreset}
+        size="sm"
+      />
 
       {preset === "custom" ? (
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="label" htmlFor="food-range-from">
-              From
-            </label>
-            <input
-              id="food-range-from"
-              type="date"
-              value={fromValue}
-              onChange={(e) => {
-                if (e.target.value) navigate({ range: "custom", from: e.target.value, to: toValue });
-              }}
-              className="input"
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="food-range-to">
-              To
-            </label>
-            <input
-              id="food-range-to"
-              type="date"
-              value={toValue}
-              onChange={(e) => {
-                if (e.target.value) navigate({ range: "custom", from: fromValue, to: e.target.value });
-              }}
-              className="input"
-            />
-          </div>
-          <p className="pb-2 text-sm text-slate-500 dark:text-slate-400">{label}</p>
-        </div>
+        <DateRangePicker
+          from={fromValue}
+          to={toValue}
+          summary={label}
+          onChange={(from, to) => navigate({ range: "custom", from, to })}
+        />
+      ) : canShift ? (
+        <StepNavigator
+          label={label}
+          sublabel={viewHint}
+          prev={{ onClick: () => shift(-1), label: "Previous range" }}
+          next={{ onClick: () => shift(1), label: "Next range" }}
+          reset={
+            showThisWeek
+              ? { onClick: () => setPreset("week"), label: "Go to this week", text: "This week" }
+              : showThisMonth
+                ? { onClick: () => setPreset("month"), label: "Go to this month", text: "This month" }
+                : undefined
+          }
+        />
       ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          {canShift && (
-            <button
-              type="button"
-              onClick={() => shift(-1)}
-              className="btn-ghost touch-target px-3"
-              aria-label="Previous range"
-            >
-              ←
-            </button>
-          )}
-          <div>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{label}</p>
-            <p className="text-xs text-slate-400">{viewHint}</p>
-          </div>
-          {canShift && (
-            <button
-              type="button"
-              onClick={() => shift(1)}
-              className="btn-ghost touch-target px-3"
-              aria-label="Next range"
-            >
-              →
-            </button>
-          )}
-          {showThisWeek && (
-            <button type="button" onClick={() => setPreset("week")} className="btn-ghost text-xs">
-              This week
-            </button>
-          )}
-          {showThisMonth && (
-            <button type="button" onClick={() => setPreset("month")} className="btn-ghost text-xs">
-              This month
-            </button>
-          )}
-        </div>
+        <p className="font-semibold text-slate-900 dark:text-slate-100">{label}</p>
       )}
     </div>
   );

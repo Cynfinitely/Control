@@ -7,6 +7,8 @@ import EmptyState from "@/components/EmptyState";
 import InspirationRow from "./InspirationRow";
 import { createInspirationForm } from "./actions";
 
+export const metadata = { title: "Inspirations" };
+
 export default async function InspirationsPage() {
   const user = await requireUser();
   const inspirations = await getInspirations(user.id);
@@ -24,6 +26,7 @@ export default async function InspirationsPage() {
         resetOnSuccess
         className="card mb-6 space-y-3"
       >
+        <h2 className="section-title">Add an inspiration</h2>
         <div>
           <label htmlFor="inspiration-text" className="label">
             Text
@@ -48,7 +51,9 @@ export default async function InspirationsPage() {
             placeholder="e.g. Seneca, a mentor, or yourself"
           />
         </div>
-        <SubmitButton className="btn-primary">Add inspiration</SubmitButton>
+        <SubmitButton className="btn-primary" pendingLabel="Adding…">
+          Add inspiration
+        </SubmitButton>
       </FormAction>
 
       {inspirations.length === 0 ? (
@@ -56,14 +61,18 @@ export default async function InspirationsPage() {
           icon="sparkles"
           title="Build your inspiration library"
           description="Save quotes and personal notes here. One will appear on your home page each time you visit."
-          tip="Start with something that helped you recently."
         />
       ) : (
-        <div className="space-y-3">
-          {inspirations.map((item) => (
-            <InspirationRow key={item.id} id={item.id} text={item.text} author={item.author} />
-          ))}
-        </div>
+        <section aria-labelledby="inspirations-list-title">
+          <h2 id="inspirations-list-title" className="section-title mb-3">
+            Your library <span className="text-base font-normal text-muted">({inspirations.length})</span>
+          </h2>
+          <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
+            {inspirations.map((item) => (
+              <InspirationRow key={item.id} id={item.id} text={item.text} author={item.author} />
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

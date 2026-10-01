@@ -1,62 +1,45 @@
 import Link from "next/link";
-import { kindColor, type PlanKind } from "@/lib/plan/kinds";
+import clsx from "clsx";
+import { kindColor, PLAN_KIND_LABELS, type PlanKind } from "@/lib/plan/kinds";
 import { isBlockOverdue } from "@/lib/plan/time";
-import { toDateInputValue } from "@/lib/date";
 import type { PlanBlockItem, PlanDayStats } from "@/lib/queries/plan";
-import Icon from "@/components/Icon";
+import EmptyState from "@/components/EmptyState";
 
 type Props = {
   blocks: PlanBlockItem[];
   stats: PlanDayStats;
   currentBlockId: string | null;
-  dayValue: string;
   isToday: boolean;
-  todoOpen?: number;
-  todoDone?: number;
 };
 
-export default function PlanPreview({
-  blocks,
-  stats,
-  currentBlockId,
-  dayValue,
-  isToday,
-  todoOpen = 0,
-  todoDone = 0,
-}: Props) {
-  const todoTotal = todoOpen + todoDone;
+export default function PlanPreview({ blocks, stats, currentBlockId, isToday }: Props) {
   return (
-    <section className="card h-full">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="section-title">Today&apos;s plan</h2>
-          {stats.totalBlocks > 0 || todoTotal > 0 ? (
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {todoTotal > 0 && (
-                <>
-                  {todoOpen > 0 ? `${todoOpen} open` : "All done"}
-                  {" · "}
-                  {todoDone}/{todoTotal} todos
-                </>
-              )}
-              {stats.totalBlocks > 0 && (
-                <>
-                  {todoTotal > 0 && " · "}
-                  {stats.doneBlocks}/{stats.totalBlocks} blocks · {stats.completionPct}%
-                </>
-              )}
+    <section className="card" aria-labelledby="plan-preview-title">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 id="plan-preview-title" className="section-title">
+            Today&apos;s plan
+          </h2>
+          {stats.totalBlocks > 0 && (
+            <p className="mt-1 text-sm text-muted">
+              {stats.doneBlocks}/{stats.totalBlocks} blocks done · {stats.completionPct}%
             </p>
-          ) : (
-            <p className="mt-1 text-sm text-slate-400">No blocks scheduled yet</p>
           )}
         </div>
-        <Link href="/dashboard/plan" className="btn-primary text-sm">
-          Edit plan
+        <Link href="/dashboard/plan" className="btn-ghost btn-sm min-h-[40px]">
+          {stats.totalBlocks > 0 ? "Open plan" : "Plan your day"}
         </Link>
       </div>
 
       {stats.totalBlocks > 0 && (
-        <div className="mb-4 h-2 overflow-hidden rounded-full progress-track">
+        <div
+          className="progress-track mb-4 h-2 overflow-hidden rounded-full"
+          role="progressbar"
+          aria-label="Plan completion"
+          aria-valuenow={stats.completionPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
           <div
             className="h-full rounded-full bg-brand-500 transition-all"
             style={{ width: `${stats.completionPct}%` }}
@@ -77,33 +60,44 @@ export default function PlanPreview({
       )}
 
       {blocks.length === 0 ? (
-        <p className="text-sm text-slate-400">
-          Start your day by adding time blocks or accepting smart suggestions on the plan page.
-        </p>
+        <EmptyState
+          variant="inline"
+          headingLevel="h3"
+          icon="calendar"
+          title="No time blocks yet"
+          description="Add blocks or accept smart suggestions on the plan page."
+        />
       ) : (
-        <div className="space-y-2">
+        <ul className="space-y-2">
           {blocks.map((block) => {
             const active = isToday && block.id === currentBlockId;
             const overdue = isToday && isBlockOverdue(block.startTime, block.endTime, block.status);
+            const done = block.status === "done";
+            const skipped = block.status === "skipped";
             return (
-              <div
+              <li
                 key={block.id}
-                className={`flex items-start gap-3 rounded-lg border px-3 py-2 ${kindColor(block.kind as PlanKind, block.color)} ${active ? "ring-2 ring-brand-400" : ""}`}
-              >
-                <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
-                  {block.startTime}
-                </span>
-                <span className={`min-w-0 flex-1 truncate text-sm ${block.status === "done" ? "line-through opacity-70" : ""}`}>
-                  {block.title}
-                </span>
-                {active && <Icon name="calendar" className="h-4 w-4 shrink-0 text-brand-500" />}
-                {overdue && !active && (
-                  <span className="shrink-0 text-xs text-red-600 dark:text-red-400">Late</span>
+                className={clsx(
+                  "flex items-center gap-3 rounded-lg border px-3 py-2",
+                  kindColor(block.kind as PlanKind, block.color),
+                  active && "ring-2 ring-brand-400"
                 )}
-              </div>
+              >
+                <span className="w-11 shrink-0 text-xs font-medium tabular-nums opacity-80">{block.startTime}</span>
+                <span className={clsx("min-w-0 flex-1 truncate text-sm", (done || skipped) && "line-through opacity-70")}>
+                  {block.title}
+                  <span className="sr-only">
+                    {" "}
+                    ({PLAN_KIND_LABELS[block.kind as PlanKind] ?? block.kind}
+                    {done ? ", done" : skipped ? ", skipped" : ""})
+                  </span>
+                </span>
+                {active && <span className="badge-brand shrink-0">Now</span>}
+                {overdue && !active && <span className="badge-danger shrink-0">Late</span>}
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </section>
   );

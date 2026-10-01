@@ -1,7 +1,10 @@
-/** Normalize Date or ISO string (e.g. after unstable_cache JSON round-trip). */
+/**
+ * Normalize Date or ISO string (e.g. after unstable_cache JSON round-trip).
+ * Always returns a new Date, so callers (startOfDay etc.) never mutate their input.
+ */
 export function coerceDate(d: Date | string | null | undefined): Date {
   if (!d) return new Date(0);
-  const date = typeof d === "string" ? new Date(d) : d;
+  const date = new Date(typeof d === "string" ? d : d.getTime());
   return isNaN(date.getTime()) ? new Date(0) : date;
 }
 
@@ -56,13 +59,36 @@ export function toDateInputValue(d: Date | string | null | undefined): string {
 }
 
 export function formatDate(d: Date | string | null | undefined): string {
-  if (!d) return "-";
+  if (!d) return "—";
   const date = typeof d === "string" ? new Date(d) : d;
-  if (isNaN(date.getTime())) return "-";
+  if (isNaN(date.getTime())) return "—";
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
+  });
+}
+
+/** "01 Oct 2026 – 07 Oct 2026"; open-ended ranges render "– Present" (or the given label). */
+export function formatRange(
+  from: Date | string | null | undefined,
+  to: Date | string | null | undefined,
+  openLabel = "Present"
+): string {
+  return `${formatDate(from)} – ${to ? formatDate(to) : openLabel}`;
+}
+
+/** "01 Oct 2026, 14:05" — the app's single timestamp format. */
+export function formatDateTime(d: Date | string | null | undefined): string {
+  if (!d) return "—";
+  const date = typeof d === "string" ? new Date(d) : d;
+  if (isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 

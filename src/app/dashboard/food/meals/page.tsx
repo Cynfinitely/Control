@@ -3,10 +3,14 @@ import { addDays, endOfDay, startOfDay } from "@/lib/date";
 import { getDefaultMeals, getFoodRange, getFoodSettings } from "@/lib/queries/food";
 import { repeatedMealCandidates } from "@/lib/food/insights";
 import PageHeader from "@/components/PageHeader";
+import CollapsibleSection from "@/components/CollapsibleSection";
+import FocusTarget from "@/components/FocusTarget";
 import FoodNav from "../FoodNav";
 import RepeatedMealsCard from "../RepeatedMealsCard";
 import DefaultMealList from "./DefaultMealList";
 import DefaultMealForm from "./DefaultMealForm";
+
+export const metadata = { title: "Default Meals" };
 
 export default async function DefaultMealsPage() {
   const user = await requireUser();
@@ -27,18 +31,20 @@ export default async function DefaultMealsPage() {
       <PageHeader
         title="Default Meals"
         description="Meals that work for your life. Log them in one tap and add them to your weekly plan."
-      />
-      <FoodNav active="/dashboard/food/meals" />
+      >
+        <FoodNav active="/dashboard/food/meals" />
+      </PageHeader>
 
       <div className="space-y-6">
+        <FocusTarget value="add">
+          <CollapsibleSection variant="card" title="New Default Meal" defaultOpen={meals.length === 0}>
+            <DefaultMealForm mealLabels={settings.mealLabels} />
+          </CollapsibleSection>
+        </FocusTarget>
+
         <DefaultMealList meals={meals} mealLabels={settings.mealLabels} usage={usage} />
 
         <RepeatedMealsCard candidates={repeatedMealCandidates(recentEntries, meals.map((m) => m.name))} />
-
-        <section className="card">
-          <h2 className="section-title mb-3">New Default Meal</h2>
-          <DefaultMealForm mealLabels={settings.mealLabels} />
-        </section>
       </div>
     </div>
   );

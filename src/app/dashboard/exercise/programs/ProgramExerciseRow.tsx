@@ -1,5 +1,6 @@
 "use client";
 
+import ActionForm from "@/components/ActionForm";
 import FormAction from "@/components/FormAction";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
@@ -30,11 +31,11 @@ export default function ProgramExerciseRow({
   isLast,
 }: Props) {
   return (
-    <div className="card">
-      <FormAction action={updateProgramExerciseForm} successMessage="Exercise updated" className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
+    <li className="card">
+      <FormAction action={updateProgramExerciseForm} successMessage="Exercise updated" className="grid grid-cols-2 gap-3 sm:grid-cols-12 sm:items-end">
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="programId" value={programId} />
-        <div className="sm:col-span-5">
+        <div className="col-span-2 sm:col-span-5">
           <label className="label" htmlFor={`ex-name-${id}`}>
             Exercise
           </label>
@@ -49,6 +50,7 @@ export default function ProgramExerciseRow({
             name="plannedSets"
             type="number"
             min={1}
+            inputMode="numeric"
             className="input"
             required
             defaultValue={plannedSets}
@@ -56,56 +58,64 @@ export default function ProgramExerciseRow({
         </div>
         <div className="sm:col-span-2">
           <label className="label" htmlFor={`ex-reps-${id}`}>
-            Reps
+            Reps <span className="font-normal text-muted">(optional)</span>
           </label>
           <input
             id={`ex-reps-${id}`}
             name="plannedReps"
             type="number"
             min={1}
+            inputMode="numeric"
             className="input"
-            placeholder="opt."
             defaultValue={plannedReps ?? ""}
           />
         </div>
-        <div className="sm:col-span-3">
+        <div className="col-span-2 sm:col-span-3">
           <SubmitButton className="btn-ghost touch-target w-full">Save</SubmitButton>
         </div>
       </FormAction>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <form action={reorderProgramExercise}>
+      <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-slate-100 pt-2 dark:border-slate-700">
+        <ActionForm action={reorderProgramExercise}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="programId" value={programId} />
           <input type="hidden" name="direction" value="up" />
           <SubmitIconButton
-            className="touch-target text-slate-300 hover:text-slate-600 disabled:opacity-40 dark:hover:text-slate-200"
-            title="Move up"
+            className="btn-icon"
+            aria-label={`Move ${name} up`}
             disabled={isFirst}
             icon={<Icon name="chevronUp" className="h-4 w-4" />}
           />
-        </form>
-        <form action={reorderProgramExercise}>
+        </ActionForm>
+        <ActionForm action={reorderProgramExercise}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="programId" value={programId} />
           <input type="hidden" name="direction" value="down" />
           <SubmitIconButton
-            className="touch-target text-slate-300 hover:text-slate-600 disabled:opacity-40 dark:hover:text-slate-200"
-            title="Move down"
+            className="btn-icon"
+            aria-label={`Move ${name} down`}
             disabled={isLast}
             icon={<Icon name="chevronDown" className="h-4 w-4" />}
           />
-        </form>
-        <form action={deleteProgramExercise}>
+        </ActionForm>
+        <ActionForm
+          action={deleteProgramExercise}
+          className="ml-auto"
+          confirm={{
+            title: `Remove “${name}” from this program?`,
+            message: "Workouts you already logged keep their exercises.",
+            confirmLabel: "Remove",
+          }}
+        >
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="programId" value={programId} />
           <SubmitIconButton
-            className="touch-target text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-            title="Remove exercise"
+            className="btn-icon-danger"
+            aria-label={`Remove ${name}`}
             icon={<Icon name="trash" className="h-4 w-4" />}
           />
-        </form>
+        </ActionForm>
       </div>
-    </div>
+    </li>
   );
 }

@@ -8,7 +8,10 @@ import SubmitButton from "@/components/SubmitButton";
 import FormAction from "@/components/FormAction";
 import FocusTarget from "@/components/FocusTarget";
 import FocusList from "./FocusList";
-import { createFocusItemForm, saveWorkLogForm } from "./actions";
+import WorkLogForm from "./WorkLogForm";
+import { createFocusItemForm } from "./actions";
+
+export const metadata = { title: "Work" };
 
 export default async function WorkPage({
   searchParams,
@@ -36,10 +39,10 @@ export default async function WorkPage({
         description="Daily work focus — commit to a few outcomes, then log what actually happened."
       />
 
-      <div className="card mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <DayNavigator basePath="/dashboard/work" dayValue={dayValue} dayLabel={dayLabel} />
         {totalCount > 0 && (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-muted">
             {doneCount}/{totalCount} done
           </p>
         )}
@@ -55,7 +58,7 @@ export default async function WorkPage({
           >
             <input type="hidden" name="dayDate" value={dayValue} />
             <div className="sm:col-span-2 lg:col-span-4">
-              <label htmlFor="work-focus-title" className="sr-only">
+              <label htmlFor="work-focus-title" className="label">
                 Focus item
               </label>
               <input
@@ -89,31 +92,7 @@ export default async function WorkPage({
 
       <FocusList initialItems={workDay.focusItems} />
 
-      <FormAction
-        action={saveWorkLogForm}
-        successMessage="Work log saved"
-        className="card mt-8 space-y-4"
-      >
-        <input type="hidden" name="dayDate" value={dayValue} />
-        <div>
-          <h2 className="section-title mb-1">What actually happened</h2>
-          <p className="mb-3 text-xs text-slate-400">
-            Optional end-of-day log — wins, blockers, or notes from the workday.
-          </p>
-          <label htmlFor="work-log" className="sr-only">
-            Work log
-          </label>
-          <textarea
-            id="work-log"
-            name="logNote"
-            className="input"
-            rows={4}
-            placeholder="Shipped X, blocked on Y, next step Z…"
-            defaultValue={workDay.logNote ?? ""}
-          />
-        </div>
-        <SubmitButton className="btn-primary touch-target">Save log</SubmitButton>
-      </FormAction>
+      <WorkLogForm key={dayValue} dayValue={dayValue} initialNote={workDay.logNote ?? ""} />
     </div>
   );
 }

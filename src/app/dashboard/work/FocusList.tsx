@@ -2,10 +2,11 @@
 
 import { useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Icon from "@/components/Icon";
+import clsx from "clsx";
 import EmptyState from "@/components/EmptyState";
 import PendingIndicator from "@/components/PendingIndicator";
-import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import CheckButton from "@/components/CheckButton";
+import IconButton from "@/components/IconButton";
 import { useToast } from "@/components/Toast";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import { toggleFocusItem, skipFocusItem, deleteFocusItem, restoreFocusItem } from "./actions";
@@ -26,7 +27,7 @@ function applyOptimistic(items: WorkFocusItemRow[], action: OptimisticAction): W
       return items.map((item) => {
         if (item.id !== action.id) return item;
         if (item.status === "open") return { ...item, status: "done" };
-        return { ...item, status: "open" };
+        return { ...item, status: "open" }; // done or skipped → open (matches toggleFocusItem)
       });
     case "skip":
       return items.map((item) => (item.id === action.id ? { ...item, status: "skipped" } : item));
@@ -52,60 +53,67 @@ function FocusRow({
   const isSkipped = item.status === "skipped";
 
   return (
-    <div
-      className={`card flex items-start gap-3 py-3 ${isDone || isSkipped ? "opacity-70" : ""}`}
-    >
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => onToggle(item.id)}
-        className={`touch-target flex h-6 w-6 shrink-0 items-center justify-center rounded border disabled:opacity-50 ${
-          isDone
-            ? "border-brand-600 bg-brand-600 text-white"
-            : "border-slate-300 hover:border-brand-500 dark:border-slate-600"
-        }`}
-        aria-label={isDone ? "Mark open" : "Mark done"}
-      >
-        {isDone ? <Icon name="check" className="h-3.5 w-3.5" /> : null}
-      </button>
+    <li className={clsx("flex items-center gap-3 px-4 py-3", (isDone || isSkipped) && "opacity-80")}>
+      <CheckButton
+        checked={isDone}
+        disabled={pending || isSkipped}
+        onChange={() => onToggle(item.id)}
+        label={
+          isSkipped
+            ? `“${item.title}” was skipped`
+            : isDone
+              ? `Mark “${item.title}” not done`
+              : `Mark “${item.title}” done`
+        }
+      />
       <div className="min-w-0 flex-1">
         <p
-          className={
-            isDone || isSkipped
-              ? "text-slate-500 line-through dark:text-slate-400"
-              : "font-medium text-slate-800 dark:text-slate-100"
-          }
+          className={clsx(
+            "break-words",
+            isDone || isSkipped ? "text-muted line-through" : "font-medium text-slate-800 dark:text-slate-100"
+          )}
         >
           {item.title}
         </p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-          {isSkipped && <span className="badge bg-amber-50 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">skipped</span>}
-          {item.linkLabel && (
-            <span className="badge bg-slate-100 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              {item.linkLabel}
-            </span>
-          )}
-        </div>
+        {(isSkipped || item.linkLabel) && (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {isSkipped && <span className="badge-warning">Skipped</span>}
+            {item.linkLabel && <span className="badge-muted">{item.linkLabel}</span>}
+          </div>
+        )}
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-1">
-      {!isDone && !isSkipped && (
-        <button
-          type="button"
+      <div className="flex shrink-0 items-center gap-1">
+        {!isDone && !isSkipped && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onSkip(item.id)}
+            className="btn-ghost btn-sm min-h-[40px]"
+            aria-label={`Skip “${item.title}”`}
+          >
+            Skip
+          </button>
+        )}
+        {isSkipped && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onToggle(item.id)}
+            className="btn-ghost btn-sm min-h-[40px]"
+            aria-label={`Reopen “${item.title}”`}
+          >
+            Reopen
+          </button>
+        )}
+        <IconButton
+          icon="trash"
+          tone="danger"
           disabled={pending}
-          onClick={() => onSkip(item.id)}
-          className="btn-ghost touch-target shrink-0 text-xs disabled:opacity-50"
-        >
-          Skip
-        </button>
-      )}
-      <DeleteConfirmButton
-        disabled={pending}
-        title="Remove focus item?"
-        message={`Remove "${item.title}"?`}
-        onConfirm={() => onDelete(item.id)}
-      />
+          onClick={() => onDelete(item.id)}
+          aria-label={`Remove “${item.title}”`}
+        />
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -122,7 +130,12 @@ export default function FocusList({ initialItems }: Props) {
   ) {
     startTransition(async () => {
       updateOptimistic(action);
-      const result = await fn();
+      let result: { ok: boolean; error?: string };
+      try {
+        result = await fn();
+      } catch {
+        result = { ok: false };
+      }
       if (!result.ok) {
         error(result.error ?? "Couldn't save — try again");
         router.refresh();
@@ -144,6 +157,7 @@ export default function FocusList({ initialItems }: Props) {
     const fd = new FormData();
     fd.set("id", id);
     runAction({ type: "skip", id }, () => skipFocusItem(fd));
+    // No toast: the row's "Skipped" badge is the confirmation.
   }
 
   function handleDelete(id: string) {
@@ -156,9 +170,10 @@ export default function FocusList({ initialItems }: Props) {
         const restoreFd = new FormData();
         restoreFd.set("id", id);
         startTransition(async () => {
-          await restoreFocusItem(restoreFd);
+          const res = await restoreFocusItem(restoreFd);
           router.refresh();
-          success("Focus item restored");
+          if (res.ok) success("Focus item restored");
+          else error(res.error);
         });
       }
     );
@@ -167,8 +182,20 @@ export default function FocusList({ initialItems }: Props) {
   const open = optimisticItems.filter((i) => i.status === "open");
   const closed = optimisticItems.filter((i) => i.status !== "open");
 
+  const rows = (items: WorkFocusItemRow[]) =>
+    items.map((item) => (
+      <FocusRow
+        key={item.id}
+        item={item}
+        onToggle={handleToggle}
+        onSkip={handleSkip}
+        onDelete={handleDelete}
+        pending={isPending}
+      />
+    ));
+
   return (
-    <div className={isPending ? "opacity-80" : ""}>
+    <div className={clsx("relative", isPending && "opacity-80")}>
       <PendingIndicator pending={isPending} />
       {optimisticItems.length === 0 && (
         <EmptyState
@@ -178,37 +205,15 @@ export default function FocusList({ initialItems }: Props) {
           tip="Personal errands stay in Todos. Deep career tracking stays in Career."
         />
       )}
-      <div className="space-y-2">
+      <div className="space-y-4">
         {open.length > 0 && (
-          <CollapsibleSection title="Open" count={open.length} defaultOpen>
-            <div className="space-y-2">
-              {open.map((item) => (
-                <FocusRow
-                  key={item.id}
-                  item={item}
-                  onToggle={handleToggle}
-                  onSkip={handleSkip}
-                  onDelete={handleDelete}
-                  pending={isPending}
-                />
-              ))}
-            </div>
+          <CollapsibleSection title="Open" count={open.length} defaultOpen as="h2">
+            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">{rows(open)}</ul>
           </CollapsibleSection>
         )}
         {closed.length > 0 && (
-          <CollapsibleSection title="Closed" count={closed.length} className="mt-4">
-            <div className="space-y-2">
-              {closed.map((item) => (
-                <FocusRow
-                  key={item.id}
-                  item={item}
-                  onToggle={handleToggle}
-                  onSkip={handleSkip}
-                  onDelete={handleDelete}
-                  pending={isPending}
-                />
-              ))}
-            </div>
+          <CollapsibleSection title="Done" count={closed.length} as="h2">
+            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">{rows(closed)}</ul>
           </CollapsibleSection>
         )}
       </div>

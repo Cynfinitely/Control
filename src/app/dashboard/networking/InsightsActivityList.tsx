@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { formatDaysAgo } from "@/lib/date";
 import {
   INTERACTION_TYPES,
   INTERACTION_TYPE_LABELS,
+  formatActivityDate,
   parseTopics,
 } from "@/lib/networking";
+import EmptyState from "@/components/EmptyState";
 import type { ActivityItem } from "@/lib/queries/networking";
 
 export default function InsightsActivityList({ items }: { items: ActivityItem[] }) {
@@ -68,25 +69,30 @@ export default function InsightsActivityList({ items }: { items: ActivityItem[] 
         </select>
       </div>
       {filtered.length === 0 ? (
-        <p className="text-sm text-slate-400">No logs in this period.</p>
+        <EmptyState
+          variant="inline"
+          headingLevel="h3"
+          icon="users"
+          title={items.length === 0 ? "No logs in this period" : "No logs match these filters"}
+        />
       ) : (
-        <div className="space-y-2">
+        <ul className="divide-y divide-slate-100 dark:divide-slate-700">
           {filtered.map((it) => (
-            <div key={it.id} className="flex items-start justify-between gap-3 border-t border-slate-100 pt-2 text-sm dark:border-slate-700">
-              <div>
+            <li key={it.id} className="flex items-start justify-between gap-3 py-2.5 text-sm first:pt-0">
+              <div className="min-w-0">
                 <Link href={`/dashboard/networking/${it.contactId}`} className="font-medium text-slate-800 hover:underline dark:text-slate-100">
                   {it.contactName}
                 </Link>
-                <span className="text-slate-400"> · {INTERACTION_TYPE_LABELS[it.type] ?? it.type}</span>
-                {it.summary && <p className="text-slate-600 dark:text-slate-300">{it.summary}</p>}
+                <span className="text-muted"> · {INTERACTION_TYPE_LABELS[it.type] ?? it.type}</span>
+                {it.summary && <p className="whitespace-pre-line text-slate-600 dark:text-slate-300">{it.summary}</p>}
                 {parseTopics(it.topics).length > 0 && (
-                  <p className="text-xs text-slate-400">{parseTopics(it.topics).join(" · ")}</p>
+                  <p className="text-xs text-muted">{parseTopics(it.topics).join(" · ")}</p>
                 )}
               </div>
-              <span className="shrink-0 text-xs text-slate-400">{formatDaysAgo(it.date)}</span>
-            </div>
+              <span className="shrink-0 text-right text-xs text-muted">{formatActivityDate(it.date)}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import clsx from "clsx";
 import type { EventOccurrence } from "@/lib/calendar/types";
-import { addDays, startOfWeek, toDateInputValue, toMonthKey, formatDate } from "@/lib/date";
+import { addDays, startOfWeek, toDateInputValue, formatDate } from "@/lib/date";
 import MonthNavigator from "@/components/MonthNavigator";
 import DayNavigator from "@/components/DayNavigator";
+import StepNavigator from "@/components/StepNavigator";
+import SegmentedControl from "@/components/SegmentedControl";
+import Icon from "@/components/Icon";
 import MonthGrid from "./MonthGrid";
 import WeekGrid from "./WeekGrid";
 import DayColumn from "./DayColumn";
@@ -26,6 +28,7 @@ export type SerializedOccurrence = {
   isException: boolean;
   isRecurring: boolean;
   rrule: string | null;
+  reminderOffsets?: number[];
 };
 
 export type SerializedReminder = {
@@ -47,7 +50,9 @@ type Props = {
   occurrences: SerializedOccurrence[];
   reminders: SerializedReminder[];
   focusEventId?: string;
-  focusReminderId?: string;
+  /** ISO originalStartsAt of the focused occurrence */
+  focusAt?: string;
+  focusReminder?: SerializedReminder;
   initialCreate?: "event" | "reminder" | null;
 };
 
@@ -77,6 +82,9 @@ export default function CalendarShell({
   view: initialView,
   occurrences: rawOccs,
   reminders: rawReminders,
+  focusEventId,
+  focusAt,
+  focusReminder,
   initialCreate,
 }: Props) {
   const router = useRouter();
@@ -90,6 +98,7 @@ export default function CalendarShell({
     values: ReminderFormValues;
   } | null>(null);
   const [bootedCreate, setBootedCreate] = useState(false);
+  const [bootedFocus, setBootedFocus] = useState(false);
 
   const occurrences = useMemo(() => rawOccs.map(reviveOcc), [rawOccs]);
   const reminders = useMemo(
@@ -144,13 +153,38 @@ export default function CalendarShell({
     router.refresh();
   }
 
+  // Open the item a notification linked to (?event=…&at=… or ?reminder=…).
+  useEffect(() => {
+    if (bootedFocus) return;
+    if (focusEventId) {
+      const occ =
+        occurrences.find(
+          (o) => o.eventId === focusEventId && (!focusAt || o.originalStartsAt.toISOString() === focusAt)
+        ) ?? occurrences.find((o) => o.eventId === focusEventId);
+      setBootedFocus(true);
+      if (occ) openOccurrence(occ);
+    } else if (focusReminder?.remindAt) {
+      setBootedFocus(true);
+      setReminderForm({
+        mode: "edit",
+        values: {
+          id: focusReminder.id,
+          title: focusReminder.title || "",
+          remindAt: new Date(focusReminder.remindAt),
+          rrule: focusReminder.rrule,
+        },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bootedFocus, focusEventId, focusAt, focusReminder, occurrences]);
+
   function setViewAndUrl(next: View) {
     setView(next);
     const params = new URLSearchParams();
     params.set("view", next);
     if (next === "month") params.set("month", monthKey);
     else params.set("day", dayValue);
-    router.push(`/dashboard/calendar?${params.toString()}`);
+    router.push(`/dashboard/calendar?${params.toString()}`, { scroll: false });
   }
 
   function openCreate(at?: Date) {
@@ -186,7 +220,7 @@ export default function CalendarShell({
         rrule: occ.rrule,
         originalStartsAt: occ.originalStartsAt,
         isRecurring: occ.isRecurring,
-        reminderOffsets: [15],
+        reminderOffsets: occ.reminderOffsets ?? [],
       },
     });
   }
@@ -222,6 +256,12 @@ export default function CalendarShell({
     if (view === "month") setView("day");
   }
 
+  const isCurrentWeek = toDateInputValue(weekStart) === toDateInputValue(startOfWeek(new Date()));
+
+  function weekHref(d: Date) {
+    return `/dashboard/calendar?view=week&day=${toDateInputValue(startOfWeek(d))}`;
+  }
+
   const views: { id: View; label: string }[] = [
     { id: "month", label: "Month" },
     { id: "week", label: "Week" },
@@ -231,81 +271,55 @@ export default function CalendarShell({
 
   return (
     <div>
-      <div className="card mb-4 flex flex-wrap items-center justify-between gap-3">
-        {view === "month" ? (
-          <MonthNavigator
-            basePath="/dashboard/calendar"
-            monthKey={monthKey}
-            monthLabel={monthLabel}
-            extraParams={{ view: "month" }}
-          />
-        ) : view === "week" ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className="btn-ghost touch-target px-3"
-              onClick={() => {
-                const prev = addDays(weekStart, -7);
-                router.push(
-                  `/dashboard/calendar?view=week&day=${toDateInputValue(prev)}`
-                );
-              }}
-            >
-              ←
+      <div className="card mb-4 space-y-4 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {view === "month" ? (
+            <MonthNavigator
+              basePath="/dashboard/calendar"
+              monthKey={monthKey}
+              monthLabel={monthLabel}
+              extraParams={{ view: "month" }}
+            />
+          ) : view === "week" ? (
+            <StepNavigator
+              label={`${formatDate(weekStart)} – ${formatDate(addDays(weekStart, 6))}`}
+              prev={{ href: weekHref(addDays(weekStart, -7)), label: "Previous week" }}
+              next={{ href: weekHref(addDays(weekStart, 7)), label: "Next week" }}
+              reset={
+                isCurrentWeek ? undefined : { href: weekHref(new Date()), label: "Go to this week", text: "This week" }
+              }
+            />
+          ) : view === "day" ? (
+            <DayNavigator
+              basePath="/dashboard/calendar"
+              dayValue={dayValue}
+              dayLabel={dayLabel}
+              extraParams={{ view }}
+            />
+          ) : (
+            <p className="font-semibold text-slate-900 dark:text-slate-100">Next 60 days</p>
+          )}
+
+          <div className="flex w-full gap-2 sm:w-auto">
+            <button type="button" className="btn-ghost flex-1 sm:flex-none" onClick={openCreateReminder}>
+              <Icon name="bell" className="h-4 w-4" />
+              Reminder
             </button>
-            <div>
-              <p className="font-semibold text-slate-900 dark:text-slate-100">
-                Week of {formatDate(weekStart)}
-              </p>
-            </div>
-            <button
-              type="button"
-              className="btn-ghost touch-target px-3"
-              onClick={() => {
-                const next = addDays(weekStart, 7);
-                router.push(
-                  `/dashboard/calendar?view=week&day=${toDateInputValue(next)}`
-                );
-              }}
-            >
-              →
+            <button type="button" className="btn-primary flex-1 sm:flex-none" onClick={() => openCreate()}>
+              <Icon name="plus" className="h-4 w-4" />
+              New event
             </button>
           </div>
-        ) : (
-          <DayNavigator
-            basePath="/dashboard/calendar"
-            dayValue={dayValue}
-            dayLabel={dayLabel}
-            extraParams={{ view }}
-          />
-        )}
-
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
-          <button type="button" className="btn-primary touch-target text-sm" onClick={() => openCreate()}>
-            New event
-          </button>
-          <button type="button" className="btn touch-target text-sm" onClick={openCreateReminder}>
-            Reminder
-          </button>
         </div>
-      </div>
 
-      <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-slate-200 p-1 dark:border-slate-700">
-        {views.map((v) => (
-          <button
-            key={v.id}
-            type="button"
-            onClick={() => setViewAndUrl(v.id)}
-            className={clsx(
-              "touch-target shrink-0 flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition",
-              view === v.id
-                ? "bg-brand-600 text-white"
-                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-            )}
-          >
-            {v.label}
-          </button>
-        ))}
+        <SegmentedControl
+          aria-label="Calendar view"
+          options={views.map((v) => ({ value: v.id, label: v.label }))}
+          value={view}
+          onChange={setViewAndUrl}
+          fill
+          className="sm:w-auto"
+        />
       </div>
 
       {view === "month" && (

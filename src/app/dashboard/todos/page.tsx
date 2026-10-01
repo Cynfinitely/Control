@@ -13,6 +13,8 @@ import TodoList from "./TodoList";
 import BacklogRow from "./BacklogRow";
 import { createTodoForm } from "./actions";
 
+export const metadata = { title: "Todos" };
+
 export default async function TodosPage({
   searchParams,
 }: {
@@ -22,6 +24,7 @@ export default async function TodosPage({
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
+  const dayName = dayLabel === "Today" || dayLabel === "Yesterday" ? dayLabel.toLowerCase() : dayLabel;
 
   const [dayTodos, backlog, staleCount] = await Promise.all([
     getDayTodos(user.id, dayValue),
@@ -33,7 +36,7 @@ export default async function TodosPage({
     <div>
       <PageHeader title="Todos" description="Simple daily checklist — add tasks, check them off." />
 
-      <div className="card mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <DayNavigator basePath="/dashboard/todos" dayValue={dayValue} dayLabel={dayLabel} />
         {staleCount > 0 && <StaleBacklogButton count={staleCount} />}
       </div>
@@ -44,12 +47,12 @@ export default async function TodosPage({
             action={createTodoForm}
             successMessage="Todo added"
             resetOnSuccess
-            className="card mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
+            className="card mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5"
           >
             <input type="hidden" name="dayDate" value={dayValue} />
-            <div className="sm:col-span-2 lg:col-span-5">
-              <label htmlFor="todo-title" className="sr-only">
-                Todo title
+            <div className="col-span-2 lg:col-span-5">
+              <label htmlFor="todo-title" className="label">
+                Todo
               </label>
               <input
                 id="todo-title"
@@ -87,11 +90,11 @@ export default async function TodosPage({
                 Add to
               </label>
               <select id="todo-destination" name="destination" className="input" defaultValue="day">
-                <option value="day">This day</option>
+                <option value="day">{dayLabel === "Today" ? "Today" : `This day (${dayLabel})`}</option>
                 <option value="backlog">Backlog</option>
               </select>
             </div>
-            <div className="flex items-end">
+            <div className="col-span-2 flex items-end lg:col-span-1">
               <SubmitButton className="btn-primary touch-target w-full">Add</SubmitButton>
             </div>
           </FormAction>
@@ -102,43 +105,24 @@ export default async function TodosPage({
 
       <CollapsibleSection
         title="Backlog"
+        as="h2"
         count={backlog.length}
-        defaultOpen={backlog.length === 0}
+        defaultOpen={backlog.length > 0}
         className="card mt-8"
       >
-        <p className="text-xs text-slate-400">
-          {backlog.length === 0
-            ? "Nothing saved for later."
-            : "Unfinished items saved for later. Pull into today's list when ready."}
-        </p>
-        <FormAction
-          action={createTodoForm}
-          successMessage="Added to backlog"
-          resetOnSuccess
-          className="mt-3 flex flex-col gap-2 sm:flex-row"
-        >
-          <input type="hidden" name="destination" value="backlog" />
-          <input type="hidden" name="priority" value="medium" />
-          <input type="hidden" name="dayDate" value={dayValue} />
-          <label htmlFor="backlog-title" className="sr-only">
-            Backlog title
-          </label>
-          <input
-            id="backlog-title"
-            name="title"
-            className="input flex-1"
-            placeholder="Add to backlog for later…"
-            required
-            autoComplete="off"
-          />
-          <SubmitButton className="btn-primary shrink-0">Add</SubmitButton>
-        </FormAction>
-        {backlog.length > 0 && (
-          <div className="mt-4 space-y-2">
-            {backlog.map((t) => (
-              <BacklogRow key={t.id} id={t.id} title={t.title} dayValue={dayValue} />
-            ))}
-          </div>
+        {backlog.length === 0 ? (
+          <p className="text-sm text-muted">
+            Nothing saved for later. To park a todo here, choose “Backlog” under “Add to” above.
+          </p>
+        ) : (
+          <>
+            <p className="text-sm text-muted">Saved for later. Pull items into {dayName === "today" ? "today’s" : "this day’s"} list when you’re ready.</p>
+            <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-700">
+              {backlog.map((t) => (
+                <BacklogRow key={t.id} id={t.id} title={t.title} dayValue={dayValue} dayName={dayName} />
+              ))}
+            </ul>
+          </>
         )}
       </CollapsibleSection>
     </div>

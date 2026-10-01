@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import ActionForm from "@/components/ActionForm";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import EmptyState from "@/components/EmptyState";
-import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import Icon from "@/components/Icon";
+import SubmitButton from "@/components/SubmitButton";
 import { formatProgramExerciseLabel } from "@/lib/exercise/format";
 import { archiveProgram, restoreProgram } from "./programs/actions";
+import { startWorkoutFromProgram } from "./actions";
 
 export type ProgramListExercise = {
   id: string;
@@ -23,9 +26,41 @@ export type ProgramListItem = {
   exercises: ProgramListExercise[];
 };
 
-export default function ProgramsSection({ programs }: { programs: ProgramListItem[] }) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
+/** Primary "Start workout" control for a program (shared with the program page). */
+export function StartWorkoutForm({
+  programId,
+  programName,
+  todayValue,
+  className,
+}: {
+  programId: string;
+  programName: string;
+  todayValue: string;
+  className?: string;
+}) {
+  return (
+    <ActionForm action={startWorkoutFromProgram} className={className}>
+      <input type="hidden" name="programId" value={programId} />
+      <input type="hidden" name="date" value={todayValue} />
+      <SubmitButton
+        className="btn-primary touch-target w-full sm:w-auto"
+        aria-label={`Start workout: ${programName}`}
+        pendingLabel="Starting…"
+      >
+        <Icon name="play" className="h-4 w-4" />
+        Start workout
+      </SubmitButton>
+    </ActionForm>
+  );
+}
+
+export default function ProgramsSection({
+  programs,
+  todayValue,
+}: {
+  programs: ProgramListItem[];
+  todayValue: string;
+}) {
   const [showArchived, setShowArchived] = useState(false);
 
   const active = programs.filter((p) => !p.archivedAt);
@@ -37,24 +72,27 @@ export default function ProgramsSection({ programs }: { programs: ProgramListIte
   }, [showArchived, archived.length]);
 
   return (
-    <section className="mb-6">
+    <section className="mb-8" aria-labelledby="programs-title">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="section-title mb-0">Programs</h2>
+        <h2 id="programs-title" className="section-title mb-0">
+          {showArchived ? "Archived programs" : "Programs"}
+        </h2>
         <div className="flex flex-wrap gap-2">
-          <Link href="/dashboard/exercise/programs/new" className="btn-ghost text-sm">
+          <Link href="/dashboard/exercise/programs/new" className="btn-ghost touch-target">
+            <Icon name="plus" className="h-4 w-4" />
             New program
           </Link>
-          <Link href="/dashboard/exercise/programs/new#paste" className="btn-ghost text-sm">
+          <Link href="/dashboard/exercise/programs/new#paste" className="btn-ghost touch-target">
             Paste from text
           </Link>
         </div>
       </div>
 
-      {visible.length === 0 && !showArchived && archived.length === 0 && (
+      {programs.length === 0 && (
         <EmptyState
           icon="dumbbell"
           title="No workout programs yet"
-          description="Save a reusable session like Full Body, then open it when you train."
+          description="Save a reusable session like Full Body, then start it with one tap when you train."
           actionLabel="New program"
           actionHref="/dashboard/exercise/programs/new"
           tip="You can also paste a numbered list of exercises."
@@ -62,80 +100,108 @@ export default function ProgramsSection({ programs }: { programs: ProgramListIte
       )}
 
       {visible.length === 0 && !showArchived && archived.length > 0 && (
-        <p className="text-sm text-slate-400">No active programs.</p>
+        <EmptyState
+          variant="inline"
+          icon="dumbbell"
+          headingLevel="h3"
+          title="No active programs"
+          description="Restore an archived program or create a new one."
+        />
       )}
 
-      {visible.length === 0 && showArchived && (
-        <p className="text-sm text-slate-400">No archived programs.</p>
-      )}
+      {visible.length > 0 && (
+        <ul className="space-y-3">
+          {visible.map((program) => {
+            const isArchived = Boolean(program.archivedAt);
+            const count = program.exercises.length;
+            return (
+              <li key={program.id} className="card">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+                      <Link
+                        href={`/dashboard/exercise/programs/${program.id}`}
+                        className="hover:text-brand-700 hover:underline dark:hover:text-brand-300"
+                      >
+                        {program.name}
+                      </Link>
+                    </h3>
+                    <p className="text-xs text-muted">
+                      {count === 1 ? "1 exercise" : `${count} exercises`}
+                      {isArchived && " · Archived"}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+                    {!isArchived && count > 0 && (
+                      <StartWorkoutForm
+                        programId={program.id}
+                        programName={program.name}
+                        todayValue={todayValue}
+                        className="col-span-2"
+                      />
+                    )}
+                    <Link
+                      href={`/dashboard/exercise/programs/${program.id}`}
+                      className="btn-ghost touch-target w-full sm:w-auto"
+                      aria-label={`Edit ${program.name}`}
+                    >
+                      <Icon name="pencil" className="h-4 w-4" />
+                      Edit
+                    </Link>
+                    {isArchived ? (
+                      <ActionForm action={restoreProgram} successMessage="Program restored">
+                        <input type="hidden" name="id" value={program.id} />
+                        <SubmitButton className="btn-ghost touch-target w-full sm:w-auto" aria-label={`Restore ${program.name}`}>
+                          <Icon name="undo" className="h-4 w-4" />
+                          Restore
+                        </SubmitButton>
+                      </ActionForm>
+                    ) : (
+                      <ActionForm
+                        action={archiveProgram}
+                        successMessage="Program archived"
+                        confirm={{
+                          title: `Archive “${program.name}”?`,
+                          message: "It will be hidden from your active list. You can restore it later.",
+                          confirmLabel: "Archive",
+                        }}
+                      >
+                        <input type="hidden" name="id" value={program.id} />
+                        <SubmitButton className="btn-ghost touch-target w-full sm:w-auto" aria-label={`Archive ${program.name}`}>
+                          Archive
+                        </SubmitButton>
+                      </ActionForm>
+                    )}
+                  </div>
+                </div>
 
-      <div className="space-y-2">
-        {visible.map((program) => (
-          <details key={program.id} className="card">
-            <summary className="flex cursor-pointer list-none items-start justify-between gap-3 [&::-webkit-details-marker]:hidden">
-              <div className="min-w-0">
-                <p className="font-medium text-slate-800 dark:text-slate-100">{program.name}</p>
-                <p className="text-xs text-slate-400">
-                  {program.exercises.length === 1 ? "1 exercise" : `${program.exercises.length} exercises`}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                <Link
-                  href={`/dashboard/exercise/programs/${program.id}`}
-                  className="text-xs text-brand-600 hover:underline dark:text-brand-400"
-                >
-                  Edit
-                </Link>
-                {program.archivedAt ? (
-                  <button
-                    type="button"
-                    className="text-xs text-slate-400 hover:text-brand-600 dark:hover:text-brand-400"
-                    onClick={() => {
-                      startTransition(async () => {
-                        const fd = new FormData();
-                        fd.set("id", program.id);
-                        await restoreProgram(fd);
-                        router.refresh();
-                      });
-                    }}
-                  >
-                    Restore
-                  </button>
+                {count > 0 ? (
+                  <CollapsibleSection title="Exercises" count={count} className="mt-2">
+                    <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+                      {program.exercises.map((ex) => (
+                        <li key={ex.id}>{formatProgramExerciseLabel(ex)}</li>
+                      ))}
+                    </ol>
+                  </CollapsibleSection>
                 ) : (
-                  <DeleteConfirmButton
-                    title="Archive program?"
-                    message="This program will be hidden from your active list. You can restore it later."
-                    label="Archive"
-                    confirmLabel="Archive"
-                    className="text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400"
-                    onConfirm={() => {
-                      startTransition(async () => {
-                        const fd = new FormData();
-                        fd.set("id", program.id);
-                        await archiveProgram(fd);
-                        router.refresh();
-                      });
-                    }}
-                  />
+                  <p className="mt-2 text-sm text-muted">
+                    No exercises yet.{" "}
+                    <Link href={`/dashboard/exercise/programs/${program.id}`} className="link">
+                      Add exercises
+                    </Link>
+                  </p>
                 )}
-              </div>
-            </summary>
-            <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
-              {program.exercises.map((ex) => (
-                <li key={ex.id}>{formatProgramExerciseLabel(ex)}</li>
-              ))}
-            </ol>
-            {program.exercises.length === 0 && (
-              <p className="mt-3 text-sm text-slate-400">No exercises yet.</p>
-            )}
-          </details>
-        ))}
-      </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {archived.length > 0 && (
         <button
           type="button"
-          className="mt-3 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+          className="btn-ghost touch-target mt-3"
+          aria-pressed={showArchived}
           onClick={() => setShowArchived((v) => !v)}
         >
           {showArchived ? "Show active programs" : `Show archived (${archived.length})`}

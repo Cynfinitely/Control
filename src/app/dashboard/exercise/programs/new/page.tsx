@@ -1,26 +1,33 @@
 import PageHeader from "@/components/PageHeader";
 import Breadcrumb from "@/components/Breadcrumb";
+import ActionForm from "@/components/ActionForm";
 import SubmitButton from "@/components/SubmitButton";
 import { createProgram } from "../actions";
 import ProgramTextImport from "../ProgramTextImport";
 
+export const metadata = { title: "New program" };
+
 export default function NewWorkoutProgramPage() {
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Exercise", href: "/dashboard/exercise" },
-          { label: "New program" },
-        ]}
-      />
       <PageHeader
+        breadcrumb={
+          <Breadcrumb
+            items={[
+              { label: "Exercise", href: "/dashboard/exercise" },
+              { label: "New program" },
+            ]}
+          />
+        }
         title="New program"
         description="Save a reusable gym session, or paste a list of exercises."
       />
 
-      <div className="card mb-6">
-        <h2 className="section-title">Create empty program</h2>
-        <form action={createProgram} className="mt-3 grid grid-cols-1 gap-3">
+      <section className="card mb-6" aria-labelledby="create-program-title">
+        <h2 id="create-program-title" className="section-title">
+          Create empty program
+        </h2>
+        <ActionForm action={createProgram} className="mt-3 grid grid-cols-1 gap-3">
           <div>
             <label className="label" htmlFor="program-name">
               Name
@@ -29,13 +36,15 @@ export default function NewWorkoutProgramPage() {
           </div>
           <div>
             <label className="label" htmlFor="program-notes">
-              Notes (optional)
+              Notes <span className="font-normal text-muted">(optional)</span>
             </label>
-            <input id="program-notes" name="notes" className="input" placeholder="optional" />
+            <input id="program-notes" name="notes" className="input" />
           </div>
-          <SubmitButton className="btn-primary touch-target">Create program</SubmitButton>
-        </form>
-      </div>
+          <div>
+            <SubmitButton className="btn-primary touch-target w-full sm:w-auto">Create program</SubmitButton>
+          </div>
+        </ActionForm>
+      </section>
 
       <ProgramTextImport />
     </div>

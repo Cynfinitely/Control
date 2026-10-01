@@ -1,14 +1,15 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import MonthNavigator from "@/components/MonthNavigator";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import StatCard from "@/components/StatCard";
 import { useToast } from "@/components/Toast";
 import { monthGridDays } from "@/lib/calendar/format";
-import { toDateInputValue } from "@/lib/date";
+import { toDateInputValue, toMonthKey } from "@/lib/date";
 import {
   DURATION_PRESETS,
   monthMigraineStats,
@@ -52,6 +53,11 @@ function applyOptimistic(current: LogMap, update: OptimisticUpdate): LogMap {
   };
 }
 
+/** "1 October" — readable cell names for screen readers. */
+function spokenDay(day: Date): string {
+  return day.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+}
+
 function formatAveragePain(averagePain: number, migraineDays: number): string {
   if (migraineDays === 0) return "—";
   return averagePain.toFixed(1).replace(/\.0$/, "");
@@ -73,7 +79,8 @@ export default function MigraineDiary({
   logs: MigraineDayLog[];
 }) {
   const router = useRouter();
-  const { error } = useToast();
+  const { error, success } = useToast();
+  const panelRef = useRef<HTMLElement>(null);
   const [pending, startTransition] = useTransition();
   const [logMap, setOptimistic] = useOptimistic(toLogMap(logs), applyOptimistic);
   const [noteDraft, setNoteDraft] = useState(() => {
@@ -90,7 +97,12 @@ export default function MigraineDiary({
 
   const [year, month] = monthKey.split("-").map(Number);
   const days = monthGridDays(monthKey);
-  const stats = monthMigraineStats(Object.values(logMap));
+  // Stats cover the shown month only (the grid also holds neighbouring days).
+  const stats = monthMigraineStats(
+    Object.entries(logMap)
+      .filter(([key]) => key.startsWith(monthKey))
+      .map(([, entry]) => entry)
+  );
   const selected = selectedDay ? logMap[selectedDay] : undefined;
   const isFutureSelected = Boolean(selectedDay && selectedDay > todayKey);
   const canEdit = Boolean(selectedDay) && !isFutureSelected;
@@ -99,16 +111,33 @@ export default function MigraineDiary({
   function selectDay(day: Date) {
     const key = toDateInputValue(day);
     if (key > todayKey) return;
-    const params = new URLSearchParams({ month: monthKey, day: key });
-    router.push(`/dashboard/health/migraine?${params.toString()}`);
+    // Leading/trailing cells belong to the neighbouring month: switch the
+    // calendar to that month so the panel never edits a day outside it.
+    const targetMonth = toMonthKey(day);
+    const params = new URLSearchParams();
+    if (targetMonth !== toMonthKey(new Date())) params.set("month", targetMonth);
+    if (key !== todayKey) params.set("day", key);
+    const qs = params.toString();
+    router.push(`/dashboard/health/migraine${qs ? `?${qs}` : ""}`, { scroll: false });
+    // On small screens the day panel sits above the calendar: bring it into view.
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+      panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
-  function runSave(date: string, entry: LogEntry, fd: FormData) {
+  function runSave(date: string, entry: LogEntry, fd: FormData, successMessage?: string) {
     startTransition(async () => {
       setOptimistic({ date, entry });
-      const result = await saveMigraineLog(fd);
-      if (!result.ok) {
-        error(result.error);
+      try {
+        const result = await saveMigraineLog(fd);
+        if (!result.ok) {
+          error(result.error);
+          router.refresh();
+        } else if (successMessage) {
+          success(successMessage);
+        }
+      } catch {
+        error("Couldn't save. Check your connection and try again.");
         router.refresh();
       }
     });
@@ -139,7 +168,12 @@ export default function MigraineDiary({
     const fd = new FormData();
     fd.set("date", selectedDay);
     fd.set("note", noteDraft);
-    runSave(selectedDay, { ...selected, note: noteDraft.trim() === "" ? null : noteDraft.trim() }, fd);
+    runSave(
+      selectedDay,
+      { ...selected, note: noteDraft.trim() === "" ? null : noteDraft.trim() },
+      fd,
+      noteDraft.trim() === "" ? "Note removed" : "Note saved"
+    );
   }
 
   function handleClear() {
@@ -149,23 +183,30 @@ export default function MigraineDiary({
     startTransition(async () => {
       setOptimistic({ date: selectedDay, entry: null });
       setNoteDraft("");
-      const result = await clearMigraineLog(fd);
-      if (!result.ok) {
-        error(result.error);
+      try {
+        const result = await clearMigraineLog(fd);
+        if (!result.ok) {
+          error(result.error);
+          router.refresh();
+        } else {
+          success("Day cleared");
+        }
+      } catch {
+        error("Couldn't clear the day. Please try again.");
         router.refresh();
       }
     });
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Migraine days" value={String(stats.migraineDays)} />
-        <StatCard label="Average pain" value={formatAveragePain(stats.averagePain, stats.migraineDays)} />
-        <StatCard label="Severe days" value={String(stats.severeDays)} />
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+      <div className="order-3 grid grid-cols-3 gap-3 lg:order-none lg:col-span-2">
+        <StatCard size="sm" label="Migraine days" value={stats.migraineDays} hint={`in ${monthLabel.split(" ")[0]}`} />
+        <StatCard size="sm" label="Average pain" value={formatAveragePain(stats.averagePain, stats.migraineDays)} hint="of 10" />
+        <StatCard size="sm" label="Severe days" value={stats.severeDays} hint="pain 7–10" />
       </div>
 
-      <div className="card space-y-4">
+      <div className="card order-2 space-y-4 lg:order-none">
         <MonthNavigator
           basePath="/dashboard/health/migraine"
           monthKey={monthKey}
@@ -199,16 +240,16 @@ export default function MigraineDiary({
                   onClick={() => selectDay(day)}
                   aria-label={
                     entry
-                      ? `${key}, pain ${entry.pain}`
+                      ? `${spokenDay(day)}, pain ${entry.pain} of 10`
                       : isFuture
-                        ? `${key}, upcoming`
-                        : `${key}, no migraine`
+                        ? `${spokenDay(day)}, upcoming`
+                        : `${spokenDay(day)}, no migraine`
                   }
                   aria-pressed={isSelected}
                   className={clsx(
                     "touch-target flex flex-col items-center justify-center gap-0.5 rounded-lg p-1 text-sm transition",
                     isFuture && "cursor-not-allowed opacity-40",
-                    !inMonth && "text-slate-400",
+                    !inMonth && "text-slate-500 dark:text-slate-400",
                     isToday && !isSelected && "ring-1 ring-inset ring-brand-400",
                     isSelected && "ring-2 ring-brand-500",
                     !isFuture && !isSelected && "hover:bg-slate-50 dark:hover:bg-slate-700/60"
@@ -241,14 +282,20 @@ export default function MigraineDiary({
         </div>
       </div>
 
-      <div className="card space-y-4">
+      <section
+        ref={panelRef}
+        className="card order-1 scroll-mt-4 space-y-4 lg:order-none lg:sticky lg:top-6"
+        aria-labelledby="migraine-day-title"
+      >
         <div>
-          <h2 className="section-title">{selectedLabel}</h2>
+          <h2 id="migraine-day-title" className="section-title">
+            {selectedLabel}
+          </h2>
           {!selectedDay && (
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Tap a day on the calendar to log pain.</p>
+            <p className="mt-1 text-sm text-muted">Tap a day on the calendar to log pain.</p>
           )}
           {isFutureSelected && (
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Future days stay empty until they arrive.</p>
+            <p className="mt-1 text-sm text-muted">Future days stay empty until they arrive.</p>
           )}
         </div>
 
@@ -256,8 +303,8 @@ export default function MigraineDiary({
           <>
             <div className="space-y-3">
               {PAIN_GROUPS.map((group) => (
-                <div key={group.label}>
-                  <p className="label">{group.label}</p>
+                <fieldset key={group.label}>
+                  <legend className="label">{group.label}</legend>
                   <div className="flex flex-wrap gap-2">
                     {group.values.map((n) => {
                       const active = selected?.pain === n;
@@ -268,6 +315,7 @@ export default function MigraineDiary({
                           disabled={pending}
                           onClick={() => handlePain(n)}
                           aria-pressed={active}
+                          aria-label={`Pain ${n} of 10`}
                           className={clsx(
                             "touch-target min-w-[2.75rem] rounded-lg px-3 text-sm font-semibold ring-1 ring-inset transition disabled:opacity-50",
                             active
@@ -280,14 +328,14 @@ export default function MigraineDiary({
                       );
                     })}
                   </div>
-                </div>
+                </fieldset>
               ))}
             </div>
 
             <CollapsibleSection key={selectedDay ?? "none"} title="More" defaultOpen={moreOpen}>
               <div className="space-y-4">
-                <div>
-                  <p className="label">Duration</p>
+                <fieldset>
+                  <legend className="label">Duration</legend>
                   <div className="flex flex-wrap gap-2">
                     {DURATION_PRESETS.map((preset) => {
                       const active = selected?.durationMin === preset.minutes;
@@ -299,8 +347,8 @@ export default function MigraineDiary({
                           onClick={() => handleDuration(preset.minutes)}
                           aria-pressed={active}
                           className={clsx(
-                            "btn-ghost touch-target text-sm disabled:opacity-50",
-                            active && "ring-2 ring-brand-500"
+                            "chip touch-target disabled:cursor-not-allowed disabled:opacity-50",
+                            active ? "chip-active" : "chip-idle"
                           )}
                         >
                           {preset.label}
@@ -308,10 +356,8 @@ export default function MigraineDiary({
                       );
                     })}
                   </div>
-                  {!selected && (
-                    <p className="mt-2 text-xs text-slate-400">Set pain first, then duration.</p>
-                  )}
-                </div>
+                  {!selected && <p className="hint">Set a pain level first, then duration.</p>}
+                </fieldset>
 
                 <div>
                   <label htmlFor="migraine-note" className="label">
@@ -323,10 +369,14 @@ export default function MigraineDiary({
                     rows={3}
                     maxLength={2000}
                     disabled={!selected || pending}
+                    aria-describedby="migraine-note-hint"
                     placeholder="Triggers, meds, what helped — optional"
                     value={noteDraft}
                     onChange={(e) => setNoteDraft(e.target.value)}
                   />
+                  <p id="migraine-note-hint" className="hint">
+                    {selected ? "Optional. Saved when you press Save note." : "Set a pain level first to add a note."}
+                  </p>
                   <div className="mt-2">
                     <button
                       type="button"
@@ -353,7 +403,7 @@ export default function MigraineDiary({
             )}
           </>
         )}
-      </div>
+      </section>
 
       <ConfirmDialog
         open={confirmClear}
@@ -366,15 +416,6 @@ export default function MigraineDiary({
         }}
         onCancel={() => setConfirmClear(false)}
       />
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="card py-3 text-center">
-      <p className="text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">{value}</p>
-      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{label}</p>
     </div>
   );
 }

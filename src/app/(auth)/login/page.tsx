@@ -6,11 +6,27 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Spinner from "@/components/Spinner";
 import FormField from "@/components/FormField";
+import PasswordInput from "@/components/PasswordInput";
 
 const VERIFY_ERRORS: Record<string, string> = {
   missing_token: "This verification link is missing a token. Check the link from your email.",
   invalid_token: "This verification link is invalid or has expired. Please register again or contact support.",
 };
+
+function Alert({ tone, children }: { tone: "error" | "success"; children: React.ReactNode }) {
+  return (
+    <p
+      role={tone === "error" ? "alert" : "status"}
+      className={
+        tone === "error"
+          ? "mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
+          : "mb-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300"
+      }
+    >
+      {children}
+    </p>
+  );
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -32,40 +48,31 @@ function LoginForm() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-    if (res?.error) {
+    try {
+      const res = await signIn("credentials", { email, password, redirect: false });
+      if (res?.error) {
+        setError(
+          res.error === "EMAIL_NOT_VERIFIED"
+            ? "Please verify your email before signing in."
+            : "Invalid email or password."
+        );
+        setLoading(false);
+        return;
+      }
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.");
       setLoading(false);
-      setError(
-        res.error === "EMAIL_NOT_VERIFIED"
-          ? "Please verify your email before signing in."
-          : "Invalid email or password."
-      );
-      return;
     }
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (
     <div className="card">
-      <h2 className="section-title mb-4">Sign in</h2>
-      {verified && (
-        <p className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
-          Email verified. You can sign in now.
-        </p>
-      )}
-      {verifyError && VERIFY_ERRORS[verifyError] && (
-        <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
-          {VERIFY_ERRORS[verifyError]}
-        </p>
-      )}
-      {error && (
-        <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{error}</p>
-      )}
+      <h1 className="section-title mb-4">Sign in</h1>
+      {verified && <Alert tone="success">Email verified. You can sign in now.</Alert>}
+      {verifyError && VERIFY_ERRORS[verifyError] && <Alert tone="error">{VERIFY_ERRORS[verifyError]}</Alert>}
+      {error && <Alert tone="error">{error}</Alert>}
       <form onSubmit={onSubmit} className="space-y-4">
         <FormField label="Email">
           {(id) => (
@@ -77,15 +84,14 @@ function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              autoFocus
             />
           )}
         </FormField>
         <FormField label="Password">
           {(id) => (
-            <input
+            <PasswordInput
               id={id}
-              className="input"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -93,20 +99,14 @@ function LoginForm() {
             />
           )}
         </FormField>
-        <button className="btn-primary w-full" disabled={loading}>
-          {loading ? (
-            <>
-              <Spinner />
-              Signing in...
-            </>
-          ) : (
-            "Sign in"
-          )}
+        <button type="submit" className="btn-primary w-full" disabled={loading}>
+          {loading && <Spinner />}
+          {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
-      <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
         Have an invite?{" "}
-        <Link href="/register" className="font-medium text-brand-600 hover:underline">
+        <Link href="/register" className="link">
           Create account
         </Link>
       </p>
@@ -114,9 +114,21 @@ function LoginForm() {
   );
 }
 
+function LoginSkeleton() {
+  return (
+    <div className="card space-y-4" role="status" aria-busy="true">
+      <span className="sr-only">Loading…</span>
+      <div className="skeleton h-6 w-24" />
+      <div className="skeleton h-10 w-full" />
+      <div className="skeleton h-10 w-full" />
+      <div className="skeleton h-10 w-full" />
+    </div>
+  );
+}
+
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="card">Loading...</div>}>
+    <Suspense fallback={<LoginSkeleton />}>
       <LoginForm />
     </Suspense>
   );

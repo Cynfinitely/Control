@@ -37,6 +37,8 @@ export type EventOccurrence = {
   isException: boolean;
   isRecurring: boolean;
   rrule: string | null;
+  /** Minutes-before offsets of the event's active reminders (series-level). */
+  reminderOffsets?: number[];
 };
 
 export type RruleBuilderInput = {

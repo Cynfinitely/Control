@@ -1,61 +1,46 @@
 "use client";
 
-import { useEffect, useRef, useTransition } from "react";
-import { useFormState } from "react-dom";
-import { useToast } from "@/components/Toast";
-import type { FormAction, ActionResult } from "@/lib/action-result";
+import ActionForm, { type ConfirmOptions } from "@/components/ActionForm";
+import type { FormAction as FormActionFn, ActionResult } from "@/lib/action-result";
 
 type Props = {
-  action: FormAction;
+  action: FormActionFn;
   successMessage?: string;
   resetOnSuccess?: boolean;
+  confirm?: ConfirmOptions;
   className?: string;
   children: React.ReactNode;
 };
 
+/** Adapter for `(prev, formData)` actions built with `wrapFormAction`. */
 export default function FormAction({
   action,
   successMessage = "Saved",
   resetOnSuccess = false,
+  confirm,
   className,
   children,
 }: Props) {
-  const { success, error } = useToast();
-  const [state, formAction] = useFormState(action, null);
-  const [, startTransition] = useTransition();
-  const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (!state) return;
-    if (state.ok) {
-      success(state.message ?? successMessage);
-      if (resetOnSuccess && formRef.current) {
-        formRef.current.reset();
-        const first = formRef.current.querySelector<HTMLElement>(
-          "input:not([type=hidden]):not([type=submit]), textarea"
-        );
-        first?.focus();
-      }
-    } else {
-      error(state.error);
-    }
-  }, [state, success, error, successMessage, resetOnSuccess]);
-
   return (
-    <form
-      ref={formRef}
-      action={(fd) => startTransition(() => formAction(fd))}
+    <ActionForm
+      action={(fd) => action(null, fd)}
+      successMessage={successMessage}
+      resetOnSuccess={resetOnSuccess}
+      confirm={confirm}
       className={className}
     >
       {children}
-    </form>
+    </ActionForm>
   );
 }
 
 export function FormErrorBanner({ state }: { state: ActionResult | null }) {
   if (!state || state.ok) return null;
   return (
-    <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+    <p
+      role="alert"
+      className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
+    >
       {state.error}
     </p>
   );

@@ -1,12 +1,17 @@
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { toDateInputValue, formatDate, addDays } from "@/lib/date";
+import { toDateInputValue, formatDate, formatRange, addDays } from "@/lib/date";
+import type { ServerFormAction } from "@/components/ActionForm";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
+import ActionForm from "@/components/ActionForm";
+import FormField from "@/components/FormField";
+import EmptyState from "@/components/EmptyState";
 import SubmitButton from "@/components/SubmitButton";
 import SubmitIconButton from "@/components/SubmitIconButton";
-import CareerTabs from "@/components/CareerTabs";
 import CollapsibleSection from "@/components/CollapsibleSection";
+import CareerTabs, { parseCareerTab } from "@/components/CareerTabs";
+import WorkExperienceForm from "./WorkExperienceForm";
 import {
   createCareerGoal,
   setCareerGoalStatus,
@@ -16,7 +21,6 @@ import {
   deleteSkill,
   createCertification,
   deleteCertification,
-  createWorkExperience,
   deleteWorkExperience,
   createLearning,
   deleteLearning,
@@ -25,12 +29,94 @@ import {
   deleteJobApplication,
 } from "./actions";
 
-export default async function CareerPage() {
+export const metadata = { title: "Career" };
+
+const LEARNING_LIMIT = 20;
+
+const JOB_STAGES = [
+  { value: "applied", label: "Applied", badge: "badge-brand" },
+  { value: "interview", label: "Interview", badge: "badge-warning" },
+  { value: "offer", label: "Offer", badge: "badge-success" },
+  { value: "rejected", label: "Rejected", badge: "badge-danger" },
+  { value: "withdrawn", label: "Withdrawn", badge: "badge-muted" },
+] as const;
+
+function stageInfo(stage: string) {
+  return (
+    JOB_STAGES.find((s) => s.value === stage) ?? {
+      value: stage,
+      label: stage.charAt(0).toUpperCase() + stage.slice(1),
+      badge: "badge-muted",
+    }
+  );
+}
+
+const SKILL_LEVELS = [1, 2, 3, 4, 5];
+
+function DeleteButton({
+  action,
+  id,
+  name,
+  noun,
+  successMessage,
+}: {
+  action: ServerFormAction;
+  id: string;
+  name: string;
+  noun: string;
+  successMessage: string;
+}) {
+  return (
+    <ActionForm
+      action={action}
+      confirm={{ title: `Delete ${noun} “${name}”?` }}
+      successMessage={successMessage}
+      className="shrink-0"
+    >
+      <input type="hidden" name="id" value={id} />
+      <SubmitIconButton
+        icon={<Icon name="trash" className="h-4 w-4" />}
+        aria-label={`Delete ${noun} ${name}`}
+        className="btn-icon-danger"
+      />
+    </ActionForm>
+  );
+}
+
+function SectionHeader({ id, title, meta }: { id: string; title: string; meta?: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 id={id} className="section-title">
+        {title}
+      </h2>
+      {meta && <p className="text-sm text-muted">{meta}</p>}
+    </div>
+  );
+}
+
+function StageOptions() {
+  return (
+    <>
+      {JOB_STAGES.map((s) => (
+        <option key={s.value} value={s.value}>
+          {s.label}
+        </option>
+      ))}
+    </>
+  );
+}
+
+export default async function CareerPage({
+  searchParams,
+}: {
+  searchParams: { tab?: string | string[] };
+}) {
   const user = await requireUser();
   const userId = user.id;
   const now = new Date();
+  const tab = parseCareerTab(searchParams.tab);
 
-  const [goals, skills, certs, experiences, learning, jobApps, contacts] = await Promise.all([
+  const [goals, skills, certs, experiences, learning, learningCount, jobApps, contacts] = await Promise.all([
     prisma.careerGoal.findMany({ where: { userId, deletedAt: null }, orderBy: { createdAt: "desc" } }),
     prisma.skill.findMany({ where: { userId, deletedAt: null }, orderBy: { name: "asc" } }),
     prisma.certification.findMany({ where: { userId, deletedAt: null }, orderBy: { issuedAt: "desc" } }),
@@ -38,9 +124,10 @@ export default async function CareerPage() {
     prisma.learningEntry.findMany({
       where: { userId, deletedAt: null },
       orderBy: { date: "desc" },
-      take: 20,
+      take: LEARNING_LIMIT,
       include: { skill: { select: { name: true } } },
     }),
+    prisma.learningEntry.count({ where: { userId, deletedAt: null } }),
     prisma.jobApplication.findMany({
       where: { userId, deletedAt: null },
       orderBy: { updatedAt: "desc" },
@@ -55,289 +142,329 @@ export default async function CareerPage() {
 
   const certExpirySoon = addDays(now, 30);
 
-  return (
-    <div>
-      <PageHeader title="Career" description="Track goals, skills, certifications, work history, and learning." />
-
-      <CareerTabs
-        panels={{
-          goals: (
-      <section className="mb-8">
-        <CollapsibleSection title="Career goals" count={goals.length} defaultOpen>
-        <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add goal</summary>
-          <form action={createCareerGoal} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="label">Title</label>
-              <input name="title" className="input" required />
-            </div>
-            <div>
-              <label className="label">Target date</label>
-              <input name="targetDate" type="date" className="input" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label">Description</label>
-              <textarea name="description" className="input" rows={2} />
-            </div>
-            <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary">Add goal</SubmitButton>
-            </div>
-          </form>
-        </details>
-        <div className="space-y-2">
-          {goals.length === 0 && <p className="text-sm text-slate-400">No career goals yet.</p>}
-          {goals.map((g) => (
-            <div key={g.id} className="card flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <p className="font-medium text-slate-800 dark:text-slate-100">
-                  {g.title}
-                  <span className="ml-2 badge-muted">{g.status}</span>
-                </p>
-                {g.description && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{g.description}</p>}
-                {g.targetDate && <p className="mt-1 text-xs text-slate-400">Target: {formatDate(g.targetDate)}</p>}
-              </div>
-              <div className="flex items-center gap-2">
-                {g.status === "active" && (
-                  <form action={setCareerGoalStatus}>
-                    <input type="hidden" name="id" value={g.id} />
-                    <input type="hidden" name="status" value="completed" />
-                    <SubmitButton className="text-xs text-brand-600 hover:underline">Complete</SubmitButton>
-                  </form>
-                )}
-                <form action={deleteCareerGoal}>
-                  <input type="hidden" name="id" value={g.id} />
-                  <SubmitIconButton
-                    className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-                    icon={<Icon name="trash" className="h-4 w-4" />}
-                  />
-                </form>
-              </div>
-            </div>
-          ))}
-        </div>
-        </CollapsibleSection>
-      </section>
-          ),
-          skills: (
-      <>
-      <section className="mb-8">
-        <CollapsibleSection title="Skills" count={skills.length} defaultOpen>
-        <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add skill</summary>
-          <form action={createSkill} className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-            <div className="min-w-0 flex-1">
-              <label className="label">Skill</label>
-              <input name="name" className="input" required />
-            </div>
-            <div>
-              <label className="label">Level (1-5)</label>
-              <input name="level" type="number" min={1} max={5} className="input sm:w-24" defaultValue={3} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <label className="label">Notes</label>
-              <input name="notes" className="input" />
-            </div>
-            <SubmitButton className="btn-primary">Add</SubmitButton>
-          </form>
-        </details>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {skills.map((s) => (
-            <div key={s.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="font-medium text-slate-800 dark:text-slate-100">{s.name}</p>
-                <div className="mt-1 flex gap-1">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <span
-                      key={n}
-                      className={`h-2 w-6 rounded-full ${n <= s.level ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-700"}`}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <form action={updateSkillLevel} className="flex items-center gap-1">
-                  <input type="hidden" name="id" value={s.id} />
-                  <input name="level" type="number" min={1} max={5} defaultValue={s.level} className="input w-16 py-1" />
-                  <SubmitButton className="text-xs text-brand-600 hover:underline">Set</SubmitButton>
-                </form>
-                <form action={deleteSkill}>
-                  <input type="hidden" name="id" value={s.id} />
-                  <SubmitIconButton
-                    className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-                    icon={<Icon name="trash" className="h-4 w-4" />}
-                  />
-                </form>
-              </div>
-            </div>
-          ))}
-        </div>
-        </CollapsibleSection>
-      </section>
-
-      {/* Certifications */}
-      <section className="mb-8">
-        <CollapsibleSection title="Certifications" count={certs.length} defaultOpen>
-        <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add certification</summary>
-          <form action={createCertification} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="label">Name</label>
-              <input name="name" className="input" required />
-            </div>
-            <div>
-              <label className="label">Issuer</label>
-              <input name="issuer" className="input" />
-            </div>
-            <div>
-              <label className="label">Issued</label>
-              <input name="issuedAt" type="date" className="input" />
-            </div>
-            <div>
-              <label className="label">Expires</label>
-              <input name="expiresAt" type="date" className="input" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label">Credential ID</label>
-              <input name="credentialId" className="input" />
-            </div>
-            <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary">Add</SubmitButton>
-            </div>
-          </form>
-        </details>
-        <div className="space-y-2">
-          {certs.map((c) => {
-            const expiringSoon =
-              c.expiresAt && c.expiresAt <= certExpirySoon && c.expiresAt >= now;
-            const expired = c.expiresAt && c.expiresAt < now;
+  const goalsPanel = (
+    <section aria-labelledby="career-goals-heading" className="space-y-3">
+      <SectionHeader id="career-goals-heading" title="Career goals" meta={`${goals.length} total`} />
+      <CollapsibleSection title="Add goal" variant="card">
+        <ActionForm
+          action={createCareerGoal}
+          successMessage="Goal added"
+          resetOnSuccess
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+        >
+          <FormField label="Title" className="sm:col-span-2" required>
+            {(_id, aria) => <input {...aria} name="title" className="input" required />}
+          </FormField>
+          <FormField label="Target date">
+            {(_id, aria) => <input {...aria} name="targetDate" type="date" className="input" />}
+          </FormField>
+          <FormField label="Description" className="sm:col-span-2">
+            {(_id, aria) => <textarea {...aria} name="description" className="input" rows={2} />}
+          </FormField>
+          <div className="sm:col-span-2">
+            <SubmitButton className="btn-primary">Add goal</SubmitButton>
+          </div>
+        </ActionForm>
+      </CollapsibleSection>
+      {goals.length === 0 ? (
+        <EmptyState
+          variant="inline"
+          headingLevel="h3"
+          icon="target"
+          title="No career goals yet"
+          description="Add a goal above, like a promotion, a new role or a skill to master."
+        />
+      ) : (
+        <ul className="space-y-2">
+          {goals.map((g) => {
+            const completed = g.status === "completed";
             return (
-              <div key={c.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
+              <li key={g.id} className="card flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="font-medium text-slate-800 dark:text-slate-100">
-                    {c.name}
-                    {expired && <span className="ml-2 badge-danger">Expired</span>}
-                    {expiringSoon && !expired && (
-                      <span className="ml-2 badge-warning">Expiring soon</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {c.issuer ?? "-"}
-                    {c.issuedAt && ` · issued ${formatDate(c.issuedAt)}`}
-                    {c.expiresAt && ` · expires ${formatDate(c.expiresAt)}`}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-medium text-slate-800 dark:text-slate-100">{g.title}</h3>
+                    <span className={completed ? "badge-success" : "badge-brand"}>
+                      {completed ? "Completed" : "Active"}
+                    </span>
+                  </div>
+                  {g.description && <p className="mt-1 text-sm text-muted">{g.description}</p>}
+                  {g.targetDate && <p className="mt-1 text-xs text-muted">Target: {formatDate(g.targetDate)}</p>}
                 </div>
-                <form action={deleteCertification}>
-                  <input type="hidden" name="id" value={c.id} />
-                  <SubmitIconButton
-                    className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-                    icon={<Icon name="trash" className="h-4 w-4" />}
+                <div className="flex items-center gap-2">
+                  <ActionForm action={setCareerGoalStatus}>
+                    <input type="hidden" name="id" value={g.id} />
+                    <input type="hidden" name="status" value={completed ? "active" : "completed"} />
+                    <SubmitButton className="btn-ghost btn-sm">
+                      {completed ? "Reopen" : "Mark complete"}
+                    </SubmitButton>
+                  </ActionForm>
+                  <DeleteButton
+                    action={deleteCareerGoal}
+                    id={g.id}
+                    name={g.title}
+                    noun="goal"
+                    successMessage="Goal deleted"
                   />
-                </form>
-              </div>
+                </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
+      )}
+    </section>
+  );
+
+  const skillsPanel = (
+    <div className="space-y-10">
+      <section aria-labelledby="career-skills-heading" className="space-y-3">
+        <SectionHeader id="career-skills-heading" title="Skills" meta={`${skills.length} total`} />
+        <CollapsibleSection title="Add skill" variant="card">
+          <ActionForm
+            action={createSkill}
+            successMessage="Skill added"
+            resetOnSuccess
+            className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr_2fr_auto] sm:items-end"
+          >
+            <FormField label="Skill" required>
+              {(_id, aria) => <input {...aria} name="name" className="input" required />}
+            </FormField>
+            <FormField label="Level (1–5)">
+              {(_id, aria) => (
+                <select {...aria} name="level" className="input" defaultValue="3">
+                  {SKILL_LEVELS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </FormField>
+            <FormField label="Notes">
+              {(_id, aria) => <input {...aria} name="notes" className="input" />}
+            </FormField>
+            <SubmitButton className="btn-primary">Add skill</SubmitButton>
+          </ActionForm>
         </CollapsibleSection>
+        {skills.length === 0 ? (
+          <EmptyState
+            variant="inline"
+            headingLevel="h3"
+            icon="sparkles"
+            title="No skills yet"
+            description="Add the skills you want to track and rate yourself from 1 to 5."
+          />
+        ) : (
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {skills.map((s) => (
+              <li key={s.id} className="card flex flex-col gap-3 py-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-medium text-slate-800 dark:text-slate-100">{s.name}</h3>
+                    <p className="mt-0.5 text-sm text-muted">Level {s.level} of 5</p>
+                    <div className="mt-1.5 flex gap-1" aria-hidden="true">
+                      {SKILL_LEVELS.map((n) => (
+                        <span
+                          key={n}
+                          className={`h-2 w-6 rounded-full ${n <= s.level ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-700"}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <DeleteButton
+                    action={deleteSkill}
+                    id={s.id}
+                    name={s.name}
+                    noun="skill"
+                    successMessage="Skill deleted"
+                  />
+                </div>
+                <ActionForm action={updateSkillLevel} className="flex items-end gap-2">
+                  <input type="hidden" name="id" value={s.id} />
+                  <FormField label={`Level for ${s.name}`} hideLabel className="w-28">
+                    {(_id, aria) => (
+                      <select {...aria} name="level" defaultValue={String(s.level)} className="input">
+                        {SKILL_LEVELS.map((n) => (
+                          <option key={n} value={n}>
+                            Level {n}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </FormField>
+                  <SubmitButton className="btn-ghost btn-sm min-h-[38px] whitespace-nowrap">Set level</SubmitButton>
+                </ActionForm>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
-      </>
-          ),
-          work: (
-      <section className="mb-8">
-        <CollapsibleSection title="Work history" count={experiences.length} defaultOpen>
-        <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add experience</summary>
-          <form action={createWorkExperience} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="label">Company</label>
-              <input name="company" className="input" required />
-            </div>
-            <div>
-              <label className="label">Role</label>
-              <input name="role" className="input" required />
-            </div>
-            <div>
-              <label className="label">Start</label>
-              <input name="startDate" type="date" className="input" />
-            </div>
-            <div>
-              <label className="label">End</label>
-              <input name="endDate" type="date" className="input" />
-            </div>
-            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <input name="current" type="checkbox" /> Current role
-            </label>
+
+      <section aria-labelledby="career-certs-heading" className="space-y-3">
+        <SectionHeader id="career-certs-heading" title="Certifications" meta={`${certs.length} total`} />
+        <CollapsibleSection title="Add certification" variant="card">
+          <ActionForm
+            action={createCertification}
+            successMessage="Certification added"
+            resetOnSuccess
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+          >
+            <FormField label="Name" required>
+              {(_id, aria) => <input {...aria} name="name" className="input" required />}
+            </FormField>
+            <FormField label="Issuer">
+              {(_id, aria) => <input {...aria} name="issuer" className="input" />}
+            </FormField>
+            <FormField label="Issued">
+              {(_id, aria) => <input {...aria} name="issuedAt" type="date" className="input" />}
+            </FormField>
+            <FormField label="Expires">
+              {(_id, aria) => <input {...aria} name="expiresAt" type="date" className="input" />}
+            </FormField>
+            <FormField label="Credential ID" className="sm:col-span-2">
+              {(_id, aria) => <input {...aria} name="credentialId" className="input" />}
+            </FormField>
             <div className="sm:col-span-2">
-              <label className="label">Summary</label>
-              <textarea name="summary" className="input" rows={2} />
+              <SubmitButton className="btn-primary">Add certification</SubmitButton>
             </div>
-            <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary">Add</SubmitButton>
-            </div>
-          </form>
-        </details>
-        <div className="space-y-2">
+          </ActionForm>
+        </CollapsibleSection>
+        {certs.length === 0 ? (
+          <EmptyState
+            variant="inline"
+            headingLevel="h3"
+            icon="shield"
+            title="No certifications yet"
+            description="Track certificates and when they expire, so renewals don't sneak up on you."
+          />
+        ) : (
+          <ul className="space-y-2">
+            {certs.map((c) => {
+              const expiringSoon = c.expiresAt && c.expiresAt <= certExpirySoon && c.expiresAt >= now;
+              const expired = c.expiresAt && c.expiresAt < now;
+              return (
+                <li key={c.id} className="card flex items-start justify-between gap-3 py-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-medium text-slate-800 dark:text-slate-100">{c.name}</h3>
+                      {expired && <span className="badge-danger">Expired</span>}
+                      {expiringSoon && !expired && <span className="badge-warning">Expiring soon</span>}
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {c.issuer ?? "—"}
+                      {c.issuedAt && ` · issued ${formatDate(c.issuedAt)}`}
+                      {c.expiresAt && ` · expires ${formatDate(c.expiresAt)}`}
+                      {c.credentialId && ` · ID ${c.credentialId}`}
+                    </p>
+                  </div>
+                  <DeleteButton
+                    action={deleteCertification}
+                    id={c.id}
+                    name={c.name}
+                    noun="certification"
+                    successMessage="Certification deleted"
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+
+  const workPanel = (
+    <section aria-labelledby="career-work-heading" className="space-y-3">
+      <SectionHeader id="career-work-heading" title="Work history" meta={`${experiences.length} total`} />
+      <CollapsibleSection title="Add experience" variant="card">
+        <WorkExperienceForm />
+      </CollapsibleSection>
+      {experiences.length === 0 ? (
+        <EmptyState
+          variant="inline"
+          headingLevel="h3"
+          icon="briefcase"
+          title="No work history yet"
+          description="Add your roles to keep a running CV."
+        />
+      ) : (
+        <ul className="space-y-2">
           {experiences.map((e) => (
-            <div key={e.id} className="card flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <li key={e.id} className="card flex items-start justify-between gap-3 py-4">
               <div className="min-w-0">
-                <p className="font-medium text-slate-800 dark:text-slate-100">
-                  {e.role} <span className="text-slate-400">@ {e.company}</span>
+                <h3 className="font-medium text-slate-800 dark:text-slate-100">
+                  {e.role} <span className="font-normal text-muted">@ {e.company}</span>
+                </h3>
+                <p className="mt-0.5 text-xs text-muted">
+                  {formatRange(e.startDate, e.current ? null : e.endDate, e.current ? "Present" : "—")}
                 </p>
-                <p className="text-xs text-slate-400">
-                  {e.startDate ? formatDate(e.startDate) : "?"} -{" "}
-                  {e.current ? "Present" : e.endDate ? formatDate(e.endDate) : "?"}
-                </p>
-                {e.summary && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{e.summary}</p>}
+                {e.summary && <p className="mt-1 text-sm text-muted">{e.summary}</p>}
               </div>
-              <form action={deleteWorkExperience}>
-                <input type="hidden" name="id" value={e.id} />
-                <SubmitIconButton
-                  className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-                  icon={<Icon name="trash" className="h-4 w-4" />}
-                />
-              </form>
-            </div>
+              <DeleteButton
+                action={deleteWorkExperience}
+                id={e.id}
+                name={`${e.role} @ ${e.company}`}
+                noun="experience"
+                successMessage="Experience deleted"
+              />
+            </li>
           ))}
-        </div>
-        </CollapsibleSection>
-      </section>
-          ),
-          learning: (
-      <section>
-        <CollapsibleSection title="Learning log" count={learning.length} defaultOpen>
-        <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add learning entry</summary>
-          <form action={createLearning} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="sm:col-span-2">
-              <label className="label">Title</label>
-              <input name="title" className="input" required />
-            </div>
-            <div>
-              <label className="label">Kind</label>
-              <select name="kind" className="input" defaultValue="course">
+        </ul>
+      )}
+    </section>
+  );
+
+  const learningPanel = (
+    <section aria-labelledby="career-learning-heading" className="space-y-3">
+      <SectionHeader
+        id="career-learning-heading"
+        title="Learning log"
+        meta={
+          learningCount > LEARNING_LIMIT
+            ? `Showing latest ${LEARNING_LIMIT} of ${learningCount}`
+            : `${learningCount} total`
+        }
+      />
+      <CollapsibleSection title="Add learning entry" variant="card">
+        <ActionForm
+          action={createLearning}
+          successMessage="Learning entry added"
+          resetOnSuccess
+          className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+        >
+          <FormField label="Title" className="sm:col-span-2" required>
+            {(_id, aria) => <input {...aria} name="title" className="input" required />}
+          </FormField>
+          <FormField label="Kind">
+            {(_id, aria) => (
+              <select {...aria} name="kind" className="input" defaultValue="course">
                 <option value="course">Course</option>
                 <option value="book">Book</option>
                 <option value="project">Project</option>
                 <option value="article">Article</option>
               </select>
-            </div>
-            <div>
-              <label className="label">Status</label>
-              <select name="status" className="input" defaultValue="in_progress">
+            )}
+          </FormField>
+          <FormField label="Status">
+            {(_id, aria) => (
+              <select {...aria} name="status" className="input" defaultValue="in_progress">
                 <option value="in_progress">In progress</option>
                 <option value="completed">Completed</option>
               </select>
-            </div>
-            <div>
-              <label className="label">Hours</label>
-              <input name="hours" type="number" step="any" className="input" defaultValue={0} />
-            </div>
-            <div>
-              <label className="label">Date</label>
-              <input name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
-            </div>
-            <div>
-              <label className="label">Related skill</label>
-              <select name="skillId" className="input" defaultValue="">
+            )}
+          </FormField>
+          <FormField label="Hours">
+            {(_id, aria) => (
+              <input {...aria} name="hours" type="number" step="any" min={0} className="input" defaultValue={0} />
+            )}
+          </FormField>
+          <FormField label="Date">
+            {(_id, aria) => (
+              <input {...aria} name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
+            )}
+          </FormField>
+          <FormField label="Related skill">
+            {(_id, aria) => (
+              <select {...aria} name="skillId" className="input" defaultValue="">
                 <option value="">— none —</option>
                 {skills.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -345,65 +472,78 @@ export default async function CareerPage() {
                   </option>
                 ))}
               </select>
-            </div>
-            <div className="sm:col-span-3">
-              <SubmitButton className="btn-primary">Add</SubmitButton>
-            </div>
-          </form>
-        </details>
-        <div className="space-y-2">
+            )}
+          </FormField>
+          <div className="sm:col-span-3">
+            <SubmitButton className="btn-primary">Add entry</SubmitButton>
+          </div>
+        </ActionForm>
+      </CollapsibleSection>
+      {learning.length === 0 ? (
+        <EmptyState
+          variant="inline"
+          headingLevel="h3"
+          icon="book"
+          title="Nothing logged yet"
+          description="Log courses, books and projects. Hours count towards linked learning goals."
+        />
+      ) : (
+        <ul className="space-y-2">
           {learning.map((l) => (
-            <div key={l.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
+            <li key={l.id} className="card flex items-start justify-between gap-3 py-4">
               <div className="min-w-0">
-                <p className="font-medium text-slate-800 dark:text-slate-100">
-                  {l.title}
-                  <span className="ml-2 badge-muted capitalize">{l.kind}</span>
-                </p>
-                <p className="text-xs text-slate-400">
-                  {formatDate(l.date)} · {l.hours}h · {l.status === "completed" ? "completed" : "in progress"}
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-medium text-slate-800 dark:text-slate-100">{l.title}</h3>
+                  <span className="badge-muted capitalize">{l.kind}</span>
+                  <span className={l.status === "completed" ? "badge-success" : "badge-brand"}>
+                    {l.status === "completed" ? "Completed" : "In progress"}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted">
+                  {formatDate(l.date)} · {l.hours}h
                   {(l.skill?.name || l.skillName) && ` · ${l.skill?.name ?? l.skillName}`}
                 </p>
               </div>
-              <form action={deleteLearning}>
-                <input type="hidden" name="id" value={l.id} />
-                <SubmitIconButton
-                  className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-                  icon={<Icon name="trash" className="h-4 w-4" />}
-                />
-              </form>
-            </div>
+              <DeleteButton
+                action={deleteLearning}
+                id={l.id}
+                name={l.title}
+                noun="learning entry"
+                successMessage="Learning entry deleted"
+              />
+            </li>
           ))}
-        </div>
-        </CollapsibleSection>
-      </section>
-          ),
-          applications: (
-      <section className="mt-8">
-        <CollapsibleSection title="Job applications" count={jobApps.length} defaultOpen>
-        <details className="card mb-3">
-          <summary className="cursor-pointer font-medium text-brand-700 dark:text-brand-400">+ Add application</summary>
-          <form action={createJobApplication} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="label">Company</label>
-              <input name="company" className="input" required />
-            </div>
-            <div>
-              <label className="label">Role</label>
-              <input name="role" className="input" required />
-            </div>
-            <div>
-              <label className="label">Stage</label>
-              <select name="stage" className="input" defaultValue="applied">
-                <option value="applied">Applied</option>
-                <option value="interview">Interview</option>
-                <option value="offer">Offer</option>
-                <option value="rejected">Rejected</option>
-                <option value="withdrawn">Withdrawn</option>
+        </ul>
+      )}
+    </section>
+  );
+
+  const applicationsPanel = (
+    <section aria-labelledby="career-apps-heading" className="space-y-3">
+      <SectionHeader id="career-apps-heading" title="Job applications" meta={`${jobApps.length} total`} />
+      <CollapsibleSection title="Add application" variant="card">
+        <ActionForm
+          action={createJobApplication}
+          successMessage="Application added"
+          resetOnSuccess
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+        >
+          <FormField label="Company" required>
+            {(_id, aria) => <input {...aria} name="company" className="input" required />}
+          </FormField>
+          <FormField label="Role" required>
+            {(_id, aria) => <input {...aria} name="role" className="input" required />}
+          </FormField>
+          <FormField label="Stage">
+            {(_id, aria) => (
+              <select {...aria} name="stage" className="input" defaultValue="applied">
+                <StageOptions />
               </select>
-            </div>
-            <div>
-              <label className="label">Linked contact</label>
-              <select name="contactId" className="input" defaultValue="">
+            )}
+          </FormField>
+          <FormField label="Linked contact">
+            {(_id, aria) => (
+              <select {...aria} name="contactId" className="input" defaultValue="">
                 <option value="">— none —</option>
                 {contacts.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -411,62 +551,93 @@ export default async function CareerPage() {
                   </option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="label">Follow-up date</label>
-              <input name="dueDate" type="date" className="input" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label">Notes</label>
-              <textarea name="notes" className="input" rows={2} />
-            </div>
-            <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary">Add</SubmitButton>
-            </div>
-          </form>
-        </details>
-        <div className="space-y-2">
-          {jobApps.length === 0 && <p className="text-sm text-slate-400">No job applications tracked.</p>}
-          {jobApps.map((j) => (
-            <div key={j.id} className="card flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="font-medium text-slate-800 dark:text-slate-100">
-                  {j.role} <span className="text-slate-400">@ {j.company}</span>
-                </p>
-                <p className="text-xs text-slate-400">
-                  <span className="badge-muted capitalize">{j.stage}</span>
-                  {j.contact && ` · contact: ${j.contact.name}`}
-                  {j.dueDate && ` · follow up ${formatDate(j.dueDate)}`}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <form action={updateJobStage} className="flex items-center gap-1">
-                  <input type="hidden" name="id" value={j.id} />
-                  <select name="stage" className="input py-1 text-xs" defaultValue={j.stage}>
-                    <option value="applied">Applied</option>
-                    <option value="interview">Interview</option>
-                    <option value="offer">Offer</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="withdrawn">Withdrawn</option>
-                  </select>
-                  <SubmitButton className="text-xs text-brand-600">Update</SubmitButton>
-                </form>
-                <form action={deleteJobApplication}>
-                  <input type="hidden" name="id" value={j.id} />
-                  <SubmitIconButton
-                    className="text-slate-300 hover:text-red-500 dark:hover:text-red-400"
-                    icon={<Icon name="trash" className="h-4 w-4" />}
+            )}
+          </FormField>
+          <FormField label="Follow-up date">
+            {(_id, aria) => <input {...aria} name="dueDate" type="date" className="input" />}
+          </FormField>
+          <FormField label="Notes" className="sm:col-span-2">
+            {(_id, aria) => <textarea {...aria} name="notes" className="input" rows={2} />}
+          </FormField>
+          <div className="sm:col-span-2">
+            <SubmitButton className="btn-primary">Add application</SubmitButton>
+          </div>
+        </ActionForm>
+      </CollapsibleSection>
+      {jobApps.length === 0 ? (
+        <EmptyState
+          variant="inline"
+          headingLevel="h3"
+          icon="briefcase"
+          title="No applications tracked"
+          description="Add an application above to follow it from applied to offer."
+        />
+      ) : (
+        <ul className="space-y-2">
+          {jobApps.map((j) => {
+            const stage = stageInfo(j.stage);
+            return (
+              <li
+                key={j.id}
+                className="card flex flex-col gap-3 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-medium text-slate-800 dark:text-slate-100">
+                      {j.role} <span className="font-normal text-muted">@ {j.company}</span>
+                    </h3>
+                    <span className={stage.badge}>{stage.label}</span>
+                  </div>
+                  {(j.contact || j.dueDate) && (
+                    <p className="mt-0.5 text-xs text-muted">
+                      {[j.contact && `Contact: ${j.contact.name}`, j.dueDate && `Follow up ${formatDate(j.dueDate)}`]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-end gap-2">
+                  <ActionForm action={updateJobStage} className="flex items-end gap-2">
+                    <input type="hidden" name="id" value={j.id} />
+                    <FormField label={`Stage for ${j.role} @ ${j.company}`} hideLabel className="w-36">
+                      {(_id, aria) => (
+                        <select {...aria} name="stage" className="input" defaultValue={j.stage}>
+                          <StageOptions />
+                        </select>
+                      )}
+                    </FormField>
+                    <SubmitButton className="btn-ghost btn-sm min-h-[38px] whitespace-nowrap">Update stage</SubmitButton>
+                  </ActionForm>
+                  <DeleteButton
+                    action={deleteJobApplication}
+                    id={j.id}
+                    name={`${j.role} @ ${j.company}`}
+                    noun="application"
+                    successMessage="Application deleted"
                   />
-                </form>
-              </div>
-            </div>
-          ))}
-        </div>
-        </CollapsibleSection>
-      </section>
-          ),
-        }}
-      />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+
+  const panels = {
+    goals: goalsPanel,
+    skills: skillsPanel,
+    work: workPanel,
+    learning: learningPanel,
+    applications: applicationsPanel,
+  } as const;
+
+  return (
+    <div>
+      <PageHeader title="Career" description="Track goals, skills, certifications, work history, and learning.">
+        <CareerTabs active={tab} />
+      </PageHeader>
+      {panels[tab]}
     </div>
   );
 }

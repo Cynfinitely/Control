@@ -3,6 +3,8 @@ import { getLifePriorities } from "@/lib/queries/priorities";
 import PageHeader from "@/components/PageHeader";
 import PrioritiesManager from "./PrioritiesManager";
 
+export const metadata = { title: "Priorities" };
+
 export default async function PrioritiesPage() {
   const user = await requireUser();
   const priorities = await getLifePriorities(user.id);

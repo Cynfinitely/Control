@@ -3,6 +3,8 @@ import { getActivePrinciples, getPrincipleReviewedToday } from "@/lib/queries/pr
 import PageHeader from "@/components/PageHeader";
 import PrinciplesView from "./PrinciplesView";
 
+export const metadata = { title: "Principles" };
+
 export default async function PrinciplesPage() {
   const user = await requireUser();
   const [principles, reviewedToday] = await Promise.all([

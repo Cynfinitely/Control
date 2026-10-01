@@ -19,7 +19,6 @@ export const navSections: NavSection[] = [
       { href: "/dashboard/todos", label: "Todos", icon: "check" },
       { href: "/dashboard/work", label: "Work", icon: "briefcase" },
       { href: "/dashboard/journal", label: "Journal", icon: "book" },
-      { href: "/dashboard/inspirations", label: "Inspirations", icon: "sparkles" },
     ],
   },
   {
@@ -29,11 +28,6 @@ export const navSections: NavSection[] = [
       { href: "/dashboard/budget", label: "Budget", icon: "wallet" },
       { href: "/dashboard/exercise", label: "Exercise", icon: "dumbbell" },
       { href: "/dashboard/religious", label: "Religious", icon: "moon" },
-    ],
-  },
-  {
-    title: "Health",
-    items: [
       { href: "/dashboard/health/migraine", label: "Migraine", icon: "heart" },
     ],
   },
@@ -49,6 +43,7 @@ export const navSections: NavSection[] = [
     title: "Reflect",
     items: [
       { href: "/dashboard/principles", label: "Principles", icon: "shield" },
+      { href: "/dashboard/inspirations", label: "Inspirations", icon: "sparkles" },
       { href: "/dashboard/priorities", label: "Priorities", icon: "flag" },
       { href: "/dashboard/review", label: "Review", icon: "clipboard" },
       { href: "/dashboard/reports", label: "Reports", icon: "chart" },

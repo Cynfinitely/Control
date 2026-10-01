@@ -13,10 +13,15 @@ import PageHeader from "@/components/PageHeader";
 import Breadcrumb from "@/components/Breadcrumb";
 import Icon from "@/components/Icon";
 import SubmitButton from "@/components/SubmitButton";
+import ActionForm from "@/components/ActionForm";
+import FormField from "@/components/FormField";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import LogComposer from "../LogComposer";
 import ActivityFeed from "../ActivityFeed";
 import { logTouchForm, updateContact, deleteContact } from "../actions";
 import { getComposerContacts, getSuggestedTopics } from "@/lib/queries/networking";
+
+export const metadata = { title: "Person" };
 
 export default async function ContactDetail({ params }: { params: { id: string } }) {
   const user = await requireUser();
@@ -70,16 +75,32 @@ export default async function ContactDetail({ params }: { params: { id: string }
       <PageHeader
         title={contact.name}
         description={descriptionParts.join(" · ") || undefined}
+        action={
+          contact.phone || contact.email ? (
+            <>
+              {contact.phone && (
+                <a href={`tel:${contact.phone}`} className="btn-ghost touch-target" aria-label={`Call ${contact.name} (${contact.phone})`}>
+                  <Icon name="phone" className="h-4 w-4" /> Call
+                </a>
+              )}
+              {contact.email && (
+                <a href={`mailto:${contact.email}`} className="btn-ghost touch-target" aria-label={`Email ${contact.name} (${contact.email})`}>
+                  <Icon name="mail" className="h-4 w-4" /> Email
+                </a>
+              )}
+            </>
+          ) : undefined
+        }
       />
 
       <div className="card mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Last contact</p>
+          <p className="text-sm text-muted">Last contact</p>
           <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">
             {last ? formatDaysAgo(last.date) : "Never"}
           </p>
           {last && (
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted">
               {formatDate(last.date)}
               {lastCall && last.type !== "call" ? ` · last call ${formatDaysAgo(lastCall.date)}` : ""}
             </p>
@@ -104,72 +125,79 @@ export default async function ContactDetail({ params }: { params: { id: string }
         <ActivityFeed items={activity} showPerson={false} empty="No logs with this person yet." />
       </div>
 
-      <details className="card">
-        <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">Edit person</summary>
-        <form action={updateContact} className="mt-4 space-y-2">
+      <CollapsibleSection title="Edit person" variant="card" icon="pencil">
+        <ActionForm action={updateContact} successMessage="Saved" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <input type="hidden" name="id" value={contact.id} />
-          <div>
-            <label className="label">Name</label>
-            <input name="name" className="input" defaultValue={contact.name} required />
-          </div>
-          <div>
-            <label className="label">Relationship</label>
-            <select name="relationship" className="input" defaultValue={contact.relationship ?? "other"}>
-              {RELATIONSHIPS.map((r) => (
-                <option key={r} value={r}>
-                  {RELATIONSHIP_LABELS[r]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label">Organization (optional)</label>
-            <input name="org" className="input" defaultValue={contact.org ?? ""} placeholder="For work contacts" />
-          </div>
-          <div>
-            <label className="label">Role (optional)</label>
-            <input name="role" className="input" defaultValue={contact.role ?? ""} />
-          </div>
-          <div>
-            <label className="label">Email</label>
-            <input name="email" type="email" className="input" defaultValue={contact.email ?? ""} />
-          </div>
-          <div>
-            <label className="label">Phone</label>
-            <input name="phone" className="input" defaultValue={contact.phone ?? ""} />
-            {contact.phone && (
-              <a href={`tel:${contact.phone}`} className="mt-1 inline-block text-xs text-brand-600 hover:underline">
-                Call {contact.phone}
-              </a>
+          <FormField label="Name" required>
+            {(_id, aria) => <input {...aria} name="name" className="input" defaultValue={contact.name} required />}
+          </FormField>
+          <FormField label="Relationship">
+            {(_id, aria) => (
+              <select {...aria} name="relationship" className="input" defaultValue={contact.relationship ?? "other"}>
+                {RELATIONSHIPS.map((r) => (
+                  <option key={r} value={r}>
+                    {RELATIONSHIP_LABELS[r]}
+                  </option>
+                ))}
+              </select>
             )}
+          </FormField>
+          <FormField label="Organization" hint="Optional, for work contacts">
+            {(_id, aria) => <input {...aria} name="org" className="input" defaultValue={contact.org ?? ""} />}
+          </FormField>
+          <FormField label="Role" hint="Optional">
+            {(_id, aria) => <input {...aria} name="role" className="input" defaultValue={contact.role ?? ""} />}
+          </FormField>
+          <FormField label="Email">
+            {(_id, aria) => (
+              <input {...aria} name="email" type="email" autoComplete="off" className="input" defaultValue={contact.email ?? ""} />
+            )}
+          </FormField>
+          <FormField label="Phone">
+            {(_id, aria) => (
+              <input {...aria} name="phone" type="tel" autoComplete="off" className="input" defaultValue={contact.phone ?? ""} />
+            )}
+          </FormField>
+          <FormField label="Tags">
+            {(_id, aria) => <input {...aria} name="tags" className="input" defaultValue={contact.tags ?? ""} />}
+          </FormField>
+          <FormField label="Touch every (days)" hint={`Defaults to ${DEFAULT_CADENCE_DAYS} days`}>
+            {(_id, aria) => (
+              <input
+                {...aria}
+                name="touchCadenceDays"
+                type="number"
+                min={1}
+                className="input"
+                defaultValue={contact.touchCadenceDays ?? ""}
+                placeholder={`${DEFAULT_CADENCE_DAYS}`}
+              />
+            )}
+          </FormField>
+          <FormField label="Notes" className="sm:col-span-2">
+            {(_id, aria) => <textarea {...aria} name="notes" className="input" rows={2} defaultValue={contact.notes ?? ""} />}
+          </FormField>
+          <div className="sm:col-span-2">
+            <SubmitButton className="btn-primary">Save changes</SubmitButton>
           </div>
-          <div>
-            <label className="label">Tags</label>
-            <input name="tags" className="input" defaultValue={contact.tags ?? ""} />
-          </div>
-          <div>
-            <label className="label">Touch every (days)</label>
-            <input
-              name="touchCadenceDays"
-              type="number"
-              className="input"
-              defaultValue={contact.touchCadenceDays ?? ""}
-              placeholder={`${DEFAULT_CADENCE_DAYS}`}
-            />
-          </div>
-          <div>
-            <label className="label">Notes</label>
-            <textarea name="notes" className="input" rows={2} defaultValue={contact.notes ?? ""} />
-          </div>
-          <SubmitButton className="btn-primary w-full text-sm">Save changes</SubmitButton>
-        </form>
-        <form action={deleteContact} className="mt-4">
-          <input type="hidden" name="id" value={contact.id} />
-          <SubmitButton className="btn-danger w-full">
-            <Icon name="trash" className="h-4 w-4" /> Delete person
-          </SubmitButton>
-        </form>
-      </details>
+        </ActionForm>
+        <div className="mt-6 border-t border-slate-100 pt-4 dark:border-slate-700">
+          <ActionForm
+            action={deleteContact}
+            confirm={{
+              title: `Delete “${contact.name}”?`,
+              message: "Their logs will no longer appear in your timeline or insights.",
+              confirmLabel: "Delete person",
+            }}
+            successMessage={false}
+          >
+            <input type="hidden" name="id" value={contact.id} />
+            <SubmitButton className="btn-danger">
+              <Icon name="trash" className="h-4 w-4" /> Delete person
+            </SubmitButton>
+          </ActionForm>
+        </div>
+      </CollapsibleSection>
     </div>
   );
 }

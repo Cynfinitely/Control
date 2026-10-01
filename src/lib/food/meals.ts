@@ -87,3 +87,31 @@ export type NutritionValues = {
 export function hasNutrition(n: NutritionValues): boolean {
   return n.calories > 0 || n.protein > 0 || n.carbs > 0 || n.fat > 0;
 }
+
+const MEAL_WINDOWS: { pattern: RegExp; from: number; to: number }[] = [
+  { pattern: /breakfast|morning/i, from: 4 * 60, to: 11 * 60 },
+  { pattern: /lunch|midday/i, from: 11 * 60, to: 15 * 60 },
+  { pattern: /dinner|supper|evening/i, from: 17 * 60, to: 22 * 60 },
+];
+
+/**
+ * Best-guess meal label for a "HH:MM" time. Only matches labels whose name
+ * clearly implies a time of day (Breakfast/Lunch/Dinner); outside those
+ * windows a "Snack" label is suggested if one exists. Returns null when
+ * nothing fits so the user picks explicitly.
+ */
+export function suggestMealLabel(labels: string[], time: string): string | null {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+  if (!match || labels.length === 0) return null;
+  const minutes = Number(match[1]) * 60 + Number(match[2]);
+  if (minutes < 0 || minutes >= 24 * 60) return null;
+
+  for (const window of MEAL_WINDOWS) {
+    if (minutes < window.from || minutes >= window.to) continue;
+    const label = labels.find((l) => window.pattern.test(l));
+    if (label) return label;
+  }
+  const hasTimedLabels = labels.some((l) => MEAL_WINDOWS.some((w) => w.pattern.test(l)));
+  if (!hasTimedLabels) return null;
+  return labels.find((l) => isSnack(l)) ?? null;
+}

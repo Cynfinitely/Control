@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { startOfDay, endOfDay } from "@/lib/date";
+import { startOfDay, endOfDay, coerceDate } from "@/lib/date";
 
 export type TodoItem = {
   id: string;
@@ -11,9 +11,14 @@ export type TodoItem = {
   dueDate: Date | null;
 };
 
-export async function getDayTodos(userId: string, dayKey: string) {
+/** cachedQuery JSON-serializes results, so revive dates after the await. */
+function reviveTodos(rows: TodoItem[]): TodoItem[] {
+  return rows.map((t) => ({ ...t, dueDate: t.dueDate ? coerceDate(t.dueDate) : null }));
+}
+
+export async function getDayTodos(userId: string, dayKey: string): Promise<TodoItem[]> {
   const day = new Date(dayKey + "T00:00:00");
-  return cachedQuery(
+  const rows = await cachedQuery(
     ["todos-day", userId, dayKey],
     [cacheTag("todos", userId)],
     () =>
@@ -35,10 +40,11 @@ export async function getDayTodos(userId: string, dayKey: string) {
         },
       })
   );
+  return reviveTodos(rows);
 }
 
-export async function getBacklogTodos(userId: string) {
-  return cachedQuery(
+export async function getBacklogTodos(userId: string): Promise<TodoItem[]> {
+  const rows = await cachedQuery(
     ["todos-backlog", userId],
     [cacheTag("todos", userId)],
     () =>
@@ -55,6 +61,7 @@ export async function getBacklogTodos(userId: string) {
         },
       })
   );
+  return reviveTodos(rows);
 }
 
 function staleOpenWhere(userId: string) {

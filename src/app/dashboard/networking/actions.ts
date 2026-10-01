@@ -6,7 +6,8 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { parseTopics, serializeTopics, INTERACTION_TYPES } from "@/lib/networking";
-import { failure, success, wrapFormAction } from "@/lib/action-result";
+import { failure, success, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import { RELATIONSHIPS } from "@/lib/contacts";
 
 function invalidateNetworking(userId: string, contactId?: string) {
   revalidateUserCache(userId, "dashboard", "networking", "plan");
@@ -24,11 +25,14 @@ function parseInteractionType(value: FormDataEntryValue | null): string {
   return INTERACTION_TYPES.includes(type as (typeof INTERACTION_TYPES)[number]) ? type : "call";
 }
 
-export async function createContact(formData: FormData) {
+/** createContact also returns the new contact so the UI can offer "Log interaction". */
+export type CreateContactResult = ActionResult & { contactId?: string; name?: string };
+
+export async function createContact(formData: FormData): Promise<CreateContactResult> {
   const userId = await getUserId();
   const name = str(formData.get("name"));
-  if (!name) return;
-  await prisma.contact.create({
+  if (!name) return failure("Name is required");
+  const created = await prisma.contact.create({
     data: {
       userId,
       name,
@@ -46,11 +50,14 @@ export async function createContact(formData: FormData) {
     },
   });
   invalidateNetworking(userId);
+  // No message: the form shows its own toast with a "Log interaction" action.
+  return { ok: true, contactId: created.id, name: created.name };
 }
 
-export async function updateContact(formData: FormData) {
+export async function updateContact(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
+  if (!str(formData.get("name"))) return failure("Name is required");
   await prisma.contact.updateMany({
     where: { id, userId },
     data: {
@@ -69,6 +76,7 @@ export async function updateContact(formData: FormData) {
     },
   });
   invalidateNetworking(userId, id);
+  return success("Saved");
 }
 
 export async function deleteContact(formData: FormData) {
@@ -88,8 +96,10 @@ async function logTouch(formData: FormData) {
   const name = str(formData.get("name"));
 
   if (!contactId && name) {
+    const rel = str(formData.get("relationship"));
+    const relationship = RELATIONSHIPS.includes(rel as (typeof RELATIONSHIPS)[number]) ? rel : "other";
     const created = await prisma.contact.create({
-      data: { userId, name, relationship: "other" },
+      data: { userId, name, relationship },
     });
     contactId = created.id;
   }
@@ -118,10 +128,12 @@ async function logTouch(formData: FormData) {
 
 export const logTouchForm = wrapFormAction(logTouch, "Logged");
 
-export async function deleteInteraction(formData: FormData) {
+export async function deleteInteraction(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const contactId = str(formData.get("contactId"));
-  await prisma.interaction.deleteMany({ where: { id, userId, contactId } });
+  const res = await prisma.interaction.deleteMany({ where: { id, userId, contactId } });
+  if (res.count === 0) return failure("Log not found");
   invalidateNetworking(userId, contactId);
+  return success("Log deleted");
 }

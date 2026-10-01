@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import type { EventOccurrence } from "@/lib/calendar/types";
 import { dayKey, monthGridDays, occurrenceDayKey } from "@/lib/calendar/format";
-import { toDateInputValue } from "@/lib/date";
+import Icon from "@/components/Icon";
 
 type ReminderChip = {
   id: string;
@@ -22,6 +22,13 @@ type Props = {
   onCreateAt: (day: Date) => void;
 };
 
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MAX_CHIPS = 3;
+
+function plural(n: number, word: string) {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
 export default function MonthGrid({
   monthKey,
   timezone,
@@ -34,7 +41,7 @@ export default function MonthGrid({
 }: Props) {
   const [y, m] = monthKey.split("-").map(Number);
   const days = monthGridDays(monthKey);
-  const todayKey = toDateInputValue(new Date());
+  const todayKey = occurrenceDayKey(new Date(), timezone);
 
   const byDay = new Map<string, EventOccurrence[]>();
   for (const occ of occurrences) {
@@ -46,7 +53,7 @@ export default function MonthGrid({
 
   const remByDay = new Map<string, ReminderChip[]>();
   for (const r of reminders) {
-    const k = dayKey(r.remindAt);
+    const k = occurrenceDayKey(r.remindAt, timezone);
     const list = remByDay.get(k) ?? [];
     list.push(r);
     remByDay.set(k, list);
@@ -54,9 +61,9 @@ export default function MonthGrid({
 
   return (
     <div className="card overflow-hidden p-0">
-      <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50 text-center text-[10px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400 sm:text-xs">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <div key={d} className="px-0.5 py-1.5 sm:px-1 sm:py-2">
+      <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400" aria-hidden="true">
+        {WEEKDAYS.map((d) => (
+          <div key={d} className="px-0.5 py-2">
             <span className="sm:hidden">{d[0]}</span>
             <span className="hidden sm:inline">{d}</span>
           </div>
@@ -69,65 +76,96 @@ export default function MonthGrid({
           const dayOccs = byDay.get(key) ?? [];
           const dayRems = remByDay.get(key) ?? [];
           const isToday = key === todayKey;
+          const shownOccs = dayOccs.slice(0, MAX_CHIPS);
+          const shownRems = dayRems.slice(0, Math.max(0, MAX_CHIPS - shownOccs.length));
+          const hidden = dayOccs.length + dayRems.length - shownOccs.length - shownRems.length;
+          const dateLabel = day.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+          const summary = [
+            isToday ? "Today" : null,
+            dayOccs.length ? plural(dayOccs.length, "event") : null,
+            dayRems.length ? plural(dayRems.length, "reminder") : null,
+          ]
+            .filter(Boolean)
+            .join(", ");
 
           return (
-            <button
+            <div
               key={key}
-              type="button"
-              onClick={() => onSelectDay(day)}
-              onDoubleClick={() => onCreateAt(day)}
               className={clsx(
-                "min-h-[3.25rem] border-b border-r border-slate-100 p-0.5 text-left align-top transition hover:bg-brand-50/50 dark:border-slate-800 dark:hover:bg-brand-950/30 sm:min-h-[6.5rem] sm:p-1",
-                !inMonth && "bg-slate-50/60 text-slate-400 dark:bg-slate-950/40 dark:text-slate-500",
-                isToday && "bg-brand-50/40 dark:bg-brand-950/20"
+                "group relative min-h-[3.5rem] border-b border-r border-slate-100 p-1 dark:border-slate-700/60 sm:min-h-[7rem]",
+                !inMonth && "bg-slate-50/70 dark:bg-slate-950/40",
+                isToday && "bg-brand-50/50 dark:bg-brand-950/20"
               )}
             >
-              <span
-                className={clsx(
-                  "inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium sm:h-6 sm:w-6 sm:text-xs",
-                  isToday && "bg-brand-600 text-white"
-                )}
-              >
-                {day.getDate()}
-              </span>
-              <div className="mt-0.5 hidden space-y-0.5 sm:block">
-                {dayOccs.slice(0, 3).map((occ) => (
-                  <span
+              {/* Full-cell target: open the day. Chips below are siblings, not nested. */}
+              <button
+                type="button"
+                onClick={() => onSelectDay(day)}
+                aria-label={summary ? `${dateLabel} — ${summary}` : dateLabel}
+                className="absolute inset-0 transition hover:bg-brand-50/60 focus-visible:z-20 dark:hover:bg-brand-950/30"
+              />
+              <div className="pointer-events-none relative flex items-center justify-between">
+                <span
+                  aria-hidden="true"
+                  className={clsx(
+                    "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
+                    isToday
+                      ? "bg-brand-600 font-semibold text-white"
+                      : inMonth
+                        ? "text-slate-800 dark:text-slate-200"
+                        : "text-slate-500 dark:text-slate-400"
+                  )}
+                >
+                  {day.getDate()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onCreateAt(day)}
+                  className="pointer-events-auto relative z-10 hidden h-6 w-6 items-center justify-center rounded text-slate-500 opacity-0 transition hover:bg-brand-100 hover:text-brand-700 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:bg-brand-900 sm:inline-flex"
+                  aria-label={`New event on ${dateLabel}`}
+                  title="New event"
+                >
+                  <Icon name="plus" className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="relative mt-0.5 hidden space-y-0.5 sm:block">
+                {shownOccs.map((occ) => (
+                  <button
                     key={`${occ.eventId}-${occ.originalStartsAt.toISOString()}`}
-                    role="presentation"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectOccurrence(occ);
-                    }}
-                    className="block truncate rounded bg-brand-100 px-1 text-[10px] text-brand-800 dark:bg-brand-900 dark:text-brand-200"
+                    type="button"
+                    onClick={() => onSelectOccurrence(occ)}
+                    className="relative z-10 block w-full truncate rounded bg-brand-100 px-1.5 py-0.5 text-left text-xs text-brand-900 hover:bg-brand-200 dark:bg-brand-900 dark:text-brand-100 dark:hover:bg-brand-800"
                   >
                     {occ.title}
-                  </span>
+                  </button>
                 ))}
-                {dayRems.slice(0, 2).map((r) => (
-                  <span
-                    key={r.id}
-                    role="presentation"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectReminder(r.id);
-                    }}
-                    className="block truncate rounded bg-amber-100 px-1 text-[10px] text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                {shownRems.map((r) => (
+                  <button
+                    key={`${r.id}-${r.remindAt.toISOString()}`}
+                    type="button"
+                    onClick={() => onSelectReminder(r.id)}
+                    className="relative z-10 flex w-full items-center gap-1 truncate rounded bg-amber-100 px-1.5 py-0.5 text-left text-xs text-amber-900 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-100"
                   >
-                    ⏱ {r.title}
-                  </span>
+                    <Icon name="bell" className="h-3 w-3 shrink-0" />
+                    <span className="sr-only">Reminder:</span>
+                    <span className="truncate">{r.title}</span>
+                  </button>
                 ))}
-                {dayOccs.length + dayRems.length > 3 && (
-                  <span className="text-[10px] text-slate-400">
-                    +{dayOccs.length + dayRems.length - 3} more
-                  </span>
+                {hidden > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectDay(day)}
+                    className="relative z-10 rounded px-1 text-xs font-medium text-slate-600 hover:underline dark:text-slate-300"
+                  >
+                    +{hidden} more
+                  </button>
                 )}
               </div>
-              <div className="mt-1 flex gap-0.5 sm:hidden">
+              <div className="pointer-events-none relative mt-1 flex gap-1 sm:hidden" aria-hidden="true">
                 {dayOccs.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />}
-                {dayRems.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
+                {dayRems.length > 0 && <span className="h-1.5 w-1.5 rounded-sm bg-amber-500" />}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

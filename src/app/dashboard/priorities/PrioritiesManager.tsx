@@ -1,12 +1,17 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import FormAction from "@/components/FormAction";
+import ActionForm from "@/components/ActionForm";
 import SubmitButton from "@/components/SubmitButton";
-import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import SubmitIconButton from "@/components/SubmitIconButton";
+import IconButton from "@/components/IconButton";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import Icon from "@/components/Icon";
+import Spinner from "@/components/Spinner";
 import EmptyState from "@/components/EmptyState";
+import { useToast } from "@/components/Toast";
 import type { LifePriorityItem } from "@/lib/queries/priorities";
 import { MAX_LIFE_PRIORITIES } from "@/lib/priorities/rank";
 import {
@@ -21,17 +26,27 @@ type Props = {
 };
 
 export default function PrioritiesManager({ priorities }: Props) {
-  const [, startTransition] = useTransition();
+  const [isMoving, startTransition] = useTransition();
+  const [movingId, setMovingId] = useState<string | null>(null);
   const router = useRouter();
+  const toast = useToast();
   const atCap = priorities.length >= MAX_LIFE_PRIORITIES;
 
-  function runMove(id: string, direction: "up" | "down") {
+  function runMove(id: string, title: string, direction: "up" | "down") {
+    setMovingId(id);
     startTransition(async () => {
       const fd = new FormData();
       fd.set("id", id);
       fd.set("direction", direction);
-      await movePriority(fd);
-      router.refresh();
+      try {
+        const result = await movePriority(fd);
+        if (!result.ok) toast.error(result.error);
+      } catch {
+        toast.error(`Couldn't move “${title}”. Please try again.`);
+      } finally {
+        router.refresh();
+        setMovingId(null);
+      }
     });
   }
 
@@ -44,7 +59,7 @@ export default function PrioritiesManager({ priorities }: Props) {
           resetOnSuccess
           className="card mb-6 space-y-3"
         >
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Add a priority</p>
+          <h2 className="section-title">Add a priority</h2>
           <div>
             <label htmlFor="priority-title" className="label">
               Title
@@ -75,7 +90,8 @@ export default function PrioritiesManager({ priorities }: Props) {
       )}
 
       {atCap && (
-        <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mb-6 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
+          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
           You&apos;ve reached the maximum of {MAX_LIFE_PRIORITIES} priorities. Remove one to add another.
         </p>
       )}
@@ -105,12 +121,11 @@ export default function PrioritiesManager({ priorities }: Props) {
                 {item.note && (
                   <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{item.note}</p>
                 )}
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-xs text-brand-600">Edit</summary>
+                <CollapsibleSection title="Edit" className="mt-1 text-sm">
                   <FormAction
                     action={updatePriorityForm}
                     successMessage="Priority updated"
-                    className="mt-3 space-y-3"
+                    className="space-y-3"
                   >
                     <input type="hidden" name="id" value={item.id} />
                     <div>
@@ -138,41 +153,39 @@ export default function PrioritiesManager({ priorities }: Props) {
                     </div>
                     <SubmitButton className="btn-primary">Save changes</SubmitButton>
                   </FormAction>
-                </details>
+                </CollapsibleSection>
               </div>
-              <div className="flex shrink-0 flex-col gap-1">
-                <button
-                  type="button"
-                  disabled={index === 0}
-                  onClick={() => runMove(item.id, "up")}
-                  className="touch-target flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+              <div className="flex shrink-0 items-center" aria-busy={movingId === item.id || undefined}>
+                {movingId === item.id && <Spinner className="mr-1 h-4 w-4 text-brand-600" />}
+                <IconButton
+                  icon="chevronUp"
+                  disabled={index === 0 || isMoving}
+                  onClick={() => runMove(item.id, item.title, "up")}
                   aria-label={`Move ${item.title} up`}
-                >
-                  <Icon name="chevronUp" className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  disabled={index === priorities.length - 1}
-                  onClick={() => runMove(item.id, "down")}
-                  className="touch-target flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                />
+                <IconButton
+                  icon="chevronDown"
+                  disabled={index === priorities.length - 1 || isMoving}
+                  onClick={() => runMove(item.id, item.title, "down")}
                   aria-label={`Move ${item.title} down`}
+                />
+                <ActionForm
+                  action={deletePriority}
+                  confirm={{
+                    title: `Remove “${item.title}”?`,
+                    message: "It will be removed from your life ranking.",
+                    confirmLabel: "Remove",
+                  }}
+                  successMessage="Priority removed"
                 >
-                  <Icon name="chevronDown" className="h-4 w-4" />
-                </button>
+                  <input type="hidden" name="id" value={item.id} />
+                  <SubmitIconButton
+                    icon={<Icon name="trash" className="h-4 w-4" />}
+                    aria-label={`Remove priority ${item.title}`}
+                    className="btn-icon-danger"
+                  />
+                </ActionForm>
               </div>
-              <DeleteConfirmButton
-                title="Remove priority?"
-                message={`Remove "${item.title}" from your life ranking?`}
-                label="Remove priority"
-                onConfirm={() => {
-                  startTransition(async () => {
-                    const fd = new FormData();
-                    fd.set("id", item.id);
-                    await deletePriority(fd);
-                    router.refresh();
-                  });
-                }}
-              />
             </li>
           ))}
         </ol>

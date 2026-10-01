@@ -1,5 +1,5 @@
 import PageLoadingSkeleton from "@/components/PageLoadingSkeleton";
 
 export default function Loading() {
-  return <PageLoadingSkeleton variant="default" />;
+  return <PageLoadingSkeleton variant="form" />;
 }

@@ -5,6 +5,8 @@ import {
   expandEventOccurrences,
   computeDueReminders,
   parseRruleUntil,
+  parseRruleParts,
+  describeRrule,
 } from "@/lib/calendar";
 import type { CalendarEventMaster } from "@/lib/calendar/types";
 
@@ -20,6 +22,33 @@ describe("buildRruleString", () => {
     const s = buildRruleString({ freq: "DAILY", until });
     expect(s).toContain("UNTIL=");
     expect(parseRruleUntil(s)?.getUTCFullYear()).toBe(2026);
+  });
+});
+
+describe("parseRruleParts", () => {
+  it("round-trips interval, weekdays and until from buildRruleString", () => {
+    const until = new Date(Date.UTC(2026, 11, 31, 23, 59, 59));
+    const s = buildRruleString({ freq: "WEEKLY", interval: 2, byweekday: [0, 2], until });
+    const parts = parseRruleParts(s);
+    expect(parts.freq).toBe("WEEKLY");
+    expect(parts.interval).toBe(2);
+    expect(parts.byweekday).toEqual([0, 2]);
+    expect(parts.until?.getTime()).toBe(until.getTime());
+  });
+
+  it("accepts an RRULE: prefix and defaults missing fields", () => {
+    const parts = parseRruleParts("RRULE:FREQ=MONTHLY");
+    expect(parts).toEqual({ freq: "MONTHLY", interval: 1, byweekday: [], until: null });
+  });
+
+  it("returns NONE for empty or invalid input", () => {
+    expect(parseRruleParts(null).freq).toBe("NONE");
+    expect(parseRruleParts("not a rule").freq).toBe("NONE");
+  });
+
+  it("describes a rule in plain language", () => {
+    expect(describeRrule("FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE")).toMatch(/every 2 weeks/i);
+    expect(describeRrule(null)).toBe("");
   });
 });
 

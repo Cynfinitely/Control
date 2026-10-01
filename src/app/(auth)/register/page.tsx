@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import Spinner from "@/components/Spinner";
+import FormField from "@/components/FormField";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -16,35 +18,39 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   function update(key: keyof typeof form) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((f) => ({ ...f, [key]: e.target.value }));
+    return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Something went wrong.");
-      return;
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Something went wrong. Please try again.");
+        return;
+      }
+      setVerifyUrl(data.verifyUrl);
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setVerifyUrl(data.verifyUrl);
   }
 
   if (verifyUrl) {
     return (
       <div className="card">
-        <h2 className="section-title mb-2">Verify your email</h2>
+        <h1 className="section-title mb-2">Verify your email</h1>
         <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-          Email verification is required. No email service is configured in this version,
-          so use the link below to verify your account directly.
+          Email verification is required. No email service is configured in this version, so use the link below to
+          verify your account directly.
         </p>
         <Link href={verifyUrl} className="btn-primary w-full">
           Verify my email
@@ -55,63 +61,69 @@ export default function RegisterPage() {
 
   return (
     <div className="card">
-      <h2 className="section-title mb-4">Create account</h2>
-      <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+      <h1 className="section-title">Create account</h1>
+      <p className="mb-4 mt-1 text-sm text-slate-600 dark:text-slate-400">
         Registration is invite-only. Enter the invite code you received.
       </p>
       {error && (
-        <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{error}</p>
+        <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          {error}
+        </p>
       )}
       <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="label">Name</label>
-          <input className="input" value={form.name} onChange={update("name")} required />
-        </div>
-        <div>
-          <label className="label">Email</label>
-          <input
-            className="input"
-            type="email"
-            value={form.email}
-            onChange={update("email")}
-            required
-          />
-        </div>
-        <div>
-          <label className="label">Password</label>
-          <input
-            className="input"
-            type="password"
-            value={form.password}
-            onChange={update("password")}
-            minLength={8}
-            required
-          />
-          <p className="mt-1 text-xs text-slate-400">At least 8 characters.</p>
-        </div>
-        <div>
-          <label className="label">Invite code</label>
-          <input
-            className="input"
-            value={form.inviteCode}
-            onChange={update("inviteCode")}
-            required
-          />
-        </div>
-        <button className="btn-primary w-full" disabled={loading}>
-          {loading ? (
-            <>
-              <Spinner />
-              Creating...
-            </>
-          ) : (
-            "Create account"
+        <FormField label="Name">
+          {(id) => (
+            <input id={id} className="input" value={form.name} onChange={update("name")} required autoComplete="name" autoFocus />
           )}
+        </FormField>
+        <FormField label="Email">
+          {(id) => (
+            <input
+              id={id}
+              className="input"
+              type="email"
+              value={form.email}
+              onChange={update("email")}
+              required
+              autoComplete="email"
+            />
+          )}
+        </FormField>
+        <FormField label="Password" hint="At least 8 characters.">
+          {(id, aria) => (
+            <PasswordInput
+              {...aria}
+              id={id}
+              value={form.password}
+              onChange={update("password")}
+              minLength={8}
+              required
+              autoComplete="new-password"
+            />
+          )}
+        </FormField>
+        <FormField label="Invite code">
+          {(id) => (
+            <input
+              id={id}
+              className="input"
+              value={form.inviteCode}
+              onChange={update("inviteCode")}
+              required
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+            />
+          )}
+        </FormField>
+        <button type="submit" className="btn-primary w-full" disabled={loading}>
+          {loading && <Spinner />}
+          {loading ? "Creating account…" : "Create account"}
         </button>
       </form>
-      <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-brand-600 hover:underline">
+        <Link href="/login" className="link">
           Sign in
         </Link>
       </p>

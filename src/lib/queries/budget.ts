@@ -173,15 +173,32 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
   };
 }
 
-export async function getUncategorizedTransactions(userId: string, limit = 100) {
+/**
+ * Uncategorized queue. `monthKey` ("YYYY-MM") narrows it to one month.
+ * `entries` is capped at `limit`; `total` is the full count for the filter
+ * and `allTotal` the count across all months.
+ */
+export async function getUncategorizedTransactions(
+  userId: string,
+  options: { monthKey?: string | null; limit?: number } = {}
+) {
+  const limit = options.limit ?? 100;
+  const monthKey = options.monthKey && /^\d{4}-\d{2}$/.test(options.monthKey) ? options.monthKey : null;
   const data = await cachedQuery(
-    ["budget-uncategorized", userId],
+    ["budget-uncategorized", userId, monthKey ?? "all", String(limit)],
     [cacheTag("budget", userId)],
     async () => {
       await ensureBudgetCategories(userId);
-      const [entries, categories] = await Promise.all([
+      const base = { userId, deletedAt: null, categoryId: null };
+      let where: typeof base & { date?: { gte: Date; lte: Date } } = base;
+      if (monthKey) {
+        const [y, m] = monthKey.split("-").map(Number);
+        const { from, to } = rangeFor("monthly", new Date(y, m - 1, 1));
+        where = { ...base, date: { gte: from, lte: to } };
+      }
+      const [entries, categories, total, allTotal] = await Promise.all([
         prisma.budgetTransaction.findMany({
-          where: { userId, deletedAt: null, categoryId: null },
+          where,
           orderBy: [{ date: "desc" }, { createdAt: "desc" }],
           take: limit,
         }),
@@ -189,6 +206,8 @@ export async function getUncategorizedTransactions(userId: string, limit = 100) 
           where: { userId, isHidden: false },
           orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
         }),
+        prisma.budgetTransaction.count({ where }),
+        monthKey ? prisma.budgetTransaction.count({ where: base }) : Promise.resolve(-1),
       ]);
 
       return {
@@ -205,6 +224,8 @@ export async function getUncategorizedTransactions(userId: string, limit = 100) 
         })),
         categories,
         count: entries.length,
+        total,
+        allTotal: allTotal < 0 ? total : allTotal,
       };
     }
   );
@@ -212,6 +233,13 @@ export async function getUncategorizedTransactions(userId: string, limit = 100) 
     ...data,
     entries: data.entries.map(reviveTxRow),
   };
+}
+
+/** Number of uncategorized transactions across all months (for the Budget tab badge). */
+export async function getUncategorizedCount(userId: string) {
+  return cachedQuery(["budget-uncategorized-count", userId], [cacheTag("budget", userId)], () =>
+    prisma.budgetTransaction.count({ where: { userId, deletedAt: null, categoryId: null } })
+  );
 }
 
 export async function getBudgetSummaryForDashboard(userId: string, ref: Date) {

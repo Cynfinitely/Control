@@ -12,8 +12,12 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
+      <head>
+        <title>Something went wrong · Control</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body>
-        <div className="flex min-h-screen items-center justify-center p-4">
+        <main className="flex min-h-screen items-center justify-center p-4">
           <ErrorRecovery
             error={error}
             reset={() => {
@@ -23,7 +27,7 @@ export default function GlobalError({
             homeHref="/dashboard"
             autoRecover="reload"
           />
-        </div>
+        </main>
       </body>
     </html>
   );

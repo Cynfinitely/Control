@@ -1,7 +1,23 @@
-import { addDays, endOfDay, rangeFor, startOfDay, startOfWeek, toDateInputValue } from "@/lib/date";
+import {
+  addDays,
+  endOfDay,
+  formatDate,
+  formatDaysAgo,
+  rangeFor,
+  startOfDay,
+  startOfWeek,
+  toDateInputValue,
+} from "@/lib/date";
 import { RELATIONSHIPS } from "@/lib/contacts";
 
 export const DEFAULT_CADENCE_DAYS = 30;
+
+/** "01 Oct 2026 · Today" — the one date format for interaction logs. */
+export function formatActivityDate(date: Date | string): string {
+  const exact = formatDate(date);
+  const ago = formatDaysAgo(date);
+  return ago === exact ? exact : `${exact} · ${ago}`;
+}
 
 export const INTERACTION_TYPES = ["call", "meeting", "message", "event"] as const;
 export type InteractionType = (typeof INTERACTION_TYPES)[number];
@@ -122,8 +138,9 @@ export function buildNetworkingInsights(
   const unique = new Set<string>();
   const weekCounts = new Map<string, number>();
 
-  let weekCursor = startOfWeek(range.from);
-  const lastWeek = startOfWeek(range.to);
+  // startOfWeek/startOfDay mutate a Date argument, so always pass copies.
+  let weekCursor = startOfWeek(new Date(range.from));
+  const lastWeek = startOfWeek(new Date(range.to));
   while (weekCursor <= lastWeek) {
     weekCounts.set(toDateInputValue(weekCursor), 0);
     weekCursor = addDays(weekCursor, 7);
@@ -135,7 +152,7 @@ export function buildNetworkingInsights(
     const rel = contactById.get(it.contactId)?.relationship ?? "other";
     const relKey = RELATIONSHIPS.includes(rel as (typeof RELATIONSHIPS)[number]) ? rel : "other";
     relCounts.set(relKey, (relCounts.get(relKey) ?? 0) + 1);
-    const weekKey = toDateInputValue(startOfWeek(it.date));
+    const weekKey = toDateInputValue(startOfWeek(new Date(it.date)));
     if (weekCounts.has(weekKey)) {
       weekCounts.set(weekKey, (weekCounts.get(weekKey) ?? 0) + 1);
     }

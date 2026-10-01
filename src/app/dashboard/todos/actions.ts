@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
-import { startOfDay, endOfDay } from "@/lib/date";
+import { startOfDay, endOfDay, formatDate } from "@/lib/date";
 import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
 
 function invalidate(userId: string) {
@@ -71,7 +71,8 @@ export async function pullFromBacklog(formData: FormData): Promise<ActionResult>
     data: { inBacklog: false, dayDate, status: "open" },
   });
   invalidate(userId);
-  return success("Added to today");
+  const isToday = dayDate.getTime() === startOfDay(new Date()).getTime();
+  return success(isToday ? "Added to today" : `Added to ${formatDate(dayDate)}`);
 }
 
 export async function deleteTodo(formData: FormData): Promise<ActionResult> {

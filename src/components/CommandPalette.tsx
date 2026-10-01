@@ -1,140 +1,195 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { navSections } from "@/lib/nav";
 import Icon from "@/components/Icon";
 
-type ActionItem = {
-  id: string;
-  label: string;
-  icon: string;
-  href: string;
-};
+export const OPEN_COMMAND_PALETTE_EVENT = "control:open-command-palette";
 
-const actions: ActionItem[] = [
-  {
-    id: "new-event",
-    label: "New event",
-    icon: "calendar",
-    href: "/dashboard/calendar?view=month&new=event",
-  },
-  {
-    id: "new-reminder",
-    label: "New reminder",
-    icon: "bell",
-    href: "/dashboard/calendar?view=agenda&new=reminder",
-  },
+/** Open the palette from anywhere (e.g. the sidebar search button). */
+export function openCommandPalette() {
+  window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE_EVENT));
+}
+
+type Item = { id: string; label: string; icon: string; href: string; group: "Actions" | "Pages" };
+
+const ACTIONS: Item[] = [
+  { id: "new-event", label: "New event", icon: "calendar", href: "/dashboard/calendar?view=month&new=event", group: "Actions" },
+  { id: "new-reminder", label: "New reminder", icon: "bell", href: "/dashboard/calendar?view=agenda&new=reminder", group: "Actions" },
+  { id: "add-todo", label: "Add todo", icon: "check", href: "/dashboard/todos?focus=add", group: "Actions" },
+  { id: "log-food", label: "Log food", icon: "food", href: "/dashboard/food?focus=log", group: "Actions" },
+  { id: "log-workout", label: "Log workout", icon: "dumbbell", href: "/dashboard/exercise?focus=log", group: "Actions" },
+  { id: "write-journal", label: "Write journal entry", icon: "book", href: "/dashboard/journal?focus=add", group: "Actions" },
 ];
 
-export default function CommandPalette() {
+export default function CommandPalette({ isAdmin = false }: { isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isMac, setIsMac] = useState(true);
   const router = useRouter();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const restoreRef = useRef<HTMLElement | null>(null);
+  const listId = useId();
 
   useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
     function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((v) => !v);
       }
-      if (e.key === "Escape") setOpen(false);
+    }
+    function onOpen() {
+      setOpen(true);
     }
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, onOpen);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener(OPEN_COMMAND_PALETTE_EVENT, onOpen);
+    };
   }, []);
 
   useEffect(() => {
-    if (open) setQuery("");
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (open) {
+      restoreRef.current = document.activeElement as HTMLElement | null;
+      setQuery("");
+      setActiveIndex(0);
+      if (!dialog.open) dialog.showModal();
+      inputRef.current?.focus();
+    } else if (dialog.open) {
+      dialog.close();
+      restoreRef.current?.focus();
+    }
   }, [open]);
 
-  if (!open) return null;
+  const items = useMemo(() => {
+    const pages: Item[] = [
+      ...navSections.flatMap((s) => s.items),
+      { href: "/dashboard/settings", label: "Settings", icon: "settings" },
+      ...(isAdmin ? [{ href: "/dashboard/admin", label: "Admin", icon: "users" }] : []),
+    ].map((p) => ({ ...p, id: p.href, group: "Pages" as const }));
+    const q = query.trim().toLowerCase();
+    return [...ACTIONS, ...pages].filter((item) => item.label.toLowerCase().includes(q));
+  }, [query, isAdmin]);
 
-  const items = navSections.flatMap((s) => s.items);
-  const q = query.toLowerCase();
-  const filteredNav = items.filter((item) => item.label.toLowerCase().includes(q));
-  const filteredActions = actions.filter((a) => a.label.toLowerCase().includes(q));
+  useEffect(() => {
+    setActiveIndex((i) => Math.min(i, Math.max(items.length - 1, 0)));
+  }, [items.length]);
 
   function go(href: string) {
+    restoreRef.current = null;
     setOpen(false);
     router.push(href);
   }
 
+  function onInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => (items.length ? (i + 1) % items.length : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => (items.length ? (i - 1 + items.length) % items.length : 0));
+    } else if (e.key === "Home") {
+      setActiveIndex(0);
+    } else if (e.key === "End") {
+      setActiveIndex(Math.max(items.length - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const item = items[activeIndex];
+      if (item) go(item.href);
+    }
+  }
+
+  const activeId = items[activeIndex] ? `${listId}-${activeIndex}` : undefined;
+
   return (
-    <div className="fixed inset-0 z-[80] flex items-start justify-center p-4 pt-[15vh]">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/40"
-        aria-label="Close command palette"
-        onClick={() => setOpen(false)}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
-        className="card relative z-10 w-full max-w-md overflow-hidden p-0 shadow-xl"
-      >
-        <input
-          autoFocus
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Jump to… or create"
-          className="input rounded-none border-0 border-b border-slate-200 focus:ring-0 dark:border-slate-700"
-          aria-label="Search pages"
-        />
-        <ul className="max-h-64 overflow-y-auto py-1">
-          {filteredActions.length > 0 && (
-            <>
-              <li className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                Actions
-              </li>
-              {filteredActions.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    className={clsx(
-                      "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm",
-                      "hover:bg-brand-50 dark:hover:bg-brand-950"
-                    )}
+    <dialog
+      ref={dialogRef}
+      aria-label="Command palette"
+      onCancel={(e) => {
+        e.preventDefault();
+        setOpen(false);
+      }}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) setOpen(false);
+      }}
+      className="mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-lg rounded-xl bg-transparent p-0"
+    >
+      {open && (
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800">
+          <div className="flex items-center gap-2 border-b border-slate-200 px-4 dark:border-slate-700">
+            <Icon name="search" className="h-4 w-4 shrink-0 text-slate-500" />
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setActiveIndex(0);
+              }}
+              onKeyDown={onInputKeyDown}
+              placeholder="Jump to a page or action…"
+              className="h-12 w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-500 dark:text-slate-100"
+              role="combobox"
+              aria-expanded="true"
+              aria-controls={listId}
+              aria-activedescendant={activeId}
+              aria-autocomplete="list"
+              aria-label="Search pages and actions"
+            />
+          </div>
+          <ul id={listId} role="listbox" aria-label="Results" className="max-h-80 overflow-y-auto py-1">
+            {items.length === 0 && <li className="px-4 py-6 text-center text-sm text-slate-500">No matches</li>}
+            {items.map((item, index) => {
+              const showGroup = index === 0 || items[index - 1].group !== item.group;
+              return (
+                <li key={item.id} role="presentation">
+                  {showGroup && (
+                    <p className="eyebrow px-4 pb-1 pt-2" aria-hidden="true">
+                      {item.group}
+                    </p>
+                  )}
+                  <div
+                    id={`${listId}-${index}`}
+                    role="option"
+                    aria-selected={index === activeIndex}
+                    onMouseMove={() => setActiveIndex(index)}
                     onClick={() => go(item.href)}
+                    className={clsx(
+                      "mx-1 flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm",
+                      index === activeIndex
+                        ? "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-200"
+                        : "text-slate-700 dark:text-slate-200"
+                    )}
                   >
-                    <Icon name={item.icon} className="h-4 w-4 text-brand-600" />
-                    {item.label}
-                  </button>
+                    <Icon name={item.icon} className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <span className="flex-1">{item.label}</span>
+                    {index === activeIndex && <Icon name="arrowRight" className="h-4 w-4 text-brand-500" />}
+                  </div>
                 </li>
-              ))}
-            </>
-          )}
-          {filteredNav.length > 0 && (
-            <li className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Pages
-            </li>
-          )}
-          {filteredNav.length === 0 && filteredActions.length === 0 && (
-            <li className="px-4 py-3 text-sm text-slate-400">No matches</li>
-          )}
-          {filteredNav.map((item) => (
-            <li key={item.href}>
-              <button
-                type="button"
-                className={clsx(
-                  "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm",
-                  "hover:bg-brand-50 dark:hover:bg-brand-950"
-                )}
-                onClick={() => go(item.href)}
-              >
-                <Icon name={item.icon} className="h-4 w-4 text-brand-600" />
-                {item.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-400 dark:border-slate-700">
-          <kbd className="rounded bg-slate-100 px-1 dark:bg-slate-800">⌘K</kbd> to open ·{" "}
-          <kbd className="rounded bg-slate-100 px-1 dark:bg-slate-800">Esc</kbd> to close
-        </p>
-      </div>
-    </div>
+              );
+            })}
+          </ul>
+          <p className="flex flex-wrap gap-x-3 border-t border-slate-100 px-4 py-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <span>
+              <kbd className="rounded bg-slate-100 px-1 font-sans dark:bg-slate-700">↑</kbd>{" "}
+              <kbd className="rounded bg-slate-100 px-1 font-sans dark:bg-slate-700">↓</kbd> to move
+            </span>
+            <span>
+              <kbd className="rounded bg-slate-100 px-1 font-sans dark:bg-slate-700">Enter</kbd> to open
+            </span>
+            <span className="hidden sm:inline">
+              <kbd className="rounded bg-slate-100 px-1 font-sans dark:bg-slate-700">{isMac ? "⌘K" : "Ctrl K"}</kbd> to toggle
+            </span>
+          </p>
+        </div>
+      )}
+    </dialog>
   );
 }

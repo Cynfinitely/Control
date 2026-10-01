@@ -2,12 +2,13 @@
 
 import { useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Icon from "@/components/Icon";
+import clsx from "clsx";
 import EmptyState from "@/components/EmptyState";
 import PendingIndicator from "@/components/PendingIndicator";
-import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import CheckButton from "@/components/CheckButton";
+import IconButton from "@/components/IconButton";
 import { useToast } from "@/components/Toast";
-import { formatDate } from "@/lib/date";
+import { formatDate, startOfDay } from "@/lib/date";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import { toggleTodo, deleteTodo, moveToBacklog, restoreTodo } from "./actions";
 import type { TodoItem } from "@/lib/queries/todos";
@@ -22,10 +23,10 @@ type OptimisticAction =
   | { type: "delete"; id: string }
   | { type: "backlog"; id: string };
 
-const PRIORITY_STYLE: Record<string, string> = {
-  high: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
-  medium: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300",
-  low: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300",
+const PRIORITY: Record<string, { label: string; className: string }> = {
+  high: { label: "High", className: "badge-danger" },
+  medium: { label: "Medium", className: "badge-muted" },
+  low: { label: "Low", className: "badge-muted" },
 };
 
 function applyOptimistic(todos: TodoItem[], action: OptimisticAction): TodoItem[] {
@@ -59,69 +60,71 @@ function TodoRow({
 }) {
   const isDone = todo.status === "done";
   const isOverdue =
-    !isDone && todo.dueDate && new Date(todo.dueDate) < new Date(new Date().toDateString());
+    !isDone && todo.dueDate && new Date(todo.dueDate) < startOfDay(new Date());
+  const priority = PRIORITY[todo.priority] ?? PRIORITY.medium;
 
   return (
-    <div className={`card flex items-start gap-3 ${compact ? "px-3 py-2" : "py-3"} ${isDone ? "opacity-70" : ""}`}>
-      <button
-        type="button"
+    <li className={clsx("flex items-center gap-3", compact ? "py-2" : "px-4 py-3")}>
+      <CheckButton
+        checked={isDone}
         disabled={pending}
-        onClick={() => onToggle(todo.id)}
-        className={`touch-target flex h-6 w-6 shrink-0 items-center justify-center rounded border disabled:opacity-50 ${
-          isDone
-            ? "border-brand-600 bg-brand-600 text-white"
-            : "border-slate-300 hover:border-brand-500 dark:border-slate-600"
-        }`}
-        aria-label={isDone ? "Mark open" : "Mark done"}
-      >
-        {isDone ? <Icon name="check" className="h-3.5 w-3.5" /> : null}
-      </button>
+        onChange={() => onToggle(todo.id)}
+        label={isDone ? `Mark “${todo.title}” not done` : `Mark “${todo.title}” done`}
+      />
       <div className="min-w-0 flex-1">
         <p
-          className={`${compact ? "text-sm" : ""} ${
-            isDone ? "text-slate-500 line-through dark:text-slate-400" : "font-medium text-slate-800 dark:text-slate-100"
-          }`}
+          className={clsx(
+            "break-words",
+            compact && "text-sm",
+            isDone ? "text-muted line-through" : "font-medium text-slate-800 dark:text-slate-100"
+          )}
         >
           {todo.title}
         </p>
         {!compact && (
-          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            <span className={`badge text-xs ${PRIORITY_STYLE[todo.priority] ?? PRIORITY_STYLE.medium}`}>
-              {todo.priority}
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className={priority.className}>
+              <span className="sr-only">Priority: </span>
+              {priority.label}
             </span>
-            {todo.category && (
-              <span className="badge bg-violet-50 text-xs text-violet-600 dark:bg-violet-950 dark:text-violet-300">{todo.category}</span>
-            )}
+            {todo.category && <span className="badge-brand">{todo.category}</span>}
             {todo.dueDate && (
-              <span className={`text-xs ${isOverdue ? "font-medium text-red-600 dark:text-red-400" : "text-slate-400"}`}>
-                due {formatDate(todo.dueDate)}
+              <span
+                className={clsx(
+                  "text-xs",
+                  isOverdue ? "font-medium text-red-700 dark:text-red-400" : "text-muted"
+                )}
+              >
+                Due {formatDate(todo.dueDate)}
                 {isOverdue ? " · overdue" : ""}
               </span>
             )}
           </div>
         )}
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-1">
-      {showBacklog && !isDone && (
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => onBacklog(todo.id)}
-          className="btn-ghost touch-target shrink-0 text-xs disabled:opacity-50"
-        >
-          Backlog
-        </button>
-      )}
-      {!compact && (
-        <DeleteConfirmButton
-          disabled={pending}
-          title="Delete todo?"
-          message={`Remove "${todo.title}"? This cannot be undone.`}
-          onConfirm={() => onDelete(todo.id)}
-        />
-      )}
+      <div className="flex shrink-0 items-center gap-1">
+        {showBacklog && !isDone && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onBacklog(todo.id)}
+            className="btn-ghost btn-sm min-h-[40px]"
+            aria-label={`Move “${todo.title}” to backlog`}
+          >
+            Backlog
+          </button>
+        )}
+        {!compact && (
+          <IconButton
+            icon="trash"
+            tone="danger"
+            disabled={pending}
+            onClick={() => onDelete(todo.id)}
+            aria-label={`Delete “${todo.title}”`}
+          />
+        )}
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -131,17 +134,26 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   const router = useRouter();
   const { success, error } = useToast();
 
-  function runAction(action: OptimisticAction, fn: () => Promise<{ ok: boolean; error?: string }>, undo?: () => void) {
+  function runAction(
+    action: OptimisticAction,
+    fn: () => Promise<{ ok: boolean; error?: string; message?: string }>,
+    after?: { message: string; undo?: () => void }
+  ) {
     startTransition(async () => {
       updateOptimistic(action);
-      const result = await fn();
+      let result: { ok: boolean; error?: string };
+      try {
+        result = await fn();
+      } catch {
+        result = { ok: false };
+      }
       if (!result.ok) {
         error(result.error ?? "Couldn't save — try again");
         router.refresh();
         return;
       }
-      if (undo) {
-        success("Todo deleted", { label: "Undo", onClick: undo });
+      if (after) {
+        success(after.message, after.undo ? { label: "Undo", onClick: after.undo } : undefined);
       }
     });
   }
@@ -155,79 +167,75 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   function handleDelete(id: string) {
     const fd = new FormData();
     fd.set("id", id);
-    runAction(
-      { type: "delete", id },
-      () => deleteTodo(fd),
-      () => {
+    runAction({ type: "delete", id }, () => deleteTodo(fd), {
+      message: "Todo deleted",
+      undo: () => {
         const restoreFd = new FormData();
         restoreFd.set("id", id);
         startTransition(async () => {
-          await restoreTodo(restoreFd);
+          const res = await restoreTodo(restoreFd);
           router.refresh();
-          success("Todo restored");
+          if (res.ok) success("Todo restored");
+          else error(res.error);
         });
-      }
-    );
+      },
+    });
   }
 
   function handleBacklog(id: string) {
     const fd = new FormData();
     fd.set("id", id);
-    runAction({ type: "backlog", id }, () => moveToBacklog(fd));
+    runAction({ type: "backlog", id }, () => moveToBacklog(fd), { message: "Moved to backlog" });
   }
 
   const open = optimisticTodos.filter((t) => t.status === "open");
   const done = optimisticTodos.filter((t) => t.status === "done");
 
+  const renderRows = (items: TodoItem[]) =>
+    items.map((t) => (
+      <TodoRow
+        key={t.id}
+        todo={t}
+        showBacklog={!compact}
+        compact={compact}
+        onToggle={handleToggle}
+        onDelete={handleDelete}
+        onBacklog={handleBacklog}
+        pending={isPending}
+      />
+    ));
+
+  if (compact) {
+    if (optimisticTodos.length === 0) return null;
+    return (
+      <div className={clsx("relative", isPending && "opacity-80")}>
+        <PendingIndicator pending={isPending} />
+        <ul className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-slate-700">
+          {renderRows([...open, ...done])}
+        </ul>
+      </div>
+    );
+  }
+
   return (
-    <div className={isPending ? "opacity-80" : ""}>
+    <div className={clsx("relative", isPending && "opacity-80")}>
       <PendingIndicator pending={isPending} />
       {optimisticTodos.length === 0 && (
-        compact ? (
-          <p className="text-sm text-slate-400">No todos for today yet.</p>
-        ) : (
-          <EmptyState
-            icon="check"
-            title="Your day is clear"
-            description="No todos scheduled for this day. Add one above to get started."
-            tip="Use priority and category tags to stay organized."
-          />
-        )
+        <EmptyState
+          icon="check"
+          title="Your day is clear"
+          description="No todos for this day. Add one above to get started."
+        />
       )}
-      <div className="space-y-2">
+      <div className="space-y-4">
         {open.length > 0 && (
-          <CollapsibleSection title="Open" count={open.length} defaultOpen>
-            <div className="space-y-2">
-              {open.map((t) => (
-                <TodoRow
-                  key={t.id}
-                  todo={t}
-                  showBacklog={!compact}
-                  compact={compact}
-                  onToggle={handleToggle}
-                  onDelete={handleDelete}
-                  onBacklog={handleBacklog}
-                  pending={isPending}
-                />
-              ))}
-            </div>
+          <CollapsibleSection title="Open" count={open.length} defaultOpen as="h2">
+            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">{renderRows(open)}</ul>
           </CollapsibleSection>
         )}
         {done.length > 0 && (
-          <CollapsibleSection title="Done" count={done.length} className={open.length > 0 ? "mt-3" : undefined}>
-            <div className="space-y-2">
-              {done.map((t) => (
-                <TodoRow
-                  key={t.id}
-                  todo={t}
-                  compact={compact}
-                  onToggle={handleToggle}
-                  onDelete={handleDelete}
-                  onBacklog={handleBacklog}
-                  pending={isPending}
-                />
-              ))}
-            </div>
+          <CollapsibleSection title="Done" count={done.length} as="h2">
+            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">{renderRows(done)}</ul>
           </CollapsibleSection>
         )}
       </div>

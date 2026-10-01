@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/Icon";
+import EmptyState from "@/components/EmptyState";
 import type { InspirationItem } from "@/lib/queries/inspirations";
 
 type Props = {
   items: InspirationItem[];
-  compact?: boolean;
 };
 
 function pickRandom(items: InspirationItem[], excludeId?: string): InspirationItem {
@@ -15,13 +15,12 @@ function pickRandom(items: InspirationItem[], excludeId?: string): InspirationIt
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-export default function InspirationSpotlight({ items, compact = false }: Props) {
+/** A random saved inspiration. The card reserves its height so the quote doesn't shift the page in. */
+export default function InspirationSpotlight({ items }: Props) {
   const [current, setCurrent] = useState<InspirationItem | null>(null);
 
   useEffect(() => {
-    if (items.length > 0) {
-      setCurrent(pickRandom(items));
-    }
+    setCurrent(items.length > 0 ? pickRandom(items) : null);
   }, [items]);
 
   const shuffle = useCallback(() => {
@@ -31,71 +30,49 @@ export default function InspirationSpotlight({ items, compact = false }: Props) 
 
   if (items.length === 0) {
     return (
-      <div className={`card border-l-4 border-l-brand-400 ${compact ? "" : "mb-6"}`}>
-        <div className="flex items-start gap-3">
-          <Icon name="sparkles" className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
-          <div>
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              Add a quote or note that motivates you — it will appear here when you need inspiration.
-            </p>
-            <Link href="/dashboard/inspirations" className="btn-ghost mt-3 inline-flex text-xs">
-              Add inspirations
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!current) return null;
-
-  if (compact) {
-    return (
-      <div className="card flex items-start gap-3 py-4">
-        <Icon name="sparkles" className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
-            &ldquo;{current.text}&rdquo;
-          </p>
-          {current.author && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">— {current.author}</p>}
-          <div className="mt-2 flex flex-wrap gap-2">
-            {items.length > 1 && (
-              <button type="button" onClick={shuffle} className="text-xs text-brand-600 hover:underline">
-                Another
-              </button>
-            )}
-            <Link href="/dashboard/inspirations" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-              Manage
-            </Link>
-          </div>
-        </div>
-      </div>
+      <section className="card" aria-label="Inspiration">
+        <EmptyState
+          variant="inline"
+          headingLevel="h2"
+          icon="sparkles"
+          title="Add an inspiration"
+          description="Save a quote or note that motivates you — one will appear here each visit."
+          actionLabel="Add inspirations"
+          actionHref="/dashboard/inspirations"
+        />
+      </section>
     );
   }
 
   return (
-    <div className="card mb-6 border-l-4 border-l-brand-400">
-      <div className="flex items-start gap-3">
-        <Icon name="sparkles" className="mt-1 h-5 w-5 shrink-0 text-brand-500" />
-        <div className="min-w-0 flex-1">
-          <p className="text-lg leading-relaxed text-slate-800 dark:text-slate-100">
-            &ldquo;{current.text}&rdquo;
-          </p>
-          {current.author && (
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">— {current.author}</p>
-          )}
-          <div className="mt-4 flex flex-wrap gap-2">
-            {items.length > 1 && (
-              <button type="button" onClick={shuffle} className="btn-ghost text-xs">
-                Another one
-              </button>
-            )}
-            <Link href="/dashboard/inspirations" className="btn-ghost text-xs">
-              Manage inspirations
-            </Link>
+    <section className="card flex min-h-[9.5rem] items-start gap-3" aria-label="Inspiration">
+      <Icon name="sparkles" className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
+      <div className="flex min-w-0 flex-1 flex-col self-stretch">
+        {current ? (
+          <figure aria-live="polite">
+            <blockquote className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+              &ldquo;{current.text}&rdquo;
+            </blockquote>
+            {current.author && <figcaption className="mt-1 text-xs text-muted">— {current.author}</figcaption>}
+          </figure>
+        ) : (
+          <div aria-hidden="true" className="space-y-2">
+            <div className="skeleton h-4 w-full" />
+            <div className="skeleton h-4 w-3/4" />
+            <div className="skeleton h-3 w-24" />
           </div>
+        )}
+        <div className="mt-auto flex flex-wrap gap-2 pt-3">
+          {items.length > 1 && (
+            <button type="button" onClick={shuffle} className="btn-ghost btn-sm min-h-[40px]">
+              Another
+            </button>
+          )}
+          <Link href="/dashboard/inspirations" className="btn-ghost btn-sm min-h-[40px]">
+            Manage
+          </Link>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

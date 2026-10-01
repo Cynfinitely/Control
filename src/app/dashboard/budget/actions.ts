@@ -8,7 +8,8 @@ import { revalidateUserCache } from "@/lib/cache";
 import { parseAmountToCents } from "@/lib/budget";
 import { ensureBudgetCategories } from "@/lib/budget-categories";
 import { parseNordeaCsv, NordeaParseError } from "@/lib/budget/nordea-csv";
-import { success, failure, wrapFormAction } from "@/lib/action-result";
+import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import { toDateInputValue, toMonthKey } from "@/lib/date";
 
 function invalidateBudget(userId: string) {
   revalidateUserCache(userId, "dashboard", "budget");
@@ -40,6 +41,10 @@ export type ImportBudgetResult = {
   skippedDuplicates: number;
   autoCategorized: number;
   uncategorized: number;
+  /** First/last transaction date in the file (YYYY-MM-DD) and the month of the latest one. */
+  dateFrom: string | null;
+  dateTo: string | null;
+  monthKey: string | null;
   message: string;
 };
 
@@ -113,6 +118,11 @@ export async function importNordeaFile(
   const dates = parsed.transactions.map((t) => t.date.getTime());
   const dateFrom = new Date(Math.min(...dates));
   const dateTo = new Date(Math.max(...dates));
+  const range = {
+    dateFrom: toDateInputValue(dateFrom) || null,
+    dateTo: toDateInputValue(dateTo) || null,
+    monthKey: isNaN(dateTo.getTime()) ? null : toMonthKey(dateTo),
+  };
 
   const resolveCategory = (merchantKey: string) => ruleMap.get(merchantKey) ?? null;
   const autoCategorized =
@@ -131,7 +141,8 @@ export async function importNordeaFile(
       uncategorized: await prisma.budgetTransaction.count({
         where: { userId, deletedAt: null, categoryId: null },
       }),
-      message: `Nothing new to import · skipped ${skippedDuplicates} duplicates`,
+      ...range,
+      message: `Nothing new to import · ${skippedDuplicates} duplicates skipped`,
     };
   }
 
@@ -214,11 +225,12 @@ export async function importNordeaFile(
     skippedDuplicates,
     autoCategorized,
     uncategorized,
-    message: `Imported ${imported} · skipped ${skippedDuplicates} duplicates · ${autoCategorized} auto-categorized`,
+    ...range,
+    message: `Imported ${imported} · ${skippedDuplicates} duplicates skipped · ${autoCategorized} auto-categorized`,
   };
 }
 
-export async function categorizeTransaction(formData: FormData) {
+export async function categorizeTransaction(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   await ensureBudgetCategories(userId);
 
@@ -239,21 +251,37 @@ export async function categorizeTransaction(formData: FormData) {
     data: { categoryId: category.id },
   });
 
+  let alsoApplied = 0;
   if (tx.merchantKey) {
     await prisma.budgetCategoryRule.upsert({
       where: { userId_merchantKey: { userId, merchantKey: tx.merchantKey } },
       update: { categoryId: category.id },
       create: { userId, merchantKey: tx.merchantKey, categoryId: category.id },
     });
+    // The rule only applies to future imports; also apply it to the rest of the queue.
+    const others = await prisma.budgetTransaction.updateMany({
+      where: {
+        userId,
+        deletedAt: null,
+        categoryId: null,
+        merchantKey: tx.merchantKey,
+        type: tx.type,
+        id: { not: tx.id },
+      },
+      data: { categoryId: category.id },
+    });
+    alsoApplied = others.count;
   }
 
   invalidateBudget(userId);
-  return success("Category saved");
+  if (!tx.merchantKey) return success(`Categorized as ${category.name}`);
+  const also = alsoApplied > 0 ? ` · also applied to ${alsoApplied} more from ${tx.merchantKey}` : "";
+  return success(`Categorized as ${category.name}${also} · future imports will match`);
 }
 
 export const categorizeTransactionForm = wrapFormAction(categorizeTransaction, "Category saved");
 
-export async function categorizeTransactionsBulk(formData: FormData) {
+export async function categorizeTransactionsBulk(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   await ensureBudgetCategories(userId);
 
@@ -288,7 +316,7 @@ export async function categorizeTransactionsBulk(formData: FormData) {
   }
 
   invalidateBudget(userId);
-  return success(`Categorized ${txs.length} transactions`);
+  return success(`Categorized ${txs.length} ${txs.length === 1 ? "transaction" : "transactions"} as ${category.name}`);
 }
 
 export const categorizeTransactionsBulkForm = wrapFormAction(
@@ -318,7 +346,7 @@ export async function undoImportBatch(formData: FormData) {
   ]);
 
   invalidateBudget(userId);
-  return success("Import undone");
+  return success(`Import undone · removed ${batch.rowCount} transactions from ${batch.filename}`);
 }
 
 export const undoImportBatchForm = wrapFormAction(undoImportBatch, "Import undone");
@@ -376,21 +404,24 @@ export async function updateTransaction(formData: FormData) {
 
 export const updateTransactionForm = wrapFormAction(updateTransaction, "Transaction updated");
 
-export async function deleteTransaction(formData: FormData) {
+export async function deleteTransaction(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  await prisma.budgetTransaction.updateMany({
-    where: { id, userId },
+  const result = await prisma.budgetTransaction.updateMany({
+    where: { id, userId, deletedAt: null },
     data: { deletedAt: new Date() },
   });
+  if (result.count === 0) return failure("Transaction not found");
   invalidateBudget(userId);
+  return success("Transaction deleted");
 }
 
-export async function addCategory(formData: FormData) {
+export async function addCategory(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const name = str(formData.get("name"));
   const kind = str(formData.get("kind"));
-  if (!name || (kind !== "income" && kind !== "expense")) return;
+  if (!name) return failure("Enter a category name");
+  if (kind !== "income" && kind !== "expense") return failure("Invalid category type");
 
   const slugBase = name
     .toLowerCase()
@@ -414,42 +445,46 @@ export async function addCategory(formData: FormData) {
     },
   });
   invalidateBudget(userId);
+  return success(`Added “${name}”`);
 }
 
-export async function renameCategory(formData: FormData) {
+export async function renameCategory(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const name = str(formData.get("name"));
-  if (!name) return;
+  if (!name) return failure("Enter a category name");
 
-  await prisma.budgetCategory.updateMany({
+  const result = await prisma.budgetCategory.updateMany({
     where: { id, userId },
     data: { name },
   });
+  if (result.count === 0) return failure("Category not found");
   invalidateBudget(userId);
+  return success(`Renamed to “${name}”`);
 }
 
-export async function toggleCategoryHidden(formData: FormData) {
+export async function toggleCategoryHidden(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const category = await prisma.budgetCategory.findFirst({ where: { id, userId } });
-  if (!category) return;
+  if (!category) return failure("Category not found");
 
   await prisma.budgetCategory.updateMany({
     where: { id, userId },
     data: { isHidden: !category.isHidden },
   });
   invalidateBudget(userId);
+  return success(category.isHidden ? `“${category.name}” is visible again` : `“${category.name}” hidden`);
 }
 
-export async function moveCategory(formData: FormData) {
+export async function moveCategory(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const direction = str(formData.get("direction"));
-  if (direction !== "up" && direction !== "down") return;
+  if (direction !== "up" && direction !== "down") return failure("Invalid direction");
 
   const category = await prisma.budgetCategory.findFirst({ where: { id, userId } });
-  if (!category) return;
+  if (!category) return failure("Category not found");
 
   const siblings = await prisma.budgetCategory.findMany({
     where: { userId, kind: category.kind },
@@ -458,7 +493,9 @@ export async function moveCategory(formData: FormData) {
 
   const index = siblings.findIndex((c) => c.id === id);
   const swapIndex = direction === "up" ? index - 1 : index + 1;
-  if (swapIndex < 0 || swapIndex >= siblings.length) return;
+  if (swapIndex < 0 || swapIndex >= siblings.length) {
+    return failure(direction === "up" ? "Already at the top" : "Already at the bottom");
+  }
 
   const other = siblings[swapIndex];
   await prisma.$transaction([
@@ -472,6 +509,7 @@ export async function moveCategory(formData: FormData) {
     }),
   ]);
   invalidateBudget(userId);
+  return success(`Moved “${category.name}” ${direction}`);
 }
 
 /** Wipe transactions, imports, and merchant rules. Keeps categories. */
@@ -498,10 +536,10 @@ export async function resetBudgetData(formData: FormData) {
   ]);
 
   invalidateBudget(userId);
-  return success("Budget data cleared — import your July file next");
+  return success("Budget data cleared. Import a statement to start again.");
 }
 
 export const resetBudgetDataForm = wrapFormAction(
   resetBudgetData,
-  "Budget data cleared — import your July file next"
+  "Budget data cleared. Import a statement to start again."
 );

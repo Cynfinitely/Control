@@ -1,6 +1,8 @@
 "use client";
 
+import clsx from "clsx";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import Modal from "@/components/Modal";
 import type { OccurrenceScope } from "@/lib/calendar/types";
 
 type Props = {
@@ -10,62 +12,69 @@ type Props = {
   onCancel: () => void;
 };
 
-export default function OccurrenceScopeDialog({ open, mode, onChoose, onCancel }: Props) {
-  if (!open) return null;
+const OPTIONS: { scope: OccurrenceScope; label: string; hint: string }[] = [
+  { scope: "this", label: "This occurrence", hint: "Only this date changes." },
+  { scope: "thisAndFuture", label: "This and following", hint: "This date and every one after it." },
+  { scope: "all", label: "Entire series", hint: "Every occurrence, past and future." },
+];
 
-  const verb = mode === "delete" ? "Delete" : "Edit";
+export default function OccurrenceScopeDialog({ open, mode, onChoose, onCancel }: Props) {
+  const isDelete = mode === "delete";
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-black/40" aria-label="Cancel" onClick={onCancel} />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${verb} recurring event`}
-        className="card relative z-10 w-full max-w-sm space-y-3 shadow-xl"
-      >
-        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-          {verb} recurring event
-        </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">This is part of a series. What should change?</p>
-        <div className="flex flex-col gap-2">
-          <button type="button" className="btn touch-target justify-start" onClick={() => onChoose("this")}>
-            This occurrence
-          </button>
+    <Modal
+      open={open}
+      onClose={onCancel}
+      title={isDelete ? "Delete recurring event" : "Save recurring event"}
+      description={isDelete ? "Which occurrences do you want to delete?" : "Which occurrences should this change apply to?"}
+      size="sm"
+      footer={
+        <button type="button" className="btn-ghost" onClick={onCancel} data-autofocus>
+          Cancel
+        </button>
+      }
+    >
+      <div className="flex flex-col gap-2">
+        {OPTIONS.map((opt) => (
           <button
+            key={opt.scope}
             type="button"
-            className="btn touch-target justify-start"
-            onClick={() => onChoose("thisAndFuture")}
+            onClick={() => onChoose(opt.scope)}
+            className={clsx(
+              "flex flex-col items-start rounded-lg px-4 py-3 text-left ring-1 ring-inset transition",
+              isDelete
+                ? "ring-red-200 hover:bg-red-50 dark:ring-red-900 dark:hover:bg-red-950"
+                : "ring-slate-200 hover:bg-slate-50 dark:ring-slate-700 dark:hover:bg-slate-700/50"
+            )}
           >
-            This and future
+            <span className={clsx("text-sm font-medium", isDelete ? "text-red-700 dark:text-red-400" : "text-slate-900 dark:text-slate-100")}>
+              {isDelete ? `Delete ${opt.label.toLowerCase()}` : opt.label}
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{opt.hint}</span>
           </button>
-          <button type="button" className="btn touch-target justify-start" onClick={() => onChoose("all")}>
-            Entire series
-          </button>
-          <button type="button" className="btn-ghost touch-target" onClick={onCancel}>
-            Cancel
-          </button>
-        </div>
+        ))}
       </div>
-    </div>
+    </Modal>
   );
 }
 
-/** Simple confirm for non-recurring deletes — re-export pattern helper */
+/** Confirm for non-recurring deletes. */
 export function DeleteConfirm({
   open,
   onConfirm,
   onCancel,
+  title = "Delete event?",
 }: {
   open: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  title?: string;
 }) {
   return (
     <ConfirmDialog
       open={open}
-      title="Delete event?"
-      message="This cannot be undone."
+      title={title}
+      message="This can't be undone."
       confirmLabel="Delete"
       variant="danger"
       onConfirm={onConfirm}
