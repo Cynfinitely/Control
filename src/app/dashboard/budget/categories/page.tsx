@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { getBudgetCategories, getUncategorizedCount } from "@/lib/queries/budget";
 import PageHeader from "@/components/PageHeader";
 import Breadcrumb from "@/components/Breadcrumb";
@@ -139,7 +139,7 @@ function CategorySection({
 }
 
 export default async function BudgetCategoriesPage() {
-  const user = await requireUser();
+  const user = await requireModule("budget");
   const [categories, uncategorizedCount] = await Promise.all([
     getBudgetCategories(user.id, true),
     getUncategorizedCount(user.id),
@@ -147,7 +147,7 @@ export default async function BudgetCategoriesPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="budget:categories"
         title="Budget categories"
         description="Rename, reorder or hide preset categories, or add your own. Hidden categories disappear from pickers."
         breadcrumb={<Breadcrumb items={[{ label: "Budget", href: "/dashboard/budget" }, { label: "Categories" }]} />}

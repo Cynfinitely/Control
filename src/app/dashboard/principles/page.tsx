@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { getActivePrinciples, getPrincipleReviewedToday } from "@/lib/queries/principles";
 import PageHeader from "@/components/PageHeader";
 import PrinciplesView from "./PrinciplesView";
@@ -6,7 +6,7 @@ import PrinciplesView from "./PrinciplesView";
 export const metadata = { title: "Principles" };
 
 export default async function PrinciplesPage() {
-  const user = await requireUser();
+  const user = await requireModule("principles");
   const [principles, reviewedToday] = await Promise.all([
     getActivePrinciples(user.id),
     getPrincipleReviewedToday(user.id),
@@ -14,7 +14,7 @@ export default async function PrinciplesPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="principles"
         title="Principles"
         description="Read your guardrails as one list. Use Manage only when you need to change them."
       />

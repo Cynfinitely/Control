@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue, formatDate } from "@/lib/date";
 import { activityLabel, formatWorkoutSummary } from "@/lib/exercise/session";
 import PageHeader from "@/components/PageHeader";
@@ -26,7 +26,7 @@ const ACTIVITY_ICONS: Record<string, string> = {
 };
 
 export default async function ExercisePage() {
-  const user = await requireUser();
+  const user = await requireModule("exercise");
   const now = new Date();
   const todayValue = toDateInputValue(now);
   const [workouts, weights, measurements, programs] = await Promise.all([
@@ -59,13 +59,13 @@ export default async function ExercisePage() {
 
   return (
     <div>
-      <PageHeader title="Exercise" description="Log runs, walks, swims, gym sessions, and body metrics." />
+      <PageHeader help="exercise" title="Exercise" description="Log runs, walks, swims, gym sessions, and body metrics." />
 
       <ProgramsSection programs={programs} todayValue={todayValue} />
 
       <div className="mb-8">
         <FocusTarget value="log">
-          <LogActivityCard todayValue={todayValue} />
+          <LogActivityCard todayValue={todayValue} userId={user.id} />
         </FocusTarget>
       </div>
 

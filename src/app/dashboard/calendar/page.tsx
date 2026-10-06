@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import {
   addDays,
@@ -33,7 +33,7 @@ export default async function CalendarPage({
     new?: string;
   };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("calendar");
   const profile = await prisma.user.findUnique({
     where: { id: user.id },
     select: { timezone: true },
@@ -111,7 +111,7 @@ export default async function CalendarPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="calendar"
         title="Calendar"
         description="Events, reminders, and what is coming up — separate from your daily plan."
       />

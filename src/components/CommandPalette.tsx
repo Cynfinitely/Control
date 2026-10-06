@@ -3,7 +3,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { navSections } from "@/lib/nav";
+import { visibleNavSections } from "@/lib/nav";
+import { moduleFilter, type ModuleId } from "@/lib/modules";
 import Icon from "@/components/Icon";
 
 export const OPEN_COMMAND_PALETTE_EVENT = "control:open-command-palette";
@@ -13,18 +14,24 @@ export function openCommandPalette() {
   window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE_EVENT));
 }
 
-type Item = { id: string; label: string; icon: string; href: string; group: "Actions" | "Pages" };
+type Item = { id: string; label: string; icon: string; href: string; group: "Actions" | "Pages"; module?: ModuleId };
 
 const ACTIONS: Item[] = [
-  { id: "new-event", label: "New event", icon: "calendar", href: "/dashboard/calendar?view=month&new=event", group: "Actions" },
-  { id: "new-reminder", label: "New reminder", icon: "bell", href: "/dashboard/calendar?view=agenda&new=reminder", group: "Actions" },
-  { id: "add-todo", label: "Add todo", icon: "check", href: "/dashboard/todos?focus=add", group: "Actions" },
-  { id: "log-food", label: "Log food", icon: "food", href: "/dashboard/food?focus=log", group: "Actions" },
-  { id: "log-workout", label: "Log workout", icon: "dumbbell", href: "/dashboard/exercise?focus=log", group: "Actions" },
-  { id: "write-journal", label: "Write journal entry", icon: "book", href: "/dashboard/journal?focus=add", group: "Actions" },
+  { id: "new-event", label: "New event", icon: "calendar", href: "/dashboard/calendar?view=month&new=event", group: "Actions", module: "calendar" },
+  { id: "new-reminder", label: "New reminder", icon: "bell", href: "/dashboard/calendar?view=agenda&new=reminder", group: "Actions", module: "calendar" },
+  { id: "add-todo", label: "Add todo", icon: "check", href: "/dashboard/todos?focus=add", group: "Actions", module: "todos" },
+  { id: "log-food", label: "Log food", icon: "food", href: "/dashboard/food?focus=log", group: "Actions", module: "food" },
+  { id: "log-workout", label: "Log workout", icon: "dumbbell", href: "/dashboard/exercise?focus=log", group: "Actions", module: "exercise" },
+  { id: "write-journal", label: "Write journal entry", icon: "book", href: "/dashboard/journal?focus=add", group: "Actions", module: "journal" },
 ];
 
-export default function CommandPalette({ isAdmin = false }: { isAdmin?: boolean }) {
+export default function CommandPalette({
+  isAdmin = false,
+  disabledModules = [],
+}: {
+  isAdmin?: boolean;
+  disabledModules?: ModuleId[];
+}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -71,13 +78,13 @@ export default function CommandPalette({ isAdmin = false }: { isAdmin?: boolean 
 
   const items = useMemo(() => {
     const pages: Item[] = [
-      ...navSections.flatMap((s) => s.items),
+      ...visibleNavSections(disabledModules).flatMap((s) => s.items),
       { href: "/dashboard/settings", label: "Settings", icon: "settings" },
       ...(isAdmin ? [{ href: "/dashboard/admin", label: "Admin", icon: "users" }] : []),
     ].map((p) => ({ ...p, id: p.href, group: "Pages" as const }));
     const q = query.trim().toLowerCase();
-    return [...ACTIONS, ...pages].filter((item) => item.label.toLowerCase().includes(q));
-  }, [query, isAdmin]);
+    return [...moduleFilter(disabledModules).keep(ACTIONS), ...pages].filter((item) => item.label.toLowerCase().includes(q));
+  }, [query, isAdmin, disabledModules]);
 
   useEffect(() => {
     setActiveIndex((i) => Math.min(i, Math.max(items.length - 1, 0)));

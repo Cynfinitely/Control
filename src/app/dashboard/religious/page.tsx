@@ -1,6 +1,6 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue, formatDate, formatDayLabel, parseDayParam } from "@/lib/date";
-import { getDayPrayers, getPrayerStreak, getReligiousSidebarData } from "@/lib/queries/religious";
+import { getDayPrayers, getDayMadeUpPrayers, getPrayerStreak, getReligiousSidebarData } from "@/lib/queries/religious";
 import { historicalDebtRemaining, prayerDebtRemaining, PRAYERS } from "@/lib/prayer-debt";
 import { groupPendingQaza, prayerLabel } from "@/lib/religious/day-prayers";
 import { khatmPercent, QURAN_TOTAL_PAGES } from "@/lib/quran";
@@ -54,17 +54,20 @@ export default async function ReligiousPage({
 }: {
   searchParams: { day?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("religious");
   const now = new Date();
   const today = new Date(toDateInputValue(now) + "T00:00:00");
-  const day = parseDayParam(searchParams.day);
+  // A future day typed into the URL falls back to today.
+  const requestedDay = parseDayParam(searchParams.day);
+  const day = requestedDay.getTime() > today.getTime() ? today : requestedDay;
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
   const isToday = day.getTime() === today.getTime();
   const todayValue = toDateInputValue(now);
 
-  const [dayPrayers, streak, sidebar] = await Promise.all([
+  const [dayPrayers, madeUpPrayers, streak, sidebar] = await Promise.all([
     getDayPrayers(user.id, dayValue),
+    getDayMadeUpPrayers(user.id, dayValue),
     getPrayerStreak(user.id, todayValue),
     getReligiousSidebarData(user.id, todayValue),
   ]);
@@ -88,13 +91,34 @@ export default async function ReligiousPage({
     .filter((d) => d.remaining > 0)
     .sort((a, b) => PRAYERS.indexOf(a.prayer as never) - PRAYERS.indexOf(b.prayer as never));
 
+  const hasHistoricalDebt = prayerDebts.some((d) => d.owed > 0);
+  // The note and period are the same on every row; take them from one that has them.
+  const debtNote = prayerDebts.find((d) => d.note)?.note;
+  const debtPeriod = prayerDebts.find((d) => d.periodStart || d.periodEnd);
+  const clearDebtForm = (
+    <ActionForm
+      action={clearPrayerDebt}
+      confirm={{
+        title: "Clear all historical prayer debt?",
+        message:
+          "Every owed count and all fulfilment progress for historical debt will be deleted. Daily qaza is not affected.",
+        confirmLabel: "Clear debt",
+      }}
+    >
+      <SubmitButton className="btn-danger touch-target">
+        <Icon name="trash" className="h-4 w-4" />
+        Clear all historical debt
+      </SubmitButton>
+    </ActionForm>
+  );
+
   const dhikrTotal = dhikr.reduce((s, d) => s + d.count, 0);
   const dayName = isToday ? "today" : dayLabel === "Yesterday" ? "yesterday" : dayLabel;
   const prayerSectionTitle = `Prayers for ${dayName}`;
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="religious"
         title="Religious"
         description="Track daily prayers, qaza, dhikr, Quran khatm, daily readings, and fasting."
       />
@@ -136,7 +160,7 @@ export default async function ReligiousPage({
             </span>
           </p>
         )}
-        <PrayerStatusPanel key={dayValue} dayValue={dayValue} dayName={dayName} initialStatuses={prayerStatuses} />
+        <PrayerStatusPanel key={dayValue} dayValue={dayValue} dayName={dayName} initialStatuses={prayerStatuses} madeUp={madeUpPrayers} />
       </section>
 
       {qazaGroups.length > 0 && (
@@ -219,10 +243,10 @@ export default async function ReligiousPage({
         </h2>
         {debtWithRemaining.length > 0 ? (
           <div className="space-y-4">
-            {prayerDebts[0]?.note && <p className="text-sm text-muted">{prayerDebts[0].note}</p>}
-            {(prayerDebts[0]?.periodStart || prayerDebts[0]?.periodEnd) && (
+            {debtNote && <p className="text-sm text-muted">{debtNote}</p>}
+            {debtPeriod && (
               <p className="text-xs text-muted">
-                Period: {formatDate(prayerDebts[0]?.periodStart)} – {formatDate(prayerDebts[0]?.periodEnd)}
+                Period: {formatDate(debtPeriod.periodStart)} – {formatDate(debtPeriod.periodEnd)}
               </p>
             )}
             <ul className="space-y-4">
@@ -269,20 +293,15 @@ export default async function ReligiousPage({
                 );
               })}
             </ul>
-            <ActionForm
-              action={clearPrayerDebt}
-              confirm={{
-                title: "Clear all historical prayer debt?",
-                message:
-                  "Every owed count and all fulfilment progress for historical debt will be deleted. Daily qaza is not affected.",
-                confirmLabel: "Clear debt",
-              }}
-            >
-              <SubmitButton className="btn-danger touch-target">
-                <Icon name="trash" className="h-4 w-4" />
-                Clear all historical debt
-              </SubmitButton>
-            </ActionForm>
+            {clearDebtForm}
+          </div>
+        ) : hasHistoricalDebt ? (
+          <div className="mb-2 space-y-3">
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              All historical debt is fulfilled ({prayerDebts.reduce((sum, d) => sum + d.fulfilled, 0)} prayers made up).
+              You can keep it as a record, change it below, or clear it.
+            </p>
+            {clearDebtForm}
           </div>
         ) : (
           <p className="mb-2 text-sm text-muted">
@@ -290,7 +309,7 @@ export default async function ReligiousPage({
           </p>
         )}
         <CollapsibleSection
-          title={debtWithRemaining.length > 0 ? "Update historical debt" : "Set up historical debt"}
+          title={hasHistoricalDebt ? "Update historical debt" : "Set up historical debt"}
           className="mt-4"
         >
           <PrayerDebtSetup existingDebts={prayerDebts} />

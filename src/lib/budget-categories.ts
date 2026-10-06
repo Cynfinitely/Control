@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 const PRESET_EXPENSE = [
@@ -23,26 +24,33 @@ export async function ensureBudgetCategories(userId: string) {
   const count = await prisma.budgetCategory.count({ where: { userId } });
   if (count > 0) return;
 
-  await prisma.budgetCategory.createMany({
-    data: [
-      ...PRESET_EXPENSE.map((c) => ({
-        userId,
-        slug: c.slug,
-        name: c.name,
-        kind: "expense",
-        icon: c.icon,
-        sortOrder: c.sortOrder,
-        isPreset: true,
-      })),
-      ...PRESET_INCOME.map((c) => ({
-        userId,
-        slug: c.slug,
-        name: c.name,
-        kind: "income",
-        icon: c.icon,
-        sortOrder: c.sortOrder,
-        isPreset: true,
-      })),
-    ],
-  });
+  try {
+    await prisma.budgetCategory.createMany({
+      data: [
+        ...PRESET_EXPENSE.map((c) => ({
+          userId,
+          slug: c.slug,
+          name: c.name,
+          kind: "expense",
+          icon: c.icon,
+          sortOrder: c.sortOrder,
+          isPreset: true,
+        })),
+        ...PRESET_INCOME.map((c) => ({
+          userId,
+          slug: c.slug,
+          name: c.name,
+          kind: "income",
+          icon: c.icon,
+          sortOrder: c.sortOrder,
+          isPreset: true,
+        })),
+      ],
+    });
+  } catch (error) {
+    // Several queries can run this at once on a new user's first visit. The
+    // insert is atomic, so a unique-constraint failure means another call won.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return;
+    throw error;
+  }
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import clsx from "clsx";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { getPeriodKey } from "@/lib/period";
 import { startOfWeek, addDays, toDateInputValue, formatDate, endOfDay } from "@/lib/date";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
@@ -10,7 +10,9 @@ import { getGoalsForPeriod } from "@/lib/queries/goals";
 import { getWeekExpenseTotal } from "@/lib/queries/budget";
 import { getOverduePeople } from "@/lib/queries/networking";
 import { formatEuro } from "@/lib/budget";
-import { REVIEW_STEPS, parseCompletedSteps, reviewProgress, type ReviewStepId } from "@/lib/review";
+import { activeReviewSteps, parseCompletedSteps, reviewProgress, type ReviewStepId } from "@/lib/review";
+import { getDisabledModules } from "@/lib/queries/modules";
+import { moduleFilter } from "@/lib/modules";
 import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import EmptyState from "@/components/EmptyState";
@@ -25,7 +27,7 @@ export const metadata = { title: "Weekly review" };
 const stepAnchor = (id: ReviewStepId) => `step-${id}`;
 
 export default async function WeeklyReviewPage() {
-  const user = await requireUser();
+  const user = await requireModule("review");
   const now = new Date();
   // getPeriodKey/startOfWeek mutate a Date argument; pass copies so `now` stays intact.
   const weekKey = getPeriodKey("weekly", new Date(now));
@@ -43,6 +45,7 @@ export default async function WeeklyReviewPage() {
     weekExpensesCents,
     review,
     lastCompleted,
+    disabledModules,
   ] = await Promise.all([
     getBacklogTodos(user.id),
     getStaleOpenTodoCount(user.id),
@@ -70,17 +73,22 @@ export default async function WeeklyReviewPage() {
       orderBy: { completedAt: "desc" },
       select: { completedAt: true },
     }),
+    getDisabledModules(user.id),
   ]);
+
+  // Steps and numbers for modules the user switched off are left out.
+  const modules = moduleFilter(disabledModules);
+  const steps = activeReviewSteps(disabledModules);
 
   const pendingQaza = pendingQazaDaily + historicalDebtRemaining(prayerDebts);
   const completedGoals = goals.filter((g) => g.status === "completed").length;
   const activeGoals = goals.length - completedGoals;
 
   const doneSteps = parseCompletedSteps(review?.completedSteps);
-  const progress = reviewProgress(doneSteps);
+  const progress = reviewProgress(doneSteps, steps);
   const remaining = progress.total - progress.done;
   const isCompleted = Boolean(review?.completedAt);
-  const pct = Math.round((progress.done / progress.total) * 100);
+  const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
 
   const description = [
     `Week of ${formatDate(weekStart)}`,
@@ -184,21 +192,33 @@ export default async function WeeklyReviewPage() {
     ),
     "plan-ahead": (
       <div className="space-y-3">
-        <p className="text-sm text-slate-700 dark:text-slate-300">
-          {shoppingRemaining > 0
-            ? `${shoppingRemaining} shopping item${shoppingRemaining === 1 ? "" : "s"} left for this week's meal plan.`
-            : "Meal plan shopping looks complete."}
-        </p>
+        {modules.has("food") ? (
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            {shoppingRemaining > 0
+              ? `${shoppingRemaining} shopping item${shoppingRemaining === 1 ? "" : "s"} left for this week's meal plan.`
+              : "Meal plan shopping looks complete."}
+          </p>
+        ) : (
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            Decide the two or three things that matter most next week, and write them in the notes below.
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
-          <Link href={`/dashboard/plan?day=${toDateInputValue(addDays(now, 1))}`} className="btn-ghost btn-sm min-h-[36px]">
-            Plan tomorrow
-          </Link>
-          <Link href="/dashboard/food/planner" className="btn-ghost btn-sm min-h-[36px]">
-            Meal planner
-          </Link>
-          <Link href="/dashboard/journal" className="btn-ghost btn-sm min-h-[36px]">
-            Write journal
-          </Link>
+          {modules.has("plan") && (
+            <Link href={`/dashboard/plan?day=${toDateInputValue(addDays(now, 1))}`} className="btn-ghost btn-sm min-h-[36px]">
+              Plan tomorrow
+            </Link>
+          )}
+          {modules.has("food") && (
+            <Link href="/dashboard/food/planner" className="btn-ghost btn-sm min-h-[36px]">
+              Meal planner
+            </Link>
+          )}
+          {modules.has("journal") && (
+            <Link href="/dashboard/journal" className="btn-ghost btn-sm min-h-[36px]">
+              Write journal
+            </Link>
+          )}
         </div>
       </div>
     ),
@@ -206,40 +226,40 @@ export default async function WeeklyReviewPage() {
 
   return (
     <div>
-      <PageHeader title="Weekly review" description={description} />
+      <PageHeader help="review" title="Weekly review" description={description} />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
-        <StatCard size="sm" label="Backlog" value={backlog.length} href={`#${stepAnchor("inbox")}`} />
-        <StatCard
+        {modules.has("todos") && <StatCard size="sm" label="Backlog" value={backlog.length} href={`#${stepAnchor("inbox")}`} />}
+        {modules.has("goals") && <StatCard
           size="sm"
           label="Goals done"
           value={`${completedGoals}/${goals.length}`}
           href={`#${stepAnchor("goals")}`}
-        />
-        <StatCard
+        />}
+        {modules.has("religious") && <StatCard
           size="sm"
           label="Qaza pending"
           value={pendingQaza}
           href={`#${stepAnchor("prayers")}`}
-        />
-        <StatCard
+        />}
+        {modules.has("budget") && <StatCard
           size="sm"
           label="Spent this week"
           value={formatEuro(weekExpensesCents)}
           href={`#${stepAnchor("spending")}`}
-        />
-        <StatCard
+        />}
+        {modules.has("networking") && <StatCard
           size="sm"
           label="Overdue people"
           value={overduePeople.length}
           href={`#${stepAnchor("people")}`}
-        />
-        <StatCard
+        />}
+        {modules.has("food") && <StatCard
           size="sm"
           label="Shopping left"
           value={shoppingRemaining}
           href={`#${stepAnchor("plan-ahead")}`}
-        />
+        />}
       </div>
 
       <section aria-labelledby="review-progress-heading" className="card mb-6">
@@ -276,7 +296,7 @@ export default async function WeeklyReviewPage() {
       </section>
 
       <ol className="space-y-4">
-        {REVIEW_STEPS.map((step, i) => {
+        {steps.map((step, i) => {
           const done = doneSteps.has(step.id);
           return (
             <li key={step.id}>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { getUserWeather } from "@/lib/queries/weather";
 import PageHeader from "@/components/PageHeader";
 import TabNav from "@/components/TabNav";
@@ -20,14 +20,14 @@ export default async function WeatherPage({
 }: {
   searchParams: { view?: string; day?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("weather");
   const weather = await getUserWeather(user.id);
   const view = searchParams.view === "week" ? "week" : "day";
 
   if (!weather.pref) {
     return (
       <div>
-        <PageHeader title="Weather" description="Daily and weekly forecast for your location." />
+        <PageHeader help="weather" title="Weather" description="Daily and weekly forecast for your location." />
         <EmptyState
           icon="cloud-sun"
           title="Set your location"
@@ -43,7 +43,7 @@ export default async function WeatherPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="weather"
         title="Weather"
         description={[pref.locationName, pref.region].filter(Boolean).join(" · ")}
         action={

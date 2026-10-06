@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { formatDate, formatDaysAgo } from "@/lib/date";
 import {
   RELATIONSHIPS,
@@ -24,7 +24,7 @@ import { getComposerContacts, getSuggestedTopics } from "@/lib/queries/networkin
 export const metadata = { title: "Person" };
 
 export default async function ContactDetail({ params }: { params: { id: string } }) {
-  const user = await requireUser();
+  const user = await requireModule("networking");
   const [contact, contacts, suggestedTopics] = await Promise.all([
     prisma.contact.findFirst({
       where: { id: params.id, userId: user.id, deletedAt: null },
@@ -72,7 +72,7 @@ export default async function ContactDetail({ params }: { params: { id: string }
           { label: contact.name },
         ]}
       />
-      <PageHeader
+      <PageHeader help="networking:person"
         title={contact.name}
         description={descriptionParts.join(" · ") || undefined}
         action={

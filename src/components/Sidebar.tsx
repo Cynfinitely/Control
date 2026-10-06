@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { navSections, type NavItem } from "@/lib/nav";
+import { visibleNavSections, type NavItem } from "@/lib/nav";
+import type { ModuleId } from "@/lib/modules";
 import Icon from "@/components/Icon";
 import Logo from "@/components/Logo";
 import NotificationBell from "@/components/NotificationBell";
@@ -18,10 +19,12 @@ export default function Sidebar({
   name,
   email,
   isAdmin,
+  disabledModules,
 }: {
   name: string;
   email: string;
   isAdmin: boolean;
+  disabledModules: ModuleId[];
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -100,6 +103,7 @@ export default function Sidebar({
     );
   }
 
+  const navSections = visibleNavSections(disabledModules);
   const sections = isAdmin
     ? [...navSections, { title: "Admin", items: [{ href: "/dashboard/admin", label: "Admin", icon: "users" }] }]
     : navSections;

@@ -1,3 +1,4 @@
+import { parseDisabledModules } from "@/lib/modules";
 import { prisma } from "@/lib/db";
 import { expandEventOccurrences, computeDueReminders } from "@/lib/calendar";
 import type { EventOccurrence } from "@/lib/calendar/types";
@@ -15,12 +16,15 @@ export async function processDueReminders(opts?: { userId?: string; now?: Date }
 
   const users = await prisma.user.findMany({
     where: opts?.userId ? { id: opts.userId } : undefined,
-    select: { id: true, timezone: true },
+    select: { id: true, timezone: true, disabledModules: true },
   });
 
   let created = 0;
 
   for (const user of users) {
+    // No calendar notifications for people who switched the Calendar module off.
+    if (parseDisabledModules(user.disabledModules).includes("calendar")) continue;
+
     const [standalone, attachedReminders, events] = await Promise.all([
       prisma.reminder.findMany({
         where: {

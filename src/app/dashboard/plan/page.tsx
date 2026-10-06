@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue, formatDayLabel, parseDayParam } from "@/lib/date";
 import {
   getDayPlanBlocks,
@@ -19,7 +19,9 @@ import SuggestionPanel from "./SuggestionPanel";
 import TemplatePicker, { CopyPreviousDay } from "./TemplatePicker";
 import PlanTextImport from "./PlanTextImport";
 import { createPlanBlock, applyPlanTemplate } from "./actions";
-import { PLAN_KIND_LABELS } from "@/lib/plan/kinds";
+import { PLAN_KIND_LABELS, PLAN_KIND_MODULES, type PlanKind } from "@/lib/plan/kinds";
+import { getDisabledModules } from "@/lib/queries/modules";
+import { moduleFilter } from "@/lib/modules";
 
 export const metadata = { title: "Daily plan" };
 
@@ -28,7 +30,7 @@ export default async function PlanPage({
 }: {
   searchParams: { day?: string; focus?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("plan");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
@@ -42,7 +44,12 @@ export default async function PlanPage({
     getPlanDayStats(user.id, dayValue),
   ]);
 
-  const suggestions = await getPlanSuggestions(user.id, dayValue, dismissedKeys);
+  // Only suggest blocks from modules that are switched on.
+  const modules = moduleFilter(await getDisabledModules(user.id));
+  const suggestions = (await getPlanSuggestions(user.id, dayValue, dismissedKeys)).filter((s) => {
+    const kindModule = PLAN_KIND_MODULES[s.kind as PlanKind];
+    return !kindModule || modules.has(kindModule);
+  });
 
   const defaultTemplate = templates.find(
     (t) => t.isDefault && t.dayOfWeek === day.getDay()
@@ -50,7 +57,7 @@ export default async function PlanPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="plan"
         title="Daily plan"
         description="Time-block your day — schedule tasks, meals, prayers, and more."
       />

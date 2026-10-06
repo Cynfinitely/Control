@@ -5,6 +5,8 @@ import Link from "next/link";
 import clsx from "clsx";
 import Icon from "@/components/Icon";
 
+// Suffixed with the user id so one person dismissing it on a shared browser
+// does not hide it for the next person.
 const STORAGE_KEY = "control-onboarding-dismissed";
 
 type CheckItem = {
@@ -16,19 +18,21 @@ type CheckItem = {
 
 type Props = {
   items: CheckItem[];
+  userId: string;
   userCreatedAt: string;
 };
 
-export default function OnboardingChecklist({ items, userCreatedAt }: Props) {
+export default function OnboardingChecklist({ items, userId, userCreatedAt }: Props) {
+  const storageKey = `${STORAGE_KEY}:${userId}`;
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
     try {
-      setDismissed(localStorage.getItem(STORAGE_KEY) === "1");
+      setDismissed(localStorage.getItem(storageKey) === "1");
     } catch {
       setDismissed(false);
     }
-  }, []);
+  }, [storageKey]);
 
   const created = new Date(userCreatedAt);
   const daysSince = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
@@ -55,7 +59,7 @@ export default function OnboardingChecklist({ items, userCreatedAt }: Props) {
           type="button"
           onClick={() => {
             try {
-              localStorage.setItem(STORAGE_KEY, "1");
+              localStorage.setItem(storageKey, "1");
             } catch {
               // ignore private mode
             }

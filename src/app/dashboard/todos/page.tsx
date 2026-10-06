@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue, formatDayLabel, parseDayParam } from "@/lib/date";
 import { getBacklogTodos, getDayTodos, getStaleOpenTodoCount } from "@/lib/queries/todos";
 import PageHeader from "@/components/PageHeader";
@@ -20,7 +20,7 @@ export default async function TodosPage({
 }: {
   searchParams: { day?: string; focus?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("todos");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
@@ -34,7 +34,7 @@ export default async function TodosPage({
 
   return (
     <div>
-      <PageHeader title="Todos" description="Simple daily checklist — add tasks, check them off." />
+      <PageHeader help="todos" title="Todos" description="Simple daily checklist — add tasks, check them off." />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <DayNavigator basePath="/dashboard/todos" dayValue={dayValue} dayLabel={dayLabel} />

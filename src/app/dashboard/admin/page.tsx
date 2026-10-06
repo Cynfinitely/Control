@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 import { formatDate } from "@/lib/date";
+import { inviteStatus, INVITE_DEFAULT_DAYS, INVITE_MAX_DAYS } from "@/lib/invites";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
 import ActionForm from "@/components/ActionForm";
@@ -24,45 +25,51 @@ export default async function AdminPage() {
 
   return (
     <div>
-      <PageHeader title="Admin" description="Manage invite codes and view registered users." />
+      <PageHeader help="admin" title="Admin" description="Invite people and see who has an account." />
 
-      <CollapsibleSection title="Create invite code" variant="card" className="mb-6">
-        <ActionForm action={createInvite} resetOnSuccess className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <CollapsibleSection title="Invite a person" variant="card" className="mb-6" defaultOpen={invites.length === 0}>
+        <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Create an invite, copy its link and send it to the person yourself. They choose their own password, start
+          with an empty account, and can never see your data or anyone else&apos;s.
+        </p>
+        <ActionForm action={createInvite} resetOnSuccess className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <label htmlFor="invite-code" className="label">
-              Custom code (optional)
+            <label htmlFor="invite-email" className="label">
+              Intended for (email, optional)
             </label>
             <input
-              id="invite-code"
-              name="code"
-              className="input font-mono"
-              placeholder="Generated if blank"
+              id="invite-email"
+              name="email"
+              type="email"
+              className="input"
               autoComplete="off"
-              aria-describedby="invite-code-hint"
+              aria-describedby="invite-email-hint"
             />
-            <p id="invite-code-hint" className="hint">
-              Leave blank for a random code like INV-1A2B3C4D.
+            <p id="invite-email-hint" className="hint">
+              If set, the account can only be created with this address.
             </p>
           </div>
           <div>
-            <label htmlFor="invite-email" className="label">
-              Lock to email (optional)
-            </label>
-            <input id="invite-email" name="email" type="email" className="input" autoComplete="off" />
-          </div>
-          <div>
             <label htmlFor="invite-max-uses" className="label">
-              Max uses
+              Number of people
             </label>
-            <input id="invite-max-uses" name="maxUses" type="number" min={1} className="input" defaultValue={1} />
+            <input id="invite-max-uses" name="maxUses" type="number" min={1} max={50} className="input" defaultValue={1} />
           </div>
           <div>
             <label htmlFor="invite-expires" className="label">
-              Expires (optional)
+              Valid for (days)
             </label>
-            <input id="invite-expires" name="expiresAt" type="date" className="input" />
+            <input
+              id="invite-expires"
+              name="expiresInDays"
+              type="number"
+              min={1}
+              max={INVITE_MAX_DAYS}
+              className="input"
+              defaultValue={INVITE_DEFAULT_DAYS}
+            />
           </div>
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-3">
             <SubmitButton className="btn-primary" pendingLabel="Creating…">
               Create invite
             </SubmitButton>
@@ -72,55 +79,59 @@ export default async function AdminPage() {
 
       <section className="mb-8" aria-labelledby="invites-title">
         <h2 id="invites-title" className="section-title mb-3">
-          Invite codes <span className="text-base font-normal text-muted">({invites.length})</span>
+          Invites <span className="text-base font-normal text-muted">({invites.length})</span>
         </h2>
         {invites.length === 0 ? (
           <EmptyState
             variant="inline"
             headingLevel="h3"
             icon="mail"
-            title="No invite codes yet"
-            description="Create one above and share it with the person you want to invite."
+            title="No invites yet"
+            description="Create one above, then copy its link and send it to the person you want to invite."
           />
         ) : (
           <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
             {invites.map((inv) => {
-              const exhausted = inv.uses >= inv.maxUses;
-              const expired = Boolean(inv.expiresAt && inv.expiresAt < now);
+              const status = inviteStatus(inv, now);
+              const label = inv.email ? `for ${inv.email}` : `created ${formatDate(inv.createdAt)}`;
               return (
                 <li key={inv.id} className="flex items-center justify-between gap-2 px-4 py-3">
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-2">
-                      <span className="break-all font-mono font-medium text-slate-800 dark:text-slate-100">{inv.code}</span>
-                      {expired ? (
+                      <span className="break-all font-medium text-slate-800 dark:text-slate-100">
+                        {inv.email ?? "Anyone with the link"}
+                      </span>
+                      {status === "expired" ? (
                         <span className="badge-muted">Expired</span>
-                      ) : exhausted ? (
-                        <span className="badge-muted">Used up</span>
+                      ) : status === "used" ? (
+                        <span className="badge-muted">Used</span>
                       ) : (
                         <span className="badge-success">Active</span>
                       )}
                     </p>
                     <p className="mt-0.5 text-xs text-muted">
-                      {inv.uses}/{inv.maxUses} used
-                      {inv.email && ` · for ${inv.email}`}
-                      {inv.expiresAt && ` · expires ${formatDate(inv.expiresAt)}`}
-                      {inv.usedBy && ` · claimed by ${inv.usedBy.email}`}
+                      {inv.uses}/{inv.maxUses} used · created {formatDate(inv.createdAt)}
+                      {inv.expiresAt && ` · ${status === "expired" ? "expired" : "expires"} ${formatDate(inv.expiresAt)}`}
+                      {inv.usedBy && ` · joined as ${inv.usedBy.email}`}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center">
-                    <CopyCodeButton code={inv.code} />
+                    {status === "active" && <CopyCodeButton code={inv.code} label={label} />}
                     <ActionForm
                       action={deleteInvite}
                       confirm={{
-                        title: `Delete invite “${inv.code}”?`,
-                        message: "Anyone who hasn't used it yet won't be able to register with it.",
+                        title: "Delete this invite?",
+                        message:
+                          status === "active"
+                            ? "The link will stop working. People who already joined with it keep their accounts."
+                            : "This only removes it from the list. People who joined with it keep their accounts.",
                       }}
                     >
                       <input type="hidden" name="id" value={inv.id} />
                       <SubmitIconButton
                         className="btn-icon-danger"
                         icon={<Icon name="trash" className="h-4 w-4" />}
-                        aria-label={`Delete invite ${inv.code}`}
+                        aria-label={`Delete invite ${label}`}
                       />
                     </ActionForm>
                   </div>
@@ -160,7 +171,7 @@ export default async function AdminPage() {
                     <td className="whitespace-nowrap px-4 py-3 text-muted">{formatDate(u.createdAt)}</td>
                     <td className="px-4 py-3">
                       <span className={u.emailVerifiedAt ? "badge-success" : "badge-warning"}>
-                        {u.emailVerifiedAt ? "Verified" : "Unverified"}
+                        {u.emailVerifiedAt ? "Active" : "Not activated"}
                       </span>
                     </td>
                   </tr>

@@ -23,6 +23,10 @@ model User {
   role            String    @default("user") // "user" | "admin"
   timezone        String    @default("Europe/Istanbul")
   emailVerifiedAt DateTime?
+  /// Comma-separated module ids the user switched off (see src/lib/modules.ts). Empty = everything on.
+  disabledModules String    @default("")
+  /// True until a newly created account has been through first-run setup.
+  needsOnboarding Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

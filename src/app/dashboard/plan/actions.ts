@@ -8,6 +8,7 @@ import { isValidTimeRange } from "@/lib/plan/time";
 import { findOverlappingBlock } from "@/lib/plan/overlap";
 import { parsePlanText } from "@/lib/plan/parse-text";
 import { getDayPlanBlocks } from "@/lib/queries/plan";
+import { ownsLink } from "@/lib/ownership";
 import { success, failure, type ActionResult } from "@/lib/action-result";
 
 const INVALID_RANGE = "End time must be after the start time (blocks can be up to 12 hours).";
@@ -54,6 +55,7 @@ export async function createPlanBlock(formData: FormData): Promise<ActionResult>
 
   if (!title) return failure("Give the block a title.");
   if (!isValidTimeRange(startTime, endTime)) return failure(INVALID_RANGE);
+  if (!(await ownsLink(userId, linkType, linkId))) return failure("That linked item no longer exists.");
 
   const overlap = await findOverlap(userId, planDate, { startTime, endTime });
   if (overlap) return failure(overlapMessage(overlap));
@@ -190,6 +192,7 @@ export async function acceptPlanSuggestion(formData: FormData): Promise<ActionRe
   const suggestionKey = str(formData.get("suggestionKey"));
 
   if (!title || !isValidTimeRange(startTime, endTime)) return failure("This suggestion is no longer valid.");
+  if (!(await ownsLink(userId, linkType, linkId))) return failure("This suggestion is no longer valid.");
 
   const overlap = await findOverlap(userId, planDate, { startTime, endTime });
   if (overlap) return failure(overlapMessage(overlap));

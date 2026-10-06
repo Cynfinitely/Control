@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue, formatDate, addDays, formatDateTime } from "@/lib/date";
 import { getWeekMealPlan, weekStartKeyFromParam } from "@/lib/queries/food-planner";
 import { getDefaultMeals, getFoodSettings } from "@/lib/queries/food";
@@ -31,7 +31,7 @@ type PlanItem = Awaited<ReturnType<typeof getWeekMealPlan>>[number];
 type DefaultMeals = Awaited<ReturnType<typeof getDefaultMeals>>;
 
 export default async function PlannerPage({ searchParams }: { searchParams: { week?: string } }) {
-  const user = await requireUser();
+  const user = await requireModule("food");
   const weekStartKey = weekStartKeyFromParam(searchParams.week);
   const weekStart = new Date(weekStartKey + "T00:00:00");
   const todayKey = toDateInputValue(new Date());
@@ -51,7 +51,7 @@ export default async function PlannerPage({ searchParams }: { searchParams: { we
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="food:planner"
         title="Meal planner"
         description="Plan the week's meals. Ingredients collect into one shopping list."
       >

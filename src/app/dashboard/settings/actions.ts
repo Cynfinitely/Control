@@ -9,6 +9,7 @@ import { isValidTimezone } from "@/lib/timezones";
 import { revalidateUserCache } from "@/lib/cache";
 import { failure, success, type ActionResult } from "@/lib/action-result";
 import { searchLocations, type LocationResult } from "@/lib/weather/client";
+import { MODULE_IDS, serializeDisabledModules, type ModuleId } from "@/lib/modules";
 
 export type ActionState = {
   ok?: boolean;
@@ -163,5 +164,25 @@ export async function clearWeatherLocation(): Promise<ActionResult> {
     return success("Weather location removed");
   } catch {
     return failure("Could not remove weather location.");
+  }
+}
+
+const modulesSchema = z.array(z.enum(MODULE_IDS as [ModuleId, ...ModuleId[]])).max(MODULE_IDS.length);
+
+/** Saves which modules are switched off. Turning a module off only hides it; its data is kept. */
+export async function saveModules(disabled: ModuleId[]): Promise<ActionResult> {
+  const parsed = modulesSchema.safeParse(disabled);
+  if (!parsed.success) return failure("Unknown module.");
+  try {
+    const userId = await getUserId();
+    await prisma.user.update({
+      where: { id: userId },
+      data: { disabledModules: serializeDisabledModules(parsed.data) },
+    });
+    revalidateUserCache(userId, "modules", "dashboard");
+    revalidatePath("/dashboard", "layout");
+    return success("Modules saved");
+  } catch {
+    return failure("Could not save your modules.");
   }
 }

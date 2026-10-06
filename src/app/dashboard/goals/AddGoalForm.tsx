@@ -4,9 +4,11 @@ import { useState } from "react";
 import ActionForm from "@/components/ActionForm";
 import SubmitButton from "@/components/SubmitButton";
 import FormField from "@/components/FormField";
+import { useModules } from "@/components/ModulesProvider";
 import { createGoal } from "./actions";
 
 export default function AddGoalForm({ period, periodKey }: { period: string; periodKey: string }) {
+  const modules = useModules();
   const [type, setType] = useState<"boolean" | "numeric">("boolean");
   const isCounter = type === "numeric";
 
@@ -61,9 +63,9 @@ export default function AddGoalForm({ period, periodKey }: { period: string; per
             {(_id, aria) => (
               <select {...aria} name="linkType" className="input" defaultValue="">
                 <option value="">Manual only</option>
-                <option value="workout">Workouts logged</option>
-                <option value="learning">Learning hours logged</option>
-                <option value="quran">Quran pages read</option>
+                {modules.has("exercise") && <option value="workout">Workouts logged</option>}
+                {modules.has("career") && <option value="learning">Learning hours logged</option>}
+                {modules.has("religious") && <option value="quran">Quran pages read</option>}
               </select>
             )}
           </FormField>

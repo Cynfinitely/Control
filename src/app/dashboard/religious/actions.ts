@@ -27,6 +27,15 @@ function prayerLogDate(value: FormDataEntryValue | null): Date {
   return startOfDay(parseDate(value));
 }
 
+const FUTURE_DAY = "You can't log prayers for a day that hasn't happened yet.";
+
+/** One day of slack, because the server's "today" can be behind the user's timezone. */
+function isFutureDay(date: Date): boolean {
+  const limit = startOfDay(new Date());
+  limit.setDate(limit.getDate() + 1);
+  return date.getTime() > limit.getTime();
+}
+
 export async function setPrayer(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const prayer = str(formData.get("prayer"));
@@ -35,6 +44,7 @@ export async function setPrayer(formData: FormData): Promise<ActionResult> {
   if (!prayer || !status) return failure("Choose a prayer and a status.");
   if (!isPrayer(prayer)) return failure("Unknown prayer.");
   if (status !== "ontime" && status !== "missed") return failure("Unknown status.");
+  if (isFutureDay(date)) return failure(FUTURE_DAY);
 
   const existing = await prisma.prayerLog.findUnique({
     where: { userId_date_prayer: { userId, date, prayer } },
@@ -48,10 +58,20 @@ export async function setPrayer(formData: FormData): Promise<ActionResult> {
 
   let qazaNote = "";
   if (status === "missed" && existing?.status !== "missed") {
-    await prisma.qazaPrayer.create({
-      data: { userId, prayer, sourceDate: date },
+    // One qaza per prayer per day: if this day's prayer was already made up
+    // (or is already waiting), marking it missed again must not add another.
+    const already = await prisma.qazaPrayer.findFirst({
+      where: { userId, prayer, sourceDate: date },
+      select: { fulfilledAt: true },
     });
-    qazaNote = " · added to qaza";
+    if (!already) {
+      await prisma.qazaPrayer.create({
+        data: { userId, prayer, sourceDate: date },
+      });
+      qazaNote = " · added to qaza";
+    } else if (already.fulfilledAt) {
+      qazaNote = " · already made up";
+    }
   } else if (status === "ontime" && existing?.status === "missed") {
     const qaza = await prisma.qazaPrayer.findFirst({
       where: { userId, prayer, sourceDate: date, fulfilledAt: null },
@@ -106,6 +126,7 @@ export async function clearPrayer(formData: FormData): Promise<ActionResult> {
 export async function markAllPrayersOnTime(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const date = prayerLogDate(formData.get("date"));
+  if (isFutureDay(date)) return failure(FUTURE_DAY);
 
   const result = await prisma.$transaction(async (tx) => {
     // Range match (like getDayPrayers) so logs stored at another time of day still count.

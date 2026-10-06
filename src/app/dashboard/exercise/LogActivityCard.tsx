@@ -60,22 +60,24 @@ function DurationField({ placeholder }: { placeholder: string }) {
  * One card for logging any activity: a type switcher plus the matching fields.
  * Each type posts the same field names to the same server action as before.
  */
-export default function LogActivityCard({ todayValue }: { todayValue: string }) {
+export default function LogActivityCard({ todayValue, userId }: { todayValue: string; userId: string }) {
+  // Per user, so a shared browser does not carry one person's choice to the next.
+  const storageKey = `${STORAGE_KEY}:${userId}`;
   const [type, setType] = useState<ActivityType>("gym");
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
+      const saved = window.localStorage.getItem(storageKey);
       if (isActivityType(saved)) setType(saved);
     } catch {
       /* storage unavailable */
     }
-  }, []);
+  }, [storageKey]);
 
   function choose(next: ActivityType) {
     setType(next);
     try {
-      window.localStorage.setItem(STORAGE_KEY, next);
+      window.localStorage.setItem(storageKey, next);
     } catch {
       /* storage unavailable */
     }

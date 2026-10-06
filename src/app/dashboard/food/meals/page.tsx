@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { addDays, endOfDay, startOfDay } from "@/lib/date";
 import { getDefaultMeals, getFoodRange, getFoodSettings } from "@/lib/queries/food";
 import { repeatedMealCandidates } from "@/lib/food/insights";
@@ -13,7 +13,7 @@ import DefaultMealForm from "./DefaultMealForm";
 export const metadata = { title: "Default Meals" };
 
 export default async function DefaultMealsPage() {
-  const user = await requireUser();
+  const user = await requireModule("food");
   const now = new Date();
   const [meals, settings, recentEntries] = await Promise.all([
     getDefaultMeals(user.id),
@@ -28,7 +28,7 @@ export default async function DefaultMealsPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="food:meals"
         title="Default Meals"
         description="Meals that work for your life. Log them in one tap and add them to your weekly plan."
       >

@@ -1,7 +1,11 @@
+import { MODULE_SECTIONS, MODULES, moduleFilter, type ModuleId } from "@/lib/modules";
+
 export type NavItem = {
   href: string;
   label: string;
   icon: string;
+  /** The switchable module this item belongs to; absent for always-on pages. */
+  module?: ModuleId;
 };
 
 export type NavSection = {
@@ -9,48 +13,25 @@ export type NavSection = {
   items: NavItem[];
 };
 
-export const navSections: NavSection[] = [
-  {
-    title: "Today",
-    items: [
-      { href: "/dashboard", label: "Home", icon: "home" },
-      { href: "/dashboard/plan", label: "Plan", icon: "clipboard" },
-      { href: "/dashboard/calendar", label: "Calendar", icon: "calendar" },
-      { href: "/dashboard/todos", label: "Todos", icon: "check" },
-      { href: "/dashboard/work", label: "Work", icon: "briefcase" },
-      { href: "/dashboard/journal", label: "Journal", icon: "book" },
-      { href: "/dashboard/weather", label: "Weather", icon: "cloud-sun" },
-    ],
-  },
-  {
-    title: "Track",
-    items: [
-      { href: "/dashboard/food", label: "Food", icon: "food" },
-      { href: "/dashboard/budget", label: "Budget", icon: "wallet" },
-      { href: "/dashboard/exercise", label: "Exercise", icon: "dumbbell" },
-      { href: "/dashboard/religious", label: "Religious", icon: "moon" },
-      { href: "/dashboard/health/migraine", label: "Migraine", icon: "heart" },
-    ],
-  },
-  {
-    title: "Grow",
-    items: [
-      { href: "/dashboard/goals", label: "Goals", icon: "target" },
-      { href: "/dashboard/career", label: "Career", icon: "briefcase" },
-      { href: "/dashboard/networking", label: "Networking", icon: "users" },
-    ],
-  },
-  {
-    title: "Reflect",
-    items: [
-      { href: "/dashboard/principles", label: "Principles", icon: "shield" },
-      { href: "/dashboard/inspirations", label: "Inspirations", icon: "sparkles" },
-      { href: "/dashboard/priorities", label: "Priorities", icon: "flag" },
-      { href: "/dashboard/review", label: "Review", icon: "clipboard" },
-      { href: "/dashboard/reports", label: "Reports", icon: "chart" },
-    ],
-  },
-];
+const HOME: NavItem = { href: "/dashboard", label: "Home", icon: "home" };
 
-/** Flat list for backwards compatibility */
-export const navItems: NavItem[] = navSections.flatMap((s) => s.items);
+export const navSections: NavSection[] = MODULE_SECTIONS.map((title) => ({
+  title,
+  items: [
+    ...(title === "Today" ? [HOME] : []),
+    ...MODULES.filter((m) => m.section === title).map((m) => ({
+      href: m.href,
+      label: m.label,
+      icon: m.icon,
+      module: m.id,
+    })),
+  ],
+}));
+
+/** Nav sections without the modules the user switched off; empty sections are dropped. */
+export function visibleNavSections(disabled: readonly ModuleId[]): NavSection[] {
+  const modules = moduleFilter(disabled);
+  return navSections
+    .map((section) => ({ ...section, items: modules.keep(section.items) }))
+    .filter((section) => section.items.length > 0);
+}

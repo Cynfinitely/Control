@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { addDays, endOfDay, formatDayLabel, parseDayParam, startOfDay, startOfWeek, toDateInputValue } from "@/lib/date";
 import {
   getDayFoodEntries,
@@ -25,7 +25,7 @@ export default async function FoodPage({
 }: {
   searchParams: { day?: string; focus?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("food");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
@@ -59,7 +59,7 @@ export default async function FoodPage({
 
   return (
     <div>
-      <PageHeader title="Food" description="Make eating visible. Log what you eat, no numbers required.">
+      <PageHeader help="food:diary" title="Food" description="Make eating visible. Log what you eat, no numbers required.">
         <FoodNav active="/dashboard/food" />
       </PageHeader>
 

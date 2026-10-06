@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue, formatDayLabel, parseDayParam } from "@/lib/date";
 import { prisma } from "@/lib/db";
 import PageHeader from "@/components/PageHeader";
@@ -14,7 +14,7 @@ export default async function JournalPage({
 }: {
   searchParams: { day?: string; focus?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("journal");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
@@ -32,7 +32,7 @@ export default async function JournalPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="journal"
         title="Journal"
         description="Daily reflection — mood, wins, blockers, and notes."
       />

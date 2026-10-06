@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
+import { getDisabledModules } from "@/lib/queries/modules";
 import { toDateInputValue, formatDate, formatRange, addDays } from "@/lib/date";
 import type { ServerFormAction } from "@/components/ActionForm";
 import PageHeader from "@/components/PageHeader";
@@ -111,12 +112,12 @@ export default async function CareerPage({
 }: {
   searchParams: { tab?: string | string[] };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("career");
   const userId = user.id;
   const now = new Date();
   const tab = parseCareerTab(searchParams.tab);
 
-  const [goals, skills, certs, experiences, learning, learningCount, jobApps, contacts] = await Promise.all([
+  const [goals, skills, certs, experiences, learningRows, learningCount, jobAppRows, contacts] = await Promise.all([
     prisma.careerGoal.findMany({ where: { userId, deletedAt: null }, orderBy: { createdAt: "desc" } }),
     prisma.skill.findMany({ where: { userId, deletedAt: null }, orderBy: { name: "asc" } }),
     prisma.certification.findMany({ where: { userId, deletedAt: null }, orderBy: { issuedAt: "desc" } }),
@@ -125,13 +126,13 @@ export default async function CareerPage({
       where: { userId, deletedAt: null },
       orderBy: { date: "desc" },
       take: LEARNING_LIMIT,
-      include: { skill: { select: { name: true } } },
+      include: { skill: { select: { name: true, userId: true } } },
     }),
     prisma.learningEntry.count({ where: { userId, deletedAt: null } }),
     prisma.jobApplication.findMany({
       where: { userId, deletedAt: null },
       orderBy: { updatedAt: "desc" },
-      include: { contact: { select: { name: true } } },
+      include: { contact: { select: { name: true, userId: true } } },
     }),
     prisma.contact.findMany({
       where: { userId, deletedAt: null },
@@ -139,6 +140,12 @@ export default async function CareerPage({
       select: { id: true, name: true },
     }),
   ]);
+
+  const networkingOn = !(await getDisabledModules(userId)).includes("networking");
+
+  // Never render a linked record that belongs to someone else.
+  const learning = learningRows.map((l) => ({ ...l, skill: l.skill?.userId === userId ? l.skill : null }));
+  const jobApps = jobAppRows.map((j) => ({ ...j, contact: j.contact?.userId === userId ? j.contact : null }));
 
   const certExpirySoon = addDays(now, 30);
 
@@ -269,6 +276,9 @@ export default async function CareerPage({
                         />
                       ))}
                     </div>
+                    {s.notes && (
+                      <p className="mt-2 whitespace-pre-line break-words text-sm text-slate-600 dark:text-slate-400">{s.notes}</p>
+                    )}
                   </div>
                   <DeleteButton
                     action={deleteSkill}
@@ -541,18 +551,20 @@ export default async function CareerPage({
               </select>
             )}
           </FormField>
-          <FormField label="Linked contact">
-            {(_id, aria) => (
-              <select {...aria} name="contactId" className="input" defaultValue="">
-                <option value="">— none —</option>
-                {contacts.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </FormField>
+          {networkingOn && (
+            <FormField label="Linked contact">
+              {(_id, aria) => (
+                <select {...aria} name="contactId" className="input" defaultValue="">
+                  <option value="">— none —</option>
+                  {contacts.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </FormField>
+          )}
           <FormField label="Follow-up date">
             {(_id, aria) => <input {...aria} name="dueDate" type="date" className="input" />}
           </FormField>
@@ -595,6 +607,9 @@ export default async function CareerPage({
                         .join(" · ")}
                     </p>
                   )}
+                  {j.notes && (
+                    <p className="mt-1 whitespace-pre-line break-words text-sm text-slate-600 dark:text-slate-400">{j.notes}</p>
+                  )}
                 </div>
                 <div className="flex items-end gap-2">
                   <ActionForm action={updateJobStage} className="flex items-end gap-2">
@@ -634,7 +649,7 @@ export default async function CareerPage({
 
   return (
     <div>
-      <PageHeader title="Career" description="Track goals, skills, certifications, work history, and learning.">
+      <PageHeader help={`career:${tab}`} title="Career" description="Track goals, skills, certifications, work history, and learning.">
         <CareerTabs active={tab} />
       </PageHeader>
       {panels[tab]}

@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { randomBytes } from "crypto";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { str, num, optStr, parseOptionalDate } from "@/lib/actions";
+import { str, num, optStr } from "@/lib/actions";
+import { generateInviteCode, inviteExpiry, INVITE_DEFAULT_DAYS } from "@/lib/invites";
 import { success, failure, type ActionResult } from "@/lib/action-result";
 
 async function requireAdminId(): Promise<string | null> {
@@ -13,40 +14,29 @@ async function requireAdminId(): Promise<string | null> {
   return session.user.id;
 }
 
-function isUniqueViolation(err: unknown) {
-  return typeof err === "object" && err !== null && (err as { code?: unknown }).code === "P2002";
-}
-
 export async function createInvite(formData: FormData): Promise<ActionResult> {
   const adminId = await requireAdminId();
-  if (!adminId) return failure("Only admins can create invite codes.");
-  const custom = str(formData.get("code"));
-  const code = custom || `INV-${randomBytes(4).toString("hex").toUpperCase()}`;
+  if (!adminId) return failure("Only admins can create invites.");
 
-  const existing = await prisma.inviteCode.findUnique({ where: { code }, select: { id: true } });
-  if (existing) return failure("That code already exists. Choose another or leave it blank to generate one.");
+  const email = optStr(formData.get("email"))?.toLowerCase() ?? null;
+  if (email && !z.string().email().safeParse(email).success) return failure("Enter a valid email address.");
 
-  try {
-    await prisma.inviteCode.create({
-      data: {
-        code,
-        email: optStr(formData.get("email")),
-        maxUses: Math.max(1, num(formData.get("maxUses"), 1)),
-        expiresAt: parseOptionalDate(formData.get("expiresAt")),
-        createdById: adminId,
-      },
-    });
-  } catch (err) {
-    if (isUniqueViolation(err)) return failure("That code already exists. Choose another or leave it blank to generate one.");
-    throw err;
-  }
+  await prisma.inviteCode.create({
+    data: {
+      code: generateInviteCode(),
+      email,
+      maxUses: Math.min(50, Math.max(1, Math.round(num(formData.get("maxUses"), 1)))),
+      expiresAt: inviteExpiry(num(formData.get("expiresInDays"), INVITE_DEFAULT_DAYS)),
+      createdById: adminId,
+    },
+  });
   revalidatePath("/dashboard/admin");
-  return success(`Invite ${code} created`);
+  return success("Invite created. Copy its link and send it to the person.");
 }
 
 export async function deleteInvite(formData: FormData): Promise<ActionResult> {
   const adminId = await requireAdminId();
-  if (!adminId) return failure("Only admins can delete invite codes.");
+  if (!adminId) return failure("Only admins can delete invites.");
   const id = str(formData.get("id"));
   if (!id) return failure("Invite not found.");
   const result = await prisma.inviteCode.deleteMany({ where: { id } });

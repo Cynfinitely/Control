@@ -19,6 +19,8 @@ type Props = {
   /** "today", "yesterday" or a formatted date, used in messages. */
   dayName: string;
   initialStatuses: PrayerStatus;
+  /** Prayers of this day whose qaza has already been made up. */
+  madeUp?: string[];
 };
 
 const STATUS_OPTIONS: { value: PrayerStatusValue; label: string }[] = [
@@ -29,12 +31,20 @@ const STATUS_OPTIONS: { value: PrayerStatusValue; label: string }[] = [
 /** `null` override = cleared locally, waiting for the server. */
 type Overrides = Record<string, PrayerStatusValue | null>;
 
-function StatusText({ status }: { status: string | undefined }) {
+function StatusText({ status, madeUp }: { status: string | undefined; madeUp: boolean }) {
   if (status === "ontime") {
     return (
       <span className="badge-success">
         <Icon name="check" className="h-3.5 w-3.5" />
         On time
+      </span>
+    );
+  }
+  if (status === "missed" && madeUp) {
+    return (
+      <span className="badge-muted">
+        <Icon name="check" className="h-3.5 w-3.5" />
+        Missed · made up
       </span>
     );
   }
@@ -53,7 +63,7 @@ function StatusText({ status }: { status: string | undefined }) {
  * Per-prayer status rows. Each row updates optimistically and only that row
  * waits for the server, so all five can be marked in quick succession.
  */
-export default function PrayerStatusPanel({ dayValue, dayName, initialStatuses }: Props) {
+export default function PrayerStatusPanel({ dayValue, dayName, initialStatuses, madeUp = [] }: Props) {
   const toast = useToast();
   const [overrides, setOverrides] = useState<Overrides>({});
   const [pending, setPending] = useState<Record<string, boolean>>({});
@@ -152,7 +162,7 @@ export default function PrayerStatusPanel({ dayValue, dayName, initialStatuses }
                 <span id={`prayer-${p}-label`} className="w-16 font-medium text-slate-800 dark:text-slate-100">
                   {label}
                 </span>
-                <StatusText status={current} />
+                <StatusText status={current} madeUp={madeUp.includes(p)} />
                 {rowPending && (
                   <span className="text-muted" aria-label={`Saving ${label}`}>
                     <Spinner className="h-3.5 w-3.5" />

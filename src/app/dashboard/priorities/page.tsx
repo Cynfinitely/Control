@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { getLifePriorities } from "@/lib/queries/priorities";
 import PageHeader from "@/components/PageHeader";
 import PrioritiesManager from "./PrioritiesManager";
@@ -6,12 +6,12 @@ import PrioritiesManager from "./PrioritiesManager";
 export const metadata = { title: "Priorities" };
 
 export default async function PrioritiesPage() {
-  const user = await requireUser();
+  const user = await requireModule("priorities");
   const priorities = await getLifePriorities(user.id);
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="priorities"
         title="Priorities"
         description="The order of your life. Rank what you serve first so every other list has a north star."
       />

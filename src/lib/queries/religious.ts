@@ -123,3 +123,15 @@ export async function getReligiousSidebarData(userId: string, todayKey: string) 
     readingEntries: data.readingEntries.map((e) => ({ ...e, date: coerceDate(e.date), createdAt: coerceDate(e.createdAt) })),
   };
 }
+
+/** Prayers of this day that were marked missed and have since been made up. */
+export async function getDayMadeUpPrayers(userId: string, dayKey: string): Promise<string[]> {
+  const day = new Date(dayKey + "T00:00:00");
+  return cachedQuery(["prayers-made-up", userId, dayKey], [cacheTag("religious", userId)], async () => {
+    const rows = await prisma.qazaPrayer.findMany({
+      where: { userId, sourceDate: { gte: startOfDay(day), lte: endOfDay(day) }, fulfilledAt: { not: null } },
+      select: { prayer: true },
+    });
+    return rows.map((r) => r.prayer);
+  });
+}

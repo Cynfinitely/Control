@@ -1,5 +1,7 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { buildReport, type Period } from "@/lib/reports";
+import { getDisabledModules } from "@/lib/queries/modules";
+import { moduleFilter } from "@/lib/modules";
 import { formatDate, formatRange } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import SegmentedControl from "@/components/SegmentedControl";
@@ -19,12 +21,13 @@ export default async function ReportsPage({
 }: {
   searchParams: { period?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("reports");
   const period = (["daily", "weekly", "monthly"].includes(searchParams.period ?? "")
     ? searchParams.period
     : "daily") as Period;
 
-  const report = await buildReport(user.id, period);
+  const [report, disabledModules] = await Promise.all([buildReport(user.id, period), getDisabledModules(user.id)]);
+  const sections = moduleFilter(disabledModules).keep(report.sections);
   const range =
     formatDate(report.from) === formatDate(report.to)
       ? formatDate(report.from)
@@ -32,7 +35,7 @@ export default async function ReportsPage({
 
   return (
     <div>
-      <PageHeader title="Reports" description={range}>
+      <PageHeader help="reports" title="Reports" description={range}>
         <SegmentedControl
           aria-label="Report period"
           value={period}
@@ -44,17 +47,17 @@ export default async function ReportsPage({
         />
       </PageHeader>
 
-      {report.sections.length === 0 ? (
+      {sections.length === 0 ? (
         <EmptyState
           icon="chart"
           title="Nothing to report yet"
-          description="Log todos, meals, workouts or prayers and your summary will appear here."
-          actionLabel="Go to Today"
-          actionHref="/dashboard"
+          description="Reports summarize the modules you have switched on. Turn modules on in Settings and start logging to see your numbers here."
+          actionLabel="Open Settings"
+          actionHref="/dashboard/settings#modules"
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {report.sections.map((section) => (
+          {sections.map((section) => (
             <section key={section.title} className="card" aria-label={section.title}>
               <h2 className="section-title mb-3">{section.title}</h2>
               <div className="grid grid-cols-2 gap-3">

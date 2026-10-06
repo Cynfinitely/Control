@@ -9,12 +9,12 @@ Works on Mac, desktop, and iPhone via a shared cloud database.
 - **Next.js 14** (App Router) + **TypeScript**
 - **Tailwind CSS** (minimal, light theme, mobile-responsive)
 - **Prisma ORM** with **PostgreSQL** (Neon, Supabase, or self-hosted)
-- **NextAuth** (credentials) with invite-only registration and email verification
+- **NextAuth** (credentials) with invite-only registration
 - **Vercel** for deployment (recommended)
 
 ## Modules
 
-1. **Auth** — invite-only sign-up, email verification, single super-admin
+1. **Auth** — invite-only sign-up by invite link, single super-admin
 2. **Todos** — simple day-based checkbox lists with optional backlog
 3. **Goals** — weekly / monthly / yearly goals (checkbox or counter)
 4. **Food** — calories-only diary + daily target; weekly meal planner + shopping list
@@ -23,7 +23,7 @@ Works on Mac, desktop, and iPhone via a shared cloud database.
 7. **Career** — career goals, skills, certifications, work history, learning log
 8. **Networking** — contacts, interactions, follow-ups
 9. **Reports** — daily/weekly/monthly aggregation across all modules
-10. **Admin** — invite code management and user overview
+10. **Admin** — invites and user overview
 
 ## Getting started (local)
 
@@ -74,11 +74,23 @@ To stop the database: `docker compose down`. Data persists in the Docker volume 
 
 ### Default credentials (created by the seed)
 
+Local development only:
+
 - **Admin email:** `admin@control.local`
 - **Admin password:** `admin1234`
-- **Invite code** for new sign-ups: `WELCOME-2026`
 
-New users register with an invite code, then verify their email. Since no email service is configured, the verification link is shown on screen after registration and logged to the server console.
+The seed refuses to use this password on a production database (see the deploy section).
+
+### Inviting people
+
+Registration is invite-only and there is no email service, so the admin shares links by hand:
+
+1. Sign in as admin and open **Admin → Invite a person**.
+2. Create an invite (single use and valid for 7 days by default; optionally tied to one email address).
+3. Copy the invite link and send it to the person.
+4. They open the link, choose a name and password, and are signed in straight away.
+
+Each account is fully separate: a new person starts with an empty account, picks which modules they want, and can never see another user's data. An invite link stops working once it is used up, expired or deleted.
 
 ## Deploy to Vercel (Mac + desktop + iPhone)
 
@@ -94,8 +106,13 @@ New users register with an invite code, then verify their email. Since no email 
 6. Seed the production database once (from your machine):
 
 ```bash
-DATABASE_URL="your-pooled-production-url" npm run db:seed
+DATABASE_URL="your-pooled-production-url" \
+SEED_ADMIN_EMAIL="you@example.com" \
+SEED_ADMIN_PASSWORD="a-long-unique-password" \
+npm run db:seed
 ```
+
+The seed only creates the admin account. It will not run against a production database with the development password.
 
 Open the Vercel URL on any device — Safari on iPhone works as a responsive mobile web app.
 
@@ -127,9 +144,10 @@ If you had an older local SQLite `dev.db`, export data manually before switching
 
 ## Security notes
 
-- Registration is invite-only; only the admin can create invite codes.
+- Registration is invite-only; only the admin can create invites. Invite links are long random tokens that are single use and expire by default.
 - Every record is scoped to the signed-in user; no cross-user reads.
-- Dashboard and API routes are protected by middleware.
+- Dashboard pages are protected by middleware. API routes and server actions each check the session themselves; the cron endpoint requires `CRON_SECRET`.
+- Isolation is covered by tests: `src/lib/isolation` scans every database query for a user filter and runs a two-user test against a temporary database.
 - Deletes are soft (recoverable) where history matters.
 
 ## Roadmap

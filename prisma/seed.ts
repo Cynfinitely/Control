@@ -2,10 +2,25 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+const DEV_PASSWORD = "admin1234";
+
+/** True for anything that is not a local development database. */
+function isRealDeployment(): boolean {
+  if (process.env.NODE_ENV === "production") return true;
+  const url = process.env.DATABASE_URL ?? "";
+  if (!/^postgres(ql)?:\/\//.test(url)) return false;
+  return !/@(localhost|127\.0\.0\.1)[:/]/.test(url);
+}
 
 async function main() {
-  const adminEmail = "admin@control.local";
-  const adminPassword = "admin1234";
+  const adminEmail = (process.env.SEED_ADMIN_EMAIL ?? "admin@control.local").toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? DEV_PASSWORD;
+
+  // The development password is public (it is in the README), so it must never
+  // reach a real deployment.
+  if (isRealDeployment() && (adminPassword === DEV_PASSWORD || adminPassword.length < 12)) {
+    throw new Error("Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD (12+ characters) before seeding a production database.");
+  }
 
   const passwordHash = await bcrypt.hash(adminPassword, 10);
 
@@ -18,6 +33,7 @@ async function main() {
       passwordHash,
       role: "admin",
       emailVerifiedAt: new Date(),
+      needsOnboarding: true,
     },
   });
 
@@ -28,24 +44,11 @@ async function main() {
     create: { userId: admin.id },
   });
 
-  // A ready-to-use invite code
-  const code = "WELCOME-2026";
-  await prisma.inviteCode.upsert({
-    where: { code },
-    update: {},
-    create: {
-      code,
-      maxUses: 5,
-      createdById: admin.id,
-    },
-  });
-
   console.log("Seed complete.");
   console.log("------------------------------------------");
-  console.log("Admin login:");
-  console.log(`  Email:    ${adminEmail}`);
-  console.log(`  Password: ${adminPassword}`);
-  console.log(`Invite code for new sign-ups: ${code}`);
+  console.log(`Admin login: ${adminEmail}`);
+  console.log(adminPassword === DEV_PASSWORD ? `Password:    ${DEV_PASSWORD} (development only)` : "Password:    from SEED_ADMIN_PASSWORD");
+  console.log("Invite people from Admin > Invite a person.");
   console.log("------------------------------------------");
 }
 

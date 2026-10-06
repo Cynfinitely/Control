@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import type { ModuleId } from "@/lib/modules";
 import { rangeFor } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
@@ -11,6 +12,13 @@ export type ReportStat = {
   label: string;
   value: string | number;
   href?: string;
+};
+
+export type ReportSection = {
+  /** The module this section reports on; hidden when that module is switched off. */
+  module: ModuleId;
+  title: string;
+  stats: ReportStat[];
 };
 
 export async function buildReport(userId: string, period: Period) {
@@ -161,6 +169,7 @@ export async function buildReport(userId: string, period: Period) {
     to,
     sections: [
       {
+        module: "todos",
         title: "Productivity",
         stats: [
           { label: "Todos completed", value: todosCompleted, href: "/dashboard/todos" },
@@ -170,6 +179,7 @@ export async function buildReport(userId: string, period: Period) {
         ],
       },
       {
+        module: "goals",
         title: "Goals",
         stats: [
           { label: "Active (this week)", value: activeGoalsInPeriod, href: "/dashboard/goals" },
@@ -177,6 +187,7 @@ export async function buildReport(userId: string, period: Period) {
         ],
       },
       {
+        module: "food",
         title: "Food",
         stats: [
           { label: "Days logged", value: `${food.daysLogged}/${days}`, href: "/dashboard/food/week" },
@@ -188,6 +199,7 @@ export async function buildReport(userId: string, period: Period) {
         ],
       },
       {
+        module: "exercise",
         title: "Fitness",
         stats: [
           { label: "Workouts", value: workouts.length, href: "/dashboard/exercise" },
@@ -203,6 +215,7 @@ export async function buildReport(userId: string, period: Period) {
         ],
       },
       {
+        module: "religious",
         title: "Religious",
         stats: [
           { label: "Prayers on time", value: prayersOnTime, href: "/dashboard/religious" },
@@ -222,6 +235,7 @@ export async function buildReport(userId: string, period: Period) {
         ],
       },
       {
+        module: "career",
         title: "Career",
         stats: [
           { label: "Learning entries", value: learning.length, href: "/dashboard/career" },
@@ -231,6 +245,7 @@ export async function buildReport(userId: string, period: Period) {
         ],
       },
       {
+        module: "networking",
         title: "Networking",
         stats: [
           { label: "Interactions", value: interactions, href: "/dashboard/networking" },
@@ -238,6 +253,7 @@ export async function buildReport(userId: string, period: Period) {
         ],
       },
       {
+        module: "budget",
         title: "Budget",
         stats: [
           { label: "Income", value: formatEuro(budgetTotals.incomeCents), href: "/dashboard/budget" },
@@ -256,6 +272,6 @@ export async function buildReport(userId: string, period: Period) {
           { label: "Transactions", value: budgetTransactions.length, href: "/dashboard/budget" },
         ],
       },
-    ],
+    ] satisfies ReportSection[] as ReportSection[],
   };
 }
