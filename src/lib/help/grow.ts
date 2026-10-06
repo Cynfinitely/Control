@@ -30,8 +30,8 @@ export const growHelp = {
     tips: [
       "Carrying over makes a copy in the current period and leaves the original where it was. Counters keep the count they had reached, milestones are not copied, and a goal is skipped if the current period already has one with the same title.",
       "Only goals from the period just before the current one can be carried over. The button disappears when there is nothing left to carry.",
-      "Auto-tracking adds 1 per workout, the number of hours per learning entry (1 if the hours are 0) and the number of pages per Quran reading. It goes to the weekly, monthly and yearly goals that cover the date of the activity, and only while the goal is still active.",
-      'Deleting a workout, learning entry or reading later does not take the count back off. Use the minus button for that. The "Weekly goals" card on Home shows how many of this week\'s goals are completed.',
+      "Auto-tracking adds 1 per workout, the number of hours per learning entry (nothing if the hours are 0) and the number of pages per Quran reading. It goes to the weekly, monthly and yearly goals that cover the date of the activity, and only while the goal is still active.",
+      'Deleting a workout or learning entry later takes what it added back off the goal. Quran readings cannot be deleted, so use the minus button to correct those. The "Weekly goals" card on Home shows how many of this week\'s goals are completed.',
     ],
     related: [{ label: "Settings (switch modules on or off)", href: "/dashboard/settings" }],
   },
@@ -88,7 +88,7 @@ export const growHelp = {
     ],
     tips: [
       "Only a skill's level can be changed after it is added. To change a skill's name or anything on a certification, delete it and add it again.",
-      'The "Notes" you type when adding a skill are saved but are not shown on the skill\'s card.',
+      'The "Notes" you type when adding a skill are shown on the skill\'s card under the level.',
       "A level has to be saved with \"Set level\". Choosing a new level in the list without pressing the button changes nothing.",
       'The "Career" card on Home mentions certifications that are about to expire.',
     ],
@@ -147,8 +147,8 @@ export const growHelp = {
     ],
     tips: [
       "Each entry is one session. To log more hours on the same course, add another entry, because an entry and its status cannot be edited afterwards.",
-      "An entry with 0 hours still adds 1 to a linked goal.",
-      "Linked goals are counted for the week, month and year of the entry's date, and only while the goal is still active. Deleting the entry later does not take the hours back off the goal.",
+      "An entry with 0 hours adds nothing to a linked goal.",
+      "Linked goals are counted for the week, month and year of the entry's date, and only while the goal is still active. Deleting the entry later takes its hours back off the goal.",
       'The "Career" card on Home shows your learning hours for this week.',
     ],
     related: [
@@ -179,7 +179,7 @@ export const growHelp = {
     ],
     tips: [
       "Only the stage can be changed after an application is added. The follow-up date, linked contact and notes are fixed.",
-      'The "Notes" you type are saved but are not shown in the list.',
+      'The "Notes" you type are shown under the application in the list.',
       "The follow-up date is shown for reference only. It does not create a reminder.",
       "Updating a stage moves that application to the top of the list.",
     ],

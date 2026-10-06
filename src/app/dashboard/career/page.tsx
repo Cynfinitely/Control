@@ -276,6 +276,9 @@ export default async function CareerPage({
                         />
                       ))}
                     </div>
+                    {s.notes && (
+                      <p className="mt-2 whitespace-pre-line break-words text-sm text-slate-600 dark:text-slate-400">{s.notes}</p>
+                    )}
                   </div>
                   <DeleteButton
                     action={deleteSkill}
@@ -603,6 +606,9 @@ export default async function CareerPage({
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
+                  )}
+                  {j.notes && (
+                    <p className="mt-1 whitespace-pre-line break-words text-sm text-slate-600 dark:text-slate-400">{j.notes}</p>
                   )}
                 </div>
                 <div className="flex items-end gap-2">

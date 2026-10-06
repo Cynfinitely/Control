@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
-import { incrementLinkedGoals } from "@/lib/goal-links";
+import { decrementLinkedGoals, incrementLinkedGoals } from "@/lib/goal-links";
 import { ownedContactId, ownedSkill } from "@/lib/ownership";
 import { success, failure, type ActionResult } from "@/lib/action-result";
 
@@ -168,17 +168,26 @@ export async function createLearning(formData: FormData): Promise<ActionResult> 
     },
   });
 
-  await incrementLinkedGoals(userId, "learning", date, num(formData.get("hours")) || 1);
+  // Learning goals count hours, so an entry without hours adds nothing.
+  await incrementLinkedGoals(userId, "learning", date, num(formData.get("hours")));
   invalidateCareer(userId);
   return success("Learning entry added");
 }
 
 export async function deleteLearning(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
-  await prisma.learningEntry.updateMany({
-    where: { id: str(formData.get("id")), userId },
+  const id = str(formData.get("id"));
+  const entry = await prisma.learningEntry.findFirst({
+    where: { id, userId, deletedAt: null },
+    select: { date: true, hours: true },
+  });
+  if (!entry) return failure("Learning entry not found");
+  const result = await prisma.learningEntry.updateMany({
+    where: { id, userId, deletedAt: null },
     data: { deletedAt: new Date() },
   });
+  // Take the hours back off any goal that counted them.
+  if (result.count > 0) await decrementLinkedGoals(userId, "learning", entry.date, entry.hours);
   invalidateCareer(userId);
   return success("Learning entry deleted");
 }

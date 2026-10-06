@@ -34,7 +34,7 @@ const REVIEWED: Record<string, number> = {
   "src/app/dashboard/religious/actions.ts::prayerDebt.update": 1,
   "src/app/dashboard/religious/actions.ts::prayerLog.delete": 1,
   "src/app/dashboard/religious/actions.ts::qazaPrayer.delete": 2,
-  "src/lib/goal-links.ts::goal.update": 1,
+  "src/lib/goal-links.ts::goal.update": 2,
 
   // Child tables without their own userId; the parent is ownership-checked first.
   "src/app/dashboard/calendar/actions.ts::calendarEventException.upsert": 2,
@@ -60,6 +60,8 @@ const REVIEWED: Record<string, number> = {
   "src/app/dashboard/goals/actions.ts::goalMilestone.update": 1,
   "src/app/dashboard/plan/actions.ts::planTemplateBlock.createMany": 1,
   "src/lib/goal-links.ts::goalCheckIn.create": 1,
+  "src/lib/goal-links.ts::goalCheckIn.delete": 1,
+  "src/lib/goal-links.ts::goalCheckIn.findFirst": 1,
 
   // Scoped through a WorkDay fetched by { userId, date }.
   "src/app/dashboard/work/actions.ts::workFocusItem.aggregate": 1,

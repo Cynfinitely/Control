@@ -30,7 +30,7 @@ export const bodyHelp = {
     tips: [
       `"Start workout" only appears on active programs that have at least one exercise.`,
       `The page lists your 30 most recent workouts, 10 most recent weigh-ins and 10 most recent measurements. Older entries are not shown here.`,
-      `If you have a goal set to auto-track "Workouts logged", every workout you log here adds 1 to it. Deleting a workout does not take that 1 back.`,
+      `If you have a goal set to auto-track "Workouts logged", every workout you log here adds 1 to it, and deleting the workout takes that 1 back off.`,
       `The activity type you chose last is remembered on this device, so the card opens on it next time. Programs cannot be deleted, only archived.`,
     ],
     related: [
@@ -143,13 +143,13 @@ export const bodyHelp = {
     ],
     capabilities: [
       `Mark each of the five prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) "On time" or "Missed". Each row saves as soon as you tap it.`,
-      `Have missed prayers added to your qaza list for you. Switching a missed prayer to "On time", or clearing it with the x button, removes that qaza entry again as long as you have not fulfilled it.`,
+      `Have missed prayers added to your qaza list for you. Switching a missed prayer to "On time", or clearing it with the x button, removes that qaza entry again as long as you have not fulfilled it. Once you have made a missed prayer up, its badge changes to "Missed · made up" and marking it missed again does not add a second qaza.`,
       `Fill in every prayer that has no status yet with "Mark all on time" (it reads "Mark remaining" with a number when some are already set). Prayers you marked "Missed" stay missed.`,
       `Move to another day with the arrows beside the date, pick a date with the calendar button, or return with "Today". You cannot go past today.`,
       `Make up missed prayers in "Daily qaza": "Fulfill one" clears the oldest one for that prayer, or enter a number and press "Fulfill" to clear several, oldest first. "Show dates" lists the days they came from.`,
       `Record prayers you owe from before you started tracking under "Set up historical debt" (a count per prayer). Enter "Period start" and "Period end" to get an estimate of one of each prayer per day, press "Apply to all prayers", adjust the counts, add an optional "Note" and press "Save historical debt".`,
       `Work through historical debt with "Fulfill 1", or a number and "Fulfill", for each prayer. A bar shows how many are fulfilled and how many are left.`,
-      `Change the owed counts later under "Update historical debt", or delete all of it with "Clear all historical debt".`,
+      `Change the owed counts later under "Update historical debt", or delete all of it with "Clear all historical debt". When everything is fulfilled the page says so and still lets you update or clear the record.`,
       `Track a khatm (one full reading of the Quran, 604 pages) in "Quran khatm". Log pages with the quick buttons, or enter "Pages" and an optional "Note" and press "Log pages". The card shows your next page, juz, percentage and "Recent sessions".`,
       `Correct your place under "Set current page": set the next page and "Khatms completed", then press "Save position".`,
       `Keep a personal list of daily readings, each with a target per day in pages or times. Tap "+1" to log one, or the second button to log the full daily target at once. A reading shows "Done" when today's target is met.`,

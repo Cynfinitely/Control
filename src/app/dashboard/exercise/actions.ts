@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { incrementLinkedGoals } from "@/lib/goal-links";
+import { decrementLinkedGoals, incrementLinkedGoals } from "@/lib/goal-links";
 import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { toDateInputValue } from "@/lib/date";
@@ -147,11 +147,18 @@ export async function deleteWorkout(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid workout.");
+  const workout = await prisma.workout.findFirst({
+    where: { id, userId, deletedAt: null },
+    select: { date: true },
+  });
+  if (!workout) return failure("Workout not found.");
   const result = await prisma.workout.updateMany({
     where: { id, userId, deletedAt: null },
     data: { deletedAt: new Date() },
   });
   if (result.count === 0) return failure("Workout not found.");
+  // Take the workout back off any goal that counted it.
+  await decrementLinkedGoals(userId, "workout", workout.date);
   invalidateExercise(userId, id);
   return success("Workout deleted");
 }
