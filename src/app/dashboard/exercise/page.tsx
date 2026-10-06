@@ -65,7 +65,7 @@ export default async function ExercisePage() {
 
       <div className="mb-8">
         <FocusTarget value="log">
-          <LogActivityCard todayValue={todayValue} />
+          <LogActivityCard todayValue={todayValue} userId={user.id} />
         </FocusTarget>
       </div>
 

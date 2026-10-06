@@ -200,6 +200,7 @@ export default async function DashboardHome() {
       )}
 
       <OnboardingChecklist
+        userId={sessionUser.id}
         userCreatedAt={user.createdAt.toISOString()}
         items={[
           {

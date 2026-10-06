@@ -3,17 +3,19 @@
 import IconButton from "@/components/IconButton";
 import { useToast } from "@/components/Toast";
 
-export default function CopyCodeButton({ code }: { code: string }) {
+/** Copies the full registration link for an invite. */
+export default function CopyCodeButton({ code, label }: { code: string; label: string }) {
   const toast = useToast();
 
   async function copy() {
+    const link = `${window.location.origin}/register?invite=${encodeURIComponent(code)}`;
     try {
-      await navigator.clipboard.writeText(code);
-      toast.success(`Copied ${code}`);
+      await navigator.clipboard.writeText(link);
+      toast.success("Invite link copied");
     } catch {
-      toast.error("Couldn't copy — select the code and copy it manually.");
+      toast.error("Couldn't copy the link. Check clipboard permissions and try again.");
     }
   }
 
-  return <IconButton icon="copy" onClick={copy} aria-label={`Copy invite code ${code}`} />;
+  return <IconButton icon="copy" onClick={copy} aria-label={`Copy invite link ${label}`} />;
 }

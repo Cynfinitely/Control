@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import Spinner from "@/components/Spinner";
 import FormField from "@/components/FormField";
 import PasswordInput from "@/components/PasswordInput";
@@ -105,10 +104,7 @@ function LoginForm() {
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
-        Have an invite?{" "}
-        <Link href="/register" className="link">
-          Create account
-        </Link>
+        New here? Control is invite-only: open the invite link you were sent to create your account.
       </p>
     </div>
   );
