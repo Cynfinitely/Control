@@ -52,7 +52,7 @@ export async function getEventsInRange(userId: string, rangeStart: Date, rangeEn
         include: {
           exceptions: true,
           reminders: {
-            where: { deletedAt: null, status: "active" },
+            where: { userId, deletedAt: null, status: "active" },
             select: {
               id: true,
               title: true,
@@ -117,7 +117,7 @@ export async function getCalendarEvent(userId: string, eventId: string) {
     where: { id: eventId, userId, deletedAt: null },
     include: {
       exceptions: true,
-      reminders: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
+      reminders: { where: { userId, deletedAt: null }, orderBy: { createdAt: "asc" } },
     },
   });
   if (!event) return null;

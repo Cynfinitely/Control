@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { incrementLinkedGoals } from "@/lib/goal-links";
+import { ownedContactId, ownedSkill } from "@/lib/ownership";
 import { success, failure, type ActionResult } from "@/lib/action-result";
 
 function invalidateCareer(userId: string) {
@@ -148,14 +149,10 @@ export async function createLearning(formData: FormData): Promise<ActionResult> 
   const userId = await getUserId();
   const title = str(formData.get("title"));
   if (!title) return failure("Title is required");
-  const skillId = optStr(formData.get("skillId"));
-  let skillName = optStr(formData.get("skillName"));
+  // Only link a skill the user owns; an unknown or foreign id is dropped.
+  const skill = await ownedSkill(userId, optStr(formData.get("skillId")));
+  const skillName = skill?.name ?? optStr(formData.get("skillName"));
   const date = parseDate(formData.get("date"));
-
-  if (skillId) {
-    const skill = await prisma.skill.findFirst({ where: { id: skillId, userId } });
-    if (skill) skillName = skill.name;
-  }
 
   await prisma.learningEntry.create({
     data: {
@@ -164,7 +161,7 @@ export async function createLearning(formData: FormData): Promise<ActionResult> 
       kind: str(formData.get("kind")) || "course",
       status: str(formData.get("status")) || "in_progress",
       hours: num(formData.get("hours")),
-      skillId: skillId ?? null,
+      skillId: skill?.id ?? null,
       skillName,
       notes: optStr(formData.get("notes")),
       date,
@@ -197,7 +194,7 @@ export async function createJobApplication(formData: FormData): Promise<ActionRe
       company,
       role,
       stage: str(formData.get("stage")) || "applied",
-      contactId: optStr(formData.get("contactId")),
+      contactId: await ownedContactId(userId, optStr(formData.get("contactId"))),
       dueDate: parseOptionalDate(formData.get("dueDate")),
       notes: optStr(formData.get("notes")),
     },

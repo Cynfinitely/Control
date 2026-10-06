@@ -116,7 +116,7 @@ export default async function CareerPage({
   const now = new Date();
   const tab = parseCareerTab(searchParams.tab);
 
-  const [goals, skills, certs, experiences, learning, learningCount, jobApps, contacts] = await Promise.all([
+  const [goals, skills, certs, experiences, learningRows, learningCount, jobAppRows, contacts] = await Promise.all([
     prisma.careerGoal.findMany({ where: { userId, deletedAt: null }, orderBy: { createdAt: "desc" } }),
     prisma.skill.findMany({ where: { userId, deletedAt: null }, orderBy: { name: "asc" } }),
     prisma.certification.findMany({ where: { userId, deletedAt: null }, orderBy: { issuedAt: "desc" } }),
@@ -125,13 +125,13 @@ export default async function CareerPage({
       where: { userId, deletedAt: null },
       orderBy: { date: "desc" },
       take: LEARNING_LIMIT,
-      include: { skill: { select: { name: true } } },
+      include: { skill: { select: { name: true, userId: true } } },
     }),
     prisma.learningEntry.count({ where: { userId, deletedAt: null } }),
     prisma.jobApplication.findMany({
       where: { userId, deletedAt: null },
       orderBy: { updatedAt: "desc" },
-      include: { contact: { select: { name: true } } },
+      include: { contact: { select: { name: true, userId: true } } },
     }),
     prisma.contact.findMany({
       where: { userId, deletedAt: null },
@@ -139,6 +139,10 @@ export default async function CareerPage({
       select: { id: true, name: true },
     }),
   ]);
+
+  // Never render a linked record that belongs to someone else.
+  const learning = learningRows.map((l) => ({ ...l, skill: l.skill?.userId === userId ? l.skill : null }));
+  const jobApps = jobAppRows.map((j) => ({ ...j, contact: j.contact?.userId === userId ? j.contact : null }));
 
   const certExpirySoon = addDays(now, 30);
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay } from "@/lib/date";
+import { ownsLink } from "@/lib/ownership";
 import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
 
 const MAX_FOCUS_ITEMS = 8;
@@ -33,25 +34,6 @@ async function ensureWorkDay(userId: string, date: Date) {
   });
 }
 
-async function assertOwnedLink(userId: string, linkType: string | null, linkId: string | null) {
-  if (!linkType || !linkId) return true;
-  if (linkType === "career_goal") {
-    const row = await prisma.careerGoal.findFirst({
-      where: { id: linkId, userId, deletedAt: null },
-      select: { id: true },
-    });
-    return Boolean(row);
-  }
-  if (linkType === "skill") {
-    const row = await prisma.skill.findFirst({
-      where: { id: linkId, userId, deletedAt: null },
-      select: { id: true },
-    });
-    return Boolean(row);
-  }
-  return false;
-}
-
 export async function createFocusItem(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const title = str(formData.get("title"));
@@ -59,7 +41,7 @@ export async function createFocusItem(formData: FormData): Promise<ActionResult>
 
   const date = startOfDay(parseDate(formData.get("dayDate")));
   const { linkType, linkId } = parseLink(optStr(formData.get("link")) ?? null);
-  if (!(await assertOwnedLink(userId, linkType, linkId))) {
+  if (!(await ownsLink(userId, linkType, linkId))) {
     return failure("Invalid career link");
   }
 

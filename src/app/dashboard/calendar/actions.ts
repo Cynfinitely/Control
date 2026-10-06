@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr } from "@/lib/actions";
+import { ownedEventId } from "@/lib/ownership";
 import { revalidateUserCache } from "@/lib/cache";
 import { parseRruleUntil, rruleUntilBefore } from "@/lib/calendar";
 import type { OccurrenceScope } from "@/lib/calendar/types";
@@ -288,7 +289,9 @@ export async function createReminder(formData: FormData) {
   if (!remindAt) return { error: "When is required." };
 
   const rrule = optStr(formData.get("rrule"));
-  const eventId = optStr(formData.get("eventId"));
+  const rawEventId = optStr(formData.get("eventId"));
+  const eventId = await ownedEventId(userId, rawEventId);
+  if (rawEventId && !eventId) return { error: "Event not found." };
   const offsetMinutesRaw = str(formData.get("offsetMinutes"));
   const offsetMinutes =
     offsetMinutesRaw === "" ? null : Number.isNaN(Number(offsetMinutesRaw)) ? null : Number(offsetMinutesRaw);
