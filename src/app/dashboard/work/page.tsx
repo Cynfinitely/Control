@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { requireUser } from "@/lib/session";
+import { getDisabledModules } from "@/lib/queries/modules";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue, formatDayLabel, parseDayParam } from "@/lib/date";
 import { getWorkDay, getWorkLinkOptions } from "@/lib/queries/work";
 import PageHeader from "@/components/PageHeader";
@@ -18,7 +19,7 @@ export default async function WorkPage({
 }: {
   searchParams: { day?: string; focus?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("work");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
@@ -28,7 +29,9 @@ export default async function WorkPage({
     getWorkLinkOptions(user.id),
   ]);
 
-  const linkChoices = [...linkOptions.goals, ...linkOptions.skills];
+  // Career links are only offered while the Career module is on.
+  const careerOn = !(await getDisabledModules(user.id)).includes("career");
+  const linkChoices = careerOn ? [...linkOptions.goals, ...linkOptions.skills] : [];
   const doneCount = workDay.focusItems.filter((i) => i.status === "done").length;
   const totalCount = workDay.focusItems.length;
 
@@ -70,7 +73,7 @@ export default async function WorkPage({
                 autoComplete="off"
               />
             </div>
-            <div className="sm:col-span-2 lg:col-span-3">
+            <div className={careerOn ? "sm:col-span-2 lg:col-span-3" : "hidden"}>
               <label htmlFor="work-focus-link" className="label">
                 Career link (optional)
               </label>

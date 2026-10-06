@@ -1,30 +1,40 @@
+import { moduleFilter, type ModuleId } from "@/lib/modules";
+
 /**
  * Guided weekly review: step definitions and the CSV state stored in
  * WeeklyReview.completedSteps. Step ids are persisted — never rename them.
+ *
+ * A step with a `module` is left out of the review when that module is
+ * switched off; "plan-ahead" belongs to no single module and always stays.
  */
 export const REVIEW_STEPS = [
   {
     id: "inbox",
+    module: "todos",
     title: "Clear todos & backlog",
     description: "Move unfinished todos from previous days into the backlog, then skim what's waiting.",
   },
   {
     id: "goals",
+    module: "goals",
     title: "Check weekly goals",
     description: "Tick off what you finished and log any progress you haven't counted yet.",
   },
   {
     id: "prayers",
+    module: "religious",
     title: "Spiritual catch-up",
     description: "See what qaza is still waiting and plan when to make it up.",
   },
   {
     id: "spending",
+    module: "budget",
     title: "Review spending",
     description: "Look at what you spent this week and categorize anything new.",
   },
   {
     id: "people",
+    module: "networking",
     title: "Relationships",
     description: "Reach out to people you haven't spoken to in a while.",
   },
@@ -33,7 +43,15 @@ export const REVIEW_STEPS = [
     title: "Plan the week ahead",
     description: "Block time for tomorrow, check the meal plan and shopping, and write a few lines.",
   },
-] as const;
+] as const satisfies readonly { id: string; module?: ModuleId; title: string; description: string }[];
+
+export type ReviewStep = (typeof REVIEW_STEPS)[number];
+
+/** The steps that apply to a user, given the modules they switched off. */
+export function activeReviewSteps(disabledModules: readonly ModuleId[]): ReviewStep[] {
+  const modules = moduleFilter(disabledModules);
+  return REVIEW_STEPS.filter((step) => !("module" in step) || modules.has(step.module));
+}
 
 export type ReviewStepId = (typeof REVIEW_STEPS)[number]["id"];
 
@@ -71,16 +89,22 @@ export function toggleCompletedStep(csv: string | null | undefined, step: Review
   return serializeCompletedSteps(set);
 }
 
-export function reviewProgress(completed: Iterable<string>): { done: number; total: number } {
+export function reviewProgress(
+  completed: Iterable<string>,
+  steps: readonly ReviewStep[] = REVIEW_STEPS
+): { done: number; total: number } {
   const set = new Set<string>(completed);
-  const done = REVIEW_STEPS.filter((s) => set.has(s.id)).length;
-  return { done, total: REVIEW_STEPS.length };
+  const done = steps.filter((s) => set.has(s.id)).length;
+  return { done, total: steps.length };
 }
 
-/** True when every step is checked off. */
-export function isReviewComplete(completed: Iterable<string> | string | null | undefined): boolean {
+/** True when every step (of the given ones) is checked off. */
+export function isReviewComplete(
+  completed: Iterable<string> | string | null | undefined,
+  steps: readonly ReviewStep[] = REVIEW_STEPS
+): boolean {
   const set = typeof completed === "string" || completed == null ? parseCompletedSteps(completed) : new Set(completed);
-  return REVIEW_STEPS.every((s) => set.has(s.id));
+  return steps.every((s) => set.has(s.id));
 }
 
 /** Validates a client-supplied week key like "2026-W40". */

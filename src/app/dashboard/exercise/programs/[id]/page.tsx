@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue } from "@/lib/date";
 import PageHeader from "@/components/PageHeader";
 import Breadcrumb from "@/components/Breadcrumb";
@@ -15,7 +15,7 @@ import { StartWorkoutForm } from "../../ProgramsSection";
 export const metadata = { title: "Program" };
 
 export default async function WorkoutProgramDetail({ params }: { params: { id: string } }) {
-  const user = await requireUser();
+  const user = await requireModule("exercise");
   const program = await prisma.workoutProgram.findFirst({
     where: { id: params.id, userId: user.id },
     include: { exercises: { orderBy: { order: "asc" } } },

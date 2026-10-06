@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { getInspirations } from "@/lib/queries/inspirations";
 import PageHeader from "@/components/PageHeader";
 import SubmitButton from "@/components/SubmitButton";
@@ -10,7 +10,7 @@ import { createInspirationForm } from "./actions";
 export const metadata = { title: "Inspirations" };
 
 export default async function InspirationsPage() {
-  const user = await requireUser();
+  const user = await requireModule("inspirations");
   const inspirations = await getInspirations(user.id);
 
   return (

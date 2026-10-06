@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { formatDayLabel, parseDayParam, parseMonthParam, toDateInputValue, toMonthKey } from "@/lib/date";
 import { getMonthMigraineLogs } from "@/lib/queries/migraine";
 import { periodLabel } from "@/lib/period";
@@ -12,7 +12,7 @@ export default async function MigrainePage({
 }: {
   searchParams: { month?: string; day?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("migraine");
   const monthDate = parseMonthParam(searchParams.month);
   const monthKey = toMonthKey(monthDate);
   const todayKey = toDateInputValue(new Date());

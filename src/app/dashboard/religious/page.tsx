@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue, formatDate, formatDayLabel, parseDayParam } from "@/lib/date";
 import { getDayPrayers, getPrayerStreak, getReligiousSidebarData } from "@/lib/queries/religious";
 import { historicalDebtRemaining, prayerDebtRemaining, PRAYERS } from "@/lib/prayer-debt";
@@ -54,7 +54,7 @@ export default async function ReligiousPage({
 }: {
   searchParams: { day?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("religious");
   const now = new Date();
   const today = new Date(toDateInputValue(now) + "T00:00:00");
   const day = parseDayParam(searchParams.day);

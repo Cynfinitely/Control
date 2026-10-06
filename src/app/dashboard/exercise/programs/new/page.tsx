@@ -2,12 +2,14 @@ import PageHeader from "@/components/PageHeader";
 import Breadcrumb from "@/components/Breadcrumb";
 import ActionForm from "@/components/ActionForm";
 import SubmitButton from "@/components/SubmitButton";
+import { requireModule } from "@/lib/session";
 import { createProgram } from "../actions";
 import ProgramTextImport from "../ProgramTextImport";
 
 export const metadata = { title: "New program" };
 
-export default function NewWorkoutProgramPage() {
+export default async function NewWorkoutProgramPage() {
+  await requireModule("exercise");
   return (
     <div>
       <PageHeader

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import clsx from "clsx";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { formatDate } from "@/lib/date";
 import {
   activityLabel,
@@ -27,7 +27,7 @@ import DeleteWorkoutButton from "./DeleteWorkoutButton";
 export const metadata = { title: "Workout" };
 
 export default async function WorkoutDetail({ params }: { params: { id: string } }) {
-  const user = await requireUser();
+  const user = await requireModule("exercise");
   const workout = await prisma.workout.findFirst({
     where: { id: params.id, userId: user.id, deletedAt: null },
     include: {

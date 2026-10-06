@@ -11,6 +11,8 @@ import { getPrincipleReviewedToday } from "@/lib/queries/principles";
 import { getLifePriorities } from "@/lib/queries/priorities";
 import { getDayTodos } from "@/lib/queries/todos";
 import { getUserWeather } from "@/lib/queries/weather";
+import { getDisabledModules } from "@/lib/queries/modules";
+import { moduleFilter, type ModuleId } from "@/lib/modules";
 import { formatEuroSigned } from "@/lib/budget";
 import PageHeader from "@/components/PageHeader";
 import Icon from "@/components/Icon";
@@ -58,21 +60,25 @@ export default async function DashboardHome() {
   const thisWeekKey = getPeriodKey("weekly", now);
   const lastWeekKey = getPeriodKey("weekly", addDays(now, -7));
 
+  // Modules the user switched off are neither queried nor shown.
+  const disabledModules = await getDisabledModules(sessionUser.id);
+  const modules = moduleFilter(disabledModules);
+
   const stats = await getDashboardStats(sessionUser.id, todayKey);
   const [planPreview, planStats, inspirations, principlesReviewed, priorities, todayTodos, reviews, weather] = await Promise.all([
-    getPlanPreviewBlocks(sessionUser.id, todayKey),
-    getPlanDayStats(sessionUser.id, todayKey, now),
-    getInspirations(sessionUser.id),
-    getPrincipleReviewedToday(sessionUser.id, now),
-    getLifePriorities(sessionUser.id),
-    getDayTodos(sessionUser.id, todayKey),
-    getRecentWeeklyReviews(sessionUser.id, [thisWeekKey, lastWeekKey]),
-    getUserWeather(sessionUser.id),
+    modules.has("plan") ? getPlanPreviewBlocks(sessionUser.id, todayKey) : null,
+    modules.has("plan") ? getPlanDayStats(sessionUser.id, todayKey, now) : null,
+    modules.has("inspirations") ? getInspirations(sessionUser.id) : null,
+    modules.has("principles") ? getPrincipleReviewedToday(sessionUser.id, now) : null,
+    modules.has("priorities") ? getLifePriorities(sessionUser.id) : null,
+    modules.has("todos") ? getDayTodos(sessionUser.id, todayKey) : null,
+    modules.has("review") ? getRecentWeeklyReviews(sessionUser.id, [thisWeekKey, lastWeekKey]) : [],
+    modules.has("weather") ? getUserWeather(sessionUser.id) : null,
   ]);
 
   const thisWeekReview = reviews.find((r) => r.weekKey === thisWeekKey);
   const lastWeekReview = reviews.find((r) => r.weekKey === lastWeekKey);
-  const showReviewNudge = shouldNudgeWeeklyReview({
+  const showReviewNudge = modules.has("review") && shouldNudgeWeeklyReview({
     isoWeekday: isoWeekdayInZone(now, user.timezone),
     thisWeekCompleted: Boolean(thisWeekReview?.completedAt),
     lastWeekStartedNotCompleted: Boolean(lastWeekReview && !lastWeekReview.completedAt),
@@ -87,8 +93,18 @@ export default async function DashboardHome() {
     prisma.prayerDebt.count({ where: { userId: sessionUser.id } }).then((n) => n > 0),
   ]);
 
-  const cards = [
+  const cards = modules.keep<{
+    module: ModuleId;
+    label: string;
+    value: string | number;
+    sub: string;
+    href: string;
+    icon: string;
+    health: DomainHealth;
+    progress?: number;
+  }>([
     {
+      module: "goals",
       label: "Weekly goals",
       value: `${stats.weeklyGoalsCompleted}/${goalTotal || 0}`,
       sub: "completed this week",
@@ -98,6 +114,7 @@ export default async function DashboardHome() {
       progress: goalTotal > 0 ? (stats.weeklyGoalsCompleted / goalTotal) * 100 : 0,
     },
     {
+      module: "food",
       label: "Food logged",
       value: `${stats.mealsToday} today`,
       sub: `${stats.foodDaysThisWeek}/7 days this week · ${stats.waterGlasses} water`,
@@ -107,6 +124,7 @@ export default async function DashboardHome() {
       progress: (stats.foodDaysThisWeek / 7) * 100,
     },
     {
+      module: "budget",
       label: "Budget",
       value: stats.budgetSetupComplete
         ? formatEuroSigned(stats.budgetMonthNetCents)
@@ -121,6 +139,7 @@ export default async function DashboardHome() {
       health: stats.health.budget,
     },
     {
+      module: "exercise",
       label: "Workouts",
       value: `${stats.workoutsToday} today`,
       sub: `${stats.workoutsThisWeek} this week`,
@@ -130,6 +149,7 @@ export default async function DashboardHome() {
       progress: Math.min(100, (stats.workoutsThisWeek / 3) * 100),
     },
     {
+      module: "religious",
       label: "Prayers today",
       value: `${stats.prayersOnTime}/${PRAYERS}`,
       sub: [
@@ -148,6 +168,7 @@ export default async function DashboardHome() {
       progress: (stats.prayersOnTime / PRAYERS) * 100,
     },
     {
+      module: "career",
       label: "Career",
       value: stats.careerGoalsActive,
       sub: `${Math.round(stats.learningHoursWeek)}h learning this week${stats.expiringCerts > 0 ? ` · ${stats.expiringCerts} cert expiring` : ""}`,
@@ -156,6 +177,7 @@ export default async function DashboardHome() {
       health: stats.health.career,
     },
     {
+      module: "networking",
       label: "Networking",
       value: stats.overdueContacts,
       sub: stats.overdueContacts === 0 ? "all caught up" : "overdue",
@@ -163,7 +185,10 @@ export default async function DashboardHome() {
       icon: "users",
       health: stats.health.networking,
     },
-  ];
+  ]);
+
+  const showMainColumn = Boolean(todayTodos || (planPreview && planStats));
+  const showGlance = Boolean(weather) || cards.length > 0;
 
   const displayName = user.name ?? "there";
 
@@ -202,52 +227,62 @@ export default async function DashboardHome() {
       <OnboardingChecklist
         userId={sessionUser.id}
         userCreatedAt={user.createdAt.toISOString()}
-        items={[
+        items={modules.keep<{ module: ModuleId; id: string; label: string; href: string; done: boolean }>([
           {
+            module: "food",
             id: "meal",
             label: "Log your first meal",
             href: "/dashboard/food?focus=log",
             done: hasMeal,
           },
           {
+            module: "goals",
             id: "goal",
             label: "Create a weekly goal",
             href: "/dashboard/goals?focus=add",
             done: hasWeeklyGoal,
           },
           {
+            module: "budget",
             id: "budget",
             label: "Import your budget transactions",
             href: "/dashboard/budget",
             done: stats.budgetSetupComplete,
           },
           {
+            module: "religious",
             id: "prayer",
             label: "Configure prayer debt (if needed)",
             href: "/dashboard/religious",
             done: hasPrayerDebt || stats.prayersOnTime > 0,
           },
-        ]}
+        ])}
       />
 
-      <LifePrioritiesCard items={priorities} />
+      {priorities && <LifePrioritiesCard items={priorities} />}
 
-      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {(showMainColumn || showGlance) && (
+      <div className={showMainColumn && showGlance ? "mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3" : "mb-6"}>
+        {showMainColumn && (
         <div className="min-w-0 lg:col-span-2">
-          <HomeTodosCard todos={todayTodos} dayValue={todayKey} overdueCount={stats.overdueTodos} />
+          {todayTodos && <HomeTodosCard todos={todayTodos} dayValue={todayKey} overdueCount={stats.overdueTodos} />}
+          {planPreview && planStats && (
           <PlanPreview
             blocks={planPreview.blocks}
             stats={planStats}
             currentBlockId={planPreview.currentBlockId}
             isToday
           />
+          )}
         </div>
+        )}
+        {showGlance && (
         <aside aria-labelledby="glance-title" className="min-w-0">
           <h2 id="glance-title" className="section-title mb-3">
             Today at a glance
           </h2>
-          <HomeWeatherCard weather={weather} />
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+          {weather && <HomeWeatherCard weather={weather} />}
+          <div className={showMainColumn ? "grid grid-cols-2 gap-2 lg:grid-cols-1" : "grid grid-cols-2 gap-2 lg:grid-cols-4"}>
             {cards.map((c) => (
               <StatCard
                 key={c.label}
@@ -264,14 +299,18 @@ export default async function DashboardHome() {
             ))}
           </div>
         </aside>
+        )}
       </div>
+      )}
 
+      {(inspirations || principlesReviewed !== null) && (
       <div className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <InspirationSpotlight items={inspirations} />
-        <PrincipleReviewCard reviewedToday={principlesReviewed} />
+        {inspirations && <InspirationSpotlight items={inspirations} />}
+        {principlesReviewed !== null && <PrincipleReviewCard reviewedToday={principlesReviewed} />}
       </div>
+      )}
 
-      <HomeQuickActions />
+      <HomeQuickActions disabledModules={disabledModules} />
     </div>
   );
 }

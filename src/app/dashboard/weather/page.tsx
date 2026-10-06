@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { getUserWeather } from "@/lib/queries/weather";
 import PageHeader from "@/components/PageHeader";
 import TabNav from "@/components/TabNav";
@@ -20,7 +20,7 @@ export default async function WeatherPage({
 }: {
   searchParams: { view?: string; day?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("weather");
   const weather = await getUserWeather(user.id);
   const view = searchParams.view === "week" ? "week" : "day";
 

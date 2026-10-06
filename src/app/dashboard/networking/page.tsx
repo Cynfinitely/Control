@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { formatRange } from "@/lib/date";
 import { RELATIONSHIP_LABELS } from "@/lib/contacts";
 import { buildNetworkingInsights, rangeForNetworkingPeriod, type NetworkingPeriod } from "@/lib/networking";
@@ -35,7 +35,7 @@ export default async function NetworkingPage({
 }: {
   searchParams: { tab?: string; relationship?: string; period?: string; person?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("networking");
   const tab = parseNetworkingTab(searchParams.tab);
   const relationshipFilter = searchParams.relationship?.trim();
   const period = parsePeriod(searchParams.period);

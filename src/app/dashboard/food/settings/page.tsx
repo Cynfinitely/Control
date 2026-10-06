@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { getFoodSettings, getNutritionTarget } from "@/lib/queries/food";
 import PageHeader from "@/components/PageHeader";
 import FormAction from "@/components/FormAction";
@@ -11,7 +11,7 @@ import { saveTargetForm } from "../actions";
 export const metadata = { title: "Food settings" };
 
 export default async function FoodSettingsPage() {
-  const user = await requireUser();
+  const user = await requireModule("food");
   const [settings, target] = await Promise.all([getFoodSettings(user.id), getNutritionTarget(user.id)]);
 
   return (

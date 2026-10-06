@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { toDateInputValue, parseDayParam, parseMonthParam, toMonthKey, formatDate } from "@/lib/date";
 import { periodLabel } from "@/lib/period";
 import {
@@ -43,7 +43,7 @@ type SearchParams = {
 const HEADER_DESCRIPTION = "Import Nordea statements, categorize merchants, and review monthly spending.";
 
 export default async function BudgetPage({ searchParams }: { searchParams: SearchParams }) {
-  const user = await requireUser();
+  const user = await requireModule("budget");
   const day = parseDayParam(searchParams.day);
   const monthParam = searchParams.month && /^\d{4}-\d{2}$/.test(searchParams.month) ? searchParams.month : undefined;
 

@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { formatDate, toDateInputValue } from "@/lib/date";
 import { parseFoodRange, type FoodRangeSearchParams } from "@/lib/food/range";
 import { buildFoodRangePrompt } from "@/lib/food/prompt";
@@ -31,7 +31,7 @@ export default async function FoodReportPage({
 }: {
   searchParams: FoodRangeSearchParams;
 }) {
-  const user = await requireUser();
+  const user = await requireModule("food");
   const range = parseFoodRange(searchParams);
   const { entries, target, waterLogs } = await getFoodReportRange(user.id, range.from, range.to);
   const targets = {

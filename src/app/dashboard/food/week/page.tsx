@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { addDays, endOfDay, parseDayParam, startOfWeek, toDateInputValue } from "@/lib/date";
 import { getDefaultMeals, getFoodRange, getUserTimezone } from "@/lib/queries/food";
 import {
@@ -17,7 +17,7 @@ import FoodNav from "../FoodNav";
 export const metadata = { title: "Food · Week summary" };
 
 export default async function FoodWeekPage({ searchParams }: { searchParams: { week?: string } }) {
-  const user = await requireUser();
+  const user = await requireModule("food");
   const weekStart = startOfWeek(parseDayParam(searchParams.week));
   const weekEnd = endOfDay(addDays(weekStart, 6));
   const currentWeekStart = startOfWeek(new Date());

@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/session";
+import { requireModule } from "@/lib/session";
 import { getPeriodKey, periodLabel, shiftPeriodDate, type GoalPeriod } from "@/lib/period";
 import { getGoalsForPeriod } from "@/lib/queries/goals";
 import PageHeader from "@/components/PageHeader";
@@ -25,7 +25,7 @@ export default async function GoalsPage({
 }: {
   searchParams: { period?: string; offset?: string };
 }) {
-  const user = await requireUser();
+  const user = await requireModule("goals");
   const periodDef = PERIODS.find((p) => p.value === searchParams.period) ?? PERIODS[0];
   const period = periodDef.value;
   const offset = parseInt(searchParams.offset ?? "0", 10) || 0;

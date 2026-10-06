@@ -1,3 +1,5 @@
+import type { ModuleId } from "@/lib/modules";
+
 export type PlanKind =
   | "custom"
   | "todo"
@@ -33,6 +35,15 @@ export const PLAN_KIND_LINKS: Partial<Record<PlanKind, string>> = {
   prayer: "/dashboard/religious",
   workout: "/dashboard/exercise",
   followup: "/dashboard/networking",
+};
+
+/** The module a block kind draws from; suggestions and links are hidden when it is switched off. */
+export const PLAN_KIND_MODULES: Partial<Record<PlanKind, ModuleId>> = {
+  todo: "todos",
+  meal: "food",
+  prayer: "religious",
+  workout: "exercise",
+  followup: "networking",
 };
 
 export function kindColor(kind: string, customColor?: string | null): string {

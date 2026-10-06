@@ -93,7 +93,7 @@ export async function registerWithInvite(input: unknown): Promise<RegistrationRe
       // There is no email service, so the invite itself is the proof that this
       // person was let in. The column stays so real verification can be added.
       const created = await tx.user.create({
-        data: { name, email, passwordHash, role: "user", emailVerifiedAt: now },
+        data: { name, email, passwordHash, role: "user", emailVerifiedAt: now, needsOnboarding: true },
       });
       await tx.nutritionTarget.create({ data: { userId: created.id } });
       await tx.inviteCode.updateMany({

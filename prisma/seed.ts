@@ -33,6 +33,7 @@ async function main() {
       passwordHash,
       role: "admin",
       emailVerifiedAt: new Date(),
+      needsOnboarding: true,
     },
   });
 

@@ -12,7 +12,8 @@ import CheckButton from "@/components/CheckButton";
 import PendingIndicator from "@/components/PendingIndicator";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 import { useToast } from "@/components/Toast";
-import { kindColor, PLAN_KIND_LABELS, PLAN_KIND_LINKS, type PlanKind } from "@/lib/plan/kinds";
+import { kindColor, PLAN_KIND_LABELS, PLAN_KIND_LINKS, PLAN_KIND_MODULES, type PlanKind } from "@/lib/plan/kinds";
+import { useModules } from "@/components/ModulesProvider";
 import { formatMinutesToTime, getCurrentTimeMinutes, isBlockActive, isBlockOverdue, parseTimeToMinutes } from "@/lib/plan/time";
 import { blocksOverlap } from "@/lib/plan/overlap";
 import type { ActionResult } from "@/lib/action-result";
@@ -95,7 +96,9 @@ function BlockRow({
   const isSkipped = block.status === "skipped";
   const active = isToday && isBlockActive(block.startTime, block.endTime) && block.status === "planned";
   const overdue = isToday && isBlockOverdue(block.startTime, block.endTime, block.status);
-  const moduleLink = PLAN_KIND_LINKS[block.kind as PlanKind];
+  const modules = useModules();
+  const kindModule = PLAN_KIND_MODULES[block.kind as PlanKind];
+  const moduleLink = !kindModule || modules.has(kindModule) ? PLAN_KIND_LINKS[block.kind as PlanKind] : undefined;
   const kindLabel = PLAN_KIND_LABELS[block.kind as PlanKind] ?? block.kind;
   const formId = `block-${block.id}`;
 
