@@ -92,7 +92,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
 
   return (
     <div>
-      <PageHeader title="Budget" description={HEADER_DESCRIPTION}>
+      <PageHeader help="budget:overview" title="Budget" description={HEADER_DESCRIPTION}>
         <BudgetNav active="overview" uncategorizedCount={monthData.uncategorizedCount} monthParam={monthParam} />
       </PageHeader>
 
@@ -267,7 +267,7 @@ async function UncategorizedView({
 
   return (
     <div>
-      <PageHeader title="Budget" description={HEADER_DESCRIPTION}>
+      <PageHeader help="budget:uncategorized" title="Budget" description={HEADER_DESCRIPTION}>
         <BudgetNav active="uncategorized" uncategorizedCount={allTotal} monthParam={monthParam} />
       </PageHeader>
 

@@ -23,7 +23,7 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="settings"
         title="Settings"
         description="Manage your profile, modules, weather location, password, and appearance."
       />

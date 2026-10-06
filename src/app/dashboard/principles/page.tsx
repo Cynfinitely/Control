@@ -14,7 +14,7 @@ export default async function PrinciplesPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="principles"
         title="Principles"
         description="Read your guardrails as one list. Use Manage only when you need to change them."
       />

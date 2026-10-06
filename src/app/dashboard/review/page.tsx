@@ -226,7 +226,7 @@ export default async function WeeklyReviewPage() {
 
   return (
     <div>
-      <PageHeader title="Weekly review" description={description} />
+      <PageHeader help="review" title="Weekly review" description={description} />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
         {modules.has("todos") && <StatCard size="sm" label="Backlog" value={backlog.length} href={`#${stepAnchor("inbox")}`} />}

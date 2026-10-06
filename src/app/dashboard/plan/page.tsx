@@ -57,7 +57,7 @@ export default async function PlanPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="plan"
         title="Daily plan"
         description="Time-block your day — schedule tasks, meals, prayers, and more."
       />

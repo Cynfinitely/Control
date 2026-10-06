@@ -25,7 +25,7 @@ export default async function AdminPage() {
 
   return (
     <div>
-      <PageHeader title="Admin" description="Invite people and see who has an account." />
+      <PageHeader help="admin" title="Admin" description="Invite people and see who has an account." />
 
       <CollapsibleSection title="Invite a person" variant="card" className="mb-6" defaultOpen={invites.length === 0}>
         <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">

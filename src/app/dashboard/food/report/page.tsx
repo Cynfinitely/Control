@@ -58,7 +58,7 @@ export default async function FoodReportPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="food:trends"
         title="Trends"
         description="Totals and targets over any range you choose, plus a copy-ready AI prompt. For a single week's patterns, see Week summary."
       >

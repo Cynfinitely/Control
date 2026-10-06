@@ -49,7 +49,7 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="exercise:workout"
         breadcrumb={
           <Breadcrumb
             items={[

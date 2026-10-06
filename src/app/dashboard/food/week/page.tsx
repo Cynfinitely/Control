@@ -39,7 +39,7 @@ export default async function FoodWeekPage({ searchParams }: { searchParams: { w
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="food:week"
         title="Week summary"
         description="One week at a glance: what you ate, when, and which meals you repeat. For trends over any range, see Trends."
       >

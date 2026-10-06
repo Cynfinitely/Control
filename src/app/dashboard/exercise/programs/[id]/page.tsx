@@ -28,7 +28,7 @@ export default async function WorkoutProgramDetail({ params }: { params: { id: s
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="exercise:program"
         breadcrumb={
           <Breadcrumb
             items={[

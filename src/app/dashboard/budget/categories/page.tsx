@@ -147,7 +147,7 @@ export default async function BudgetCategoriesPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="budget:categories"
         title="Budget categories"
         description="Rename, reorder or hide preset categories, or add your own. Hidden categories disappear from pickers."
         breadcrumb={<Breadcrumb items={[{ label: "Budget", href: "/dashboard/budget" }, { label: "Categories" }]} />}

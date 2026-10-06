@@ -12,7 +12,7 @@ export default async function NewWorkoutProgramPage() {
   await requireModule("exercise");
   return (
     <div>
-      <PageHeader
+      <PageHeader help="exercise:program-new"
         breadcrumb={
           <Breadcrumb
             items={[

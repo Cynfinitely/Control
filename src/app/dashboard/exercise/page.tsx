@@ -59,7 +59,7 @@ export default async function ExercisePage() {
 
   return (
     <div>
-      <PageHeader title="Exercise" description="Log runs, walks, swims, gym sessions, and body metrics." />
+      <PageHeader help="exercise" title="Exercise" description="Log runs, walks, swims, gym sessions, and body metrics." />
 
       <ProgramsSection programs={programs} todayValue={todayValue} />
 

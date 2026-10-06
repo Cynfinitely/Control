@@ -11,7 +11,7 @@ export default async function PrioritiesPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="priorities"
         title="Priorities"
         description="The order of your life. Rank what you serve first so every other list has a north star."
       />

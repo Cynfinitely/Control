@@ -60,7 +60,7 @@ export default async function GoalsPage({
 
   return (
     <div>
-      <PageHeader title="Goals" description={`${label} — checkboxes, counters, and milestones.`}>
+      <PageHeader help="goals" title="Goals" description={`${label} — checkboxes, counters, and milestones.`}>
         <TabNav
           aria-label="Goal period"
           variant="pills"

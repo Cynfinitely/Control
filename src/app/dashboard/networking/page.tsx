@@ -42,7 +42,7 @@ export default async function NetworkingPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help={`networking:${tab}`}
         title="Networking"
         description="Log a call in a few taps. Add topics when you want the detail."
       >

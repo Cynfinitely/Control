@@ -15,7 +15,7 @@ export default async function InspirationsPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="inspirations"
         title="Inspirations"
         description="Quotes, wise words, and personal notes to revisit when you need motivation."
       />

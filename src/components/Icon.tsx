@@ -173,6 +173,12 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M12 11v5M12 8h.01" />
     </>
   ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.2.9-1.2 1.7v.3M12 16.8h.01" />
+    </>
+  ),
   arrowRight: <path d="M5 12h14M13 6l6 6-6 6" />,
   undo: <path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3" />,
   cloud: <path d="M17.5 19H8a5 5 0 1 1 1.1-9.9A6 6 0 0 1 20.5 12a3.5 3.5 0 0 1-3 7z" />,

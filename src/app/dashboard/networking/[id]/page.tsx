@@ -72,7 +72,7 @@ export default async function ContactDetail({ params }: { params: { id: string }
           { label: contact.name },
         ]}
       />
-      <PageHeader
+      <PageHeader help="networking:person"
         title={contact.name}
         description={descriptionParts.join(" · ") || undefined}
         action={

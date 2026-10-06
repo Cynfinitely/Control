@@ -94,7 +94,7 @@ export default async function ReligiousPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="religious"
         title="Religious"
         description="Track daily prayers, qaza, dhikr, Quran khatm, daily readings, and fasting."
       />

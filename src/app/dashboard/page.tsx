@@ -194,7 +194,7 @@ export default async function DashboardHome() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="home"
         title={greetingForHour(hourInZone(now, user.timezone), displayName)}
         description={formatLongDateInZone(now, user.timezone)}
       />

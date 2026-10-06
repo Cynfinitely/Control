@@ -34,7 +34,7 @@ export default async function TodosPage({
 
   return (
     <div>
-      <PageHeader title="Todos" description="Simple daily checklist — add tasks, check them off." />
+      <PageHeader help="todos" title="Todos" description="Simple daily checklist — add tasks, check them off." />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <DayNavigator basePath="/dashboard/todos" dayValue={dayValue} dayLabel={dayLabel} />

@@ -37,7 +37,7 @@ export default async function WorkPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="work"
         title="Work"
         description="Daily work focus — commit to a few outcomes, then log what actually happened."
       />

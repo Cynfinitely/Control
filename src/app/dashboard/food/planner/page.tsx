@@ -51,7 +51,7 @@ export default async function PlannerPage({ searchParams }: { searchParams: { we
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="food:planner"
         title="Meal planner"
         description="Plan the week's meals. Ingredients collect into one shopping list."
       >

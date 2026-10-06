@@ -30,7 +30,7 @@ export default async function MigrainePage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="migraine"
         title="Migraine"
         description="Tap a day, set pain. Add duration and a note when you can."
       />

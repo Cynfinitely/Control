@@ -35,7 +35,7 @@ export default async function ReportsPage({
 
   return (
     <div>
-      <PageHeader title="Reports" description={range}>
+      <PageHeader help="reports" title="Reports" description={range}>
         <SegmentedControl
           aria-label="Report period"
           value={period}

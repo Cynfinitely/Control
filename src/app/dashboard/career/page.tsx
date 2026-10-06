@@ -643,7 +643,7 @@ export default async function CareerPage({
 
   return (
     <div>
-      <PageHeader title="Career" description="Track goals, skills, certifications, work history, and learning.">
+      <PageHeader help={`career:${tab}`} title="Career" description="Track goals, skills, certifications, work history, and learning.">
         <CareerTabs active={tab} />
       </PageHeader>
       {panels[tab]}

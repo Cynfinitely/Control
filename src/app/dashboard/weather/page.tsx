@@ -27,7 +27,7 @@ export default async function WeatherPage({
   if (!weather.pref) {
     return (
       <div>
-        <PageHeader title="Weather" description="Daily and weekly forecast for your location." />
+        <PageHeader help="weather" title="Weather" description="Daily and weekly forecast for your location." />
         <EmptyState
           icon="cloud-sun"
           title="Set your location"
@@ -43,7 +43,7 @@ export default async function WeatherPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="weather"
         title="Weather"
         description={[pref.locationName, pref.region].filter(Boolean).join(" · ")}
         action={

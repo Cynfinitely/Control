@@ -111,7 +111,7 @@ export default async function CalendarPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="calendar"
         title="Calendar"
         description="Events, reminders, and what is coming up — separate from your daily plan."
       />

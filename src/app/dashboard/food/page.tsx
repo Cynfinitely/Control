@@ -59,7 +59,7 @@ export default async function FoodPage({
 
   return (
     <div>
-      <PageHeader title="Food" description="Make eating visible. Log what you eat, no numbers required.">
+      <PageHeader help="food:diary" title="Food" description="Make eating visible. Log what you eat, no numbers required.">
         <FoodNav active="/dashboard/food" />
       </PageHeader>
 

@@ -16,7 +16,7 @@ export default async function FoodSettingsPage() {
 
   return (
     <div>
-      <PageHeader title="Food settings" description="Choose what the food diary focuses on.">
+      <PageHeader help="food:settings" title="Food settings" description="Choose what the food diary focuses on.">
         <FoodNav active="/dashboard/food/settings" />
       </PageHeader>
 

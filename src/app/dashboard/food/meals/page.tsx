@@ -28,7 +28,7 @@ export default async function DefaultMealsPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="food:meals"
         title="Default Meals"
         description="Meals that work for your life. Log them in one tap and add them to your weekly plan."
       >

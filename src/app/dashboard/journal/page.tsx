@@ -32,7 +32,7 @@ export default async function JournalPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader help="journal"
         title="Journal"
         description="Daily reflection — mood, wins, blockers, and notes."
       />
