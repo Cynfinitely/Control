@@ -3,6 +3,7 @@ import Sidebar from "@/components/Sidebar";
 import CommandPalette from "@/components/CommandPalette";
 import MainContainer from "@/components/MainContainer";
 import ModulesProvider from "@/components/ModulesProvider";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { getModuleState } from "@/lib/queries/modules";
 
@@ -13,7 +14,9 @@ export default async function DashboardLayout({
 }) {
   const user = await requireUser();
   const isAdmin = user.role === "admin";
-  const { disabled: disabledModules } = await getModuleState(user.id);
+  const { disabled: disabledModules, needsOnboarding } = await getModuleState(user.id);
+  // A new account chooses its modules before it sees the app.
+  if (needsOnboarding) redirect("/onboarding");
 
   return (
     <Providers>
