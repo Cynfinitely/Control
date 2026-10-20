@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import ActionForm from "@/components/ActionForm";
 import CollapsibleSection from "@/components/CollapsibleSection";
@@ -65,17 +65,15 @@ export default function ProgramsSection({
 
   const active = programs.filter(p => !p.archivedAt);
   const archived = programs.filter(p => p.archivedAt);
-  const visible = showArchived ? archived : active;
-
-  useEffect(() => {
-    if (showArchived && archived.length === 0) setShowArchived(false);
-  }, [showArchived, archived.length]);
+  // Fall back to active programs once the last archived one is gone.
+  const showingArchived = showArchived && archived.length > 0;
+  const visible = showingArchived ? archived : active;
 
   return (
     <section className="mb-8" aria-labelledby="programs-title">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 id="programs-title" className="section-title mb-0">
-          {showArchived ? "Archived programs" : "Programs"}
+          {showingArchived ? "Archived programs" : "Programs"}
         </h2>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -105,7 +103,7 @@ export default function ProgramsSection({
         />
       )}
 
-      {visible.length === 0 && !showArchived && archived.length > 0 && (
+      {visible.length === 0 && !showingArchived && archived.length > 0 && (
         <EmptyState
           variant="inline"
           icon="dumbbell"
@@ -224,10 +222,10 @@ export default function ProgramsSection({
         <button
           type="button"
           className="btn-ghost touch-target mt-3"
-          aria-pressed={showArchived}
-          onClick={() => setShowArchived(v => !v)}
+          aria-pressed={showingArchived}
+          onClick={() => setShowArchived(!showingArchived)}
         >
-          {showArchived
+          {showingArchived
             ? "Show active programs"
             : `Show archived (${archived.length})`}
         </button>

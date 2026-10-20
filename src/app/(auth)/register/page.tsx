@@ -5,11 +5,10 @@ import RegisterForm from "./RegisterForm";
 export const metadata = { title: "Create account" };
 export const dynamic = "force-dynamic";
 
-export default async function RegisterPage({
-  searchParams,
-}: {
-  searchParams: { invite?: string | string[] };
+export default async function RegisterPage(props: {
+  searchParams: Promise<{ invite?: string | string[] }>;
 }) {
+  const searchParams = await props.searchParams;
   const code =
     typeof searchParams.invite === "string" ? searchParams.invite : null;
   const invite = await findUsableInvite(code);

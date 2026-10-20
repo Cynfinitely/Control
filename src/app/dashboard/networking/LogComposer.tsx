@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState, useTransition } from "react";
-import { useFormState } from "react-dom";
+import { useActionState, useId, useMemo, useState, useTransition } from "react";
 import clsx from "clsx";
 import { addDays, toDateInputValue } from "@/lib/date";
 import {
@@ -17,7 +16,7 @@ import {
 import SubmitButton from "@/components/SubmitButton";
 import IconButton from "@/components/IconButton";
 import { useToast } from "@/components/Toast";
-import type { FormAction } from "@/lib/action-result";
+import type { ActionResult, FormAction } from "@/lib/action-result";
 import type { ComposerContact } from "@/lib/queries/networking";
 
 type DateChip = "today" | "yesterday" | "custom";
@@ -43,7 +42,6 @@ export default function LogComposer({
   initialContactId,
 }: Props) {
   const { success, error } = useToast();
-  const [state, formAction] = useFormState(action, null);
   const [, startTransition] = useTransition();
   const uid = useId();
   const listboxId = `${uid}-people`;
@@ -65,33 +63,44 @@ export default function LogComposer({
   const [note, setNote] = useState("");
 
   // `?person=` may change while the composer stays mounted (toast action).
-  useEffect(() => {
-    if (lockedContact || !initialContactId) return;
-    const c = contacts.find(x => x.id === initialContactId);
+  const [preselect, setPreselect] = useState({ initialContactId, contacts });
+  if (
+    preselect.initialContactId !== initialContactId ||
+    preselect.contacts !== contacts
+  ) {
+    setPreselect({ initialContactId, contacts });
+    const c = lockedContact
+      ? undefined
+      : contacts.find(x => x.id === initialContactId);
     if (c) {
       setSelectedId(c.id);
       setQuery(c.name);
     }
-  }, [initialContactId, contacts, lockedContact]);
+  }
 
-  useEffect(() => {
-    if (!state) return;
-    if (state.ok) {
-      success(state.message ?? "Logged");
-      if (!lockedContact) {
-        setQuery("");
-        setSelectedId("");
-        setNewRelationship("other");
+  // Report the result and reset the form as part of the action itself.
+  const [, formAction] = useActionState<ActionResult | null, FormData>(
+    async (prev, formData) => {
+      const result = await action(prev, formData);
+      if (result.ok) {
+        success(result.message ?? "Logged");
+        if (!lockedContact) {
+          setQuery("");
+          setSelectedId("");
+          setNewRelationship("other");
+        }
+        setTopics([]);
+        setTopicDraft("");
+        setNote("");
+        setDateChip("today");
+        setType("call");
+      } else {
+        error(result.error);
       }
-      setTopics([]);
-      setTopicDraft("");
-      setNote("");
-      setDateChip("today");
-      setType("call");
-    } else {
-      error(state.error);
-    }
-  }, [state, success, error, lockedContact]);
+      return result;
+    },
+    null
+  );
 
   const dateValue =
     dateChip === "today"

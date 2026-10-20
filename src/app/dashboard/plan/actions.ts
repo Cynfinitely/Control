@@ -464,7 +464,7 @@ export async function deletePlanTemplate(
 export async function copyYesterdayPlan(
   formData: FormData
 ): Promise<ActionResult> {
-  const userId = await getUserId();
+  await getUserId();
   const planDate = startOfDay(parseDate(formData.get("planDate")));
   const sourceDate = addDays(planDate, -1);
   const fd = new FormData();

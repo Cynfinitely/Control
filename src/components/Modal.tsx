@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useRef } from "react";
 import clsx from "clsx";
 import Icon from "@/components/Icon";
 
@@ -14,7 +14,7 @@ type Props = {
   size?: "sm" | "md" | "lg";
   role?: "dialog" | "alertdialog";
   /** Element to focus when opened. Defaults to the first focusable element. */
-  initialFocusRef?: React.RefObject<HTMLElement>;
+  initialFocusRef?: React.RefObject<HTMLElement | null>;
   /** Hide the visible close (×) button — e.g. for confirmations with an explicit Cancel. */
   hideClose?: boolean;
   className?: string;
@@ -42,7 +42,9 @@ export default function Modal({
   const titleId = useId();
   const descId = useId();
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     const dialog = ref.current;

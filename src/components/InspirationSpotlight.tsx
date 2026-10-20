@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import EmptyState from "@/components/EmptyState";
@@ -21,17 +21,41 @@ function pickRandom(
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+// The pick lives outside React so render stays pure: one random pick per
+// `items` array (a fresh array arrives on each visit), replaced on shuffle.
+const picks = new WeakMap<InspirationItem[], InspirationItem>();
+const pickListeners = new Set<() => void>();
+
+function subscribePicks(listener: () => void) {
+  pickListeners.add(listener);
+  return () => {
+    pickListeners.delete(listener);
+  };
+}
+
+function currentPick(items: InspirationItem[]): InspirationItem | null {
+  if (items.length === 0) return null;
+  let pick = picks.get(items);
+  if (!pick) {
+    pick = pickRandom(items);
+    picks.set(items, pick);
+  }
+  return pick;
+}
+
 /** A random saved inspiration. The card reserves its height so the quote doesn't shift the page in. */
 export default function InspirationSpotlight({ items }: Props) {
-  const [current, setCurrent] = useState<InspirationItem | null>(null);
-
-  useEffect(() => {
-    setCurrent(items.length > 0 ? pickRandom(items) : null);
-  }, [items]);
+  // Null on the server so the random pick never causes a hydration mismatch.
+  const current = useSyncExternalStore(
+    subscribePicks,
+    () => currentPick(items),
+    () => null
+  );
 
   const shuffle = useCallback(() => {
     if (items.length === 0) return;
-    setCurrent(prev => pickRandom(items, prev?.id));
+    picks.set(items, pickRandom(items, picks.get(items)?.id));
+    pickListeners.forEach(listener => listener());
   }, [items]);
 
   if (items.length === 0) {

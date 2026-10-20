@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLocalStorage } from "@/lib/use-client-store";
 import ActionForm from "@/components/ActionForm";
 import FormField from "@/components/FormField";
 import SegmentedControl from "@/components/SegmentedControl";
@@ -85,24 +85,11 @@ export default function LogActivityCard({
 }) {
   // Per user, so a shared browser does not carry one person's choice to the next.
   const storageKey = `${STORAGE_KEY}:${userId}`;
-  const [type, setType] = useState<ActivityType>("gym");
-
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (isActivityType(saved)) setType(saved);
-    } catch {
-      /* storage unavailable */
-    }
-  }, [storageKey]);
+  const [saved, setSaved] = useLocalStorage(storageKey);
+  const type: ActivityType = isActivityType(saved) ? saved : "gym";
 
   function choose(next: ActivityType) {
-    setType(next);
-    try {
-      window.localStorage.setItem(storageKey, next);
-    } catch {
-      /* storage unavailable */
-    }
+    setSaved(next);
   }
 
   const grid = "mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2";

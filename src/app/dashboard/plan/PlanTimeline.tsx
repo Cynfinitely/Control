@@ -2,9 +2,9 @@
 
 import {
   Fragment,
-  useEffect,
   useOptimistic,
   useState,
+  useSyncExternalStore,
   useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -74,15 +74,18 @@ function applyOptimistic(
   }
 }
 
-/** Client clock (minutes since midnight), refreshed each minute. Null until mounted to avoid hydration mismatch. */
+function subscribeMinuteClock(onTick: () => void) {
+  const timer = setInterval(onTick, 60_000);
+  return () => clearInterval(timer);
+}
+
+/** Client clock (minutes since midnight), refreshed each minute. Null on the server and during hydration. */
 function useNowMinutes(enabled: boolean) {
-  const [now, setNow] = useState<number | null>(null);
-  useEffect(() => {
-    if (!enabled) return;
-    setNow(getCurrentTimeMinutes());
-    const timer = setInterval(() => setNow(getCurrentTimeMinutes()), 60_000);
-    return () => clearInterval(timer);
-  }, [enabled]);
+  const now = useSyncExternalStore<number | null>(
+    subscribeMinuteClock,
+    getCurrentTimeMinutes,
+    () => null
+  );
   return enabled ? now : null;
 }
 

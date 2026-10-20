@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { visibleNavSections } from "@/lib/nav";
 import { moduleFilter, type ModuleId } from "@/lib/modules";
 import Icon from "@/components/Icon";
+import { useIsMac } from "@/lib/use-client-store";
 
 export const OPEN_COMMAND_PALETTE_EVENT = "control:open-command-palette";
 
@@ -84,7 +85,7 @@ export default function CommandPalette({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isMac, setIsMac] = useState(true);
+  const isMac = useIsMac();
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -92,14 +93,20 @@ export default function CommandPalette({
   const listId = useId();
 
   useEffect(() => {
-    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
+    // Opening always starts from an empty search; resetting on close is harmless.
+    function resetSearch() {
+      setQuery("");
+      setActiveIndex(0);
+    }
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        resetSearch();
         setOpen(v => !v);
       }
     }
     function onOpen() {
+      resetSearch();
       setOpen(true);
     }
     document.addEventListener("keydown", onKey);
@@ -115,8 +122,6 @@ export default function CommandPalette({
     if (!dialog) return;
     if (open) {
       restoreRef.current = document.activeElement as HTMLElement | null;
-      setQuery("");
-      setActiveIndex(0);
       if (!dialog.open) dialog.showModal();
       inputRef.current?.focus();
     } else if (dialog.open) {
@@ -139,9 +144,8 @@ export default function CommandPalette({
     );
   }, [query, isAdmin, disabledModules]);
 
-  useEffect(() => {
-    setActiveIndex(i => Math.min(i, Math.max(items.length - 1, 0)));
-  }, [items.length]);
+  // Keep the highlight inside the list when it shrinks.
+  const active = Math.min(activeIndex, Math.max(items.length - 1, 0));
 
   function go(href: string) {
     restoreRef.current = null;
@@ -164,12 +168,12 @@ export default function CommandPalette({
       setActiveIndex(Math.max(items.length - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const item = items[activeIndex];
+      const item = items[active];
       if (item) go(item.href);
     }
   }
 
-  const activeId = items[activeIndex] ? `${listId}-${activeIndex}` : undefined;
+  const activeId = items[active] ? `${listId}-${active}` : undefined;
 
   return (
     <dialog
@@ -230,12 +234,12 @@ export default function CommandPalette({
                   <div
                     id={`${listId}-${index}`}
                     role="option"
-                    aria-selected={index === activeIndex}
+                    aria-selected={index === active}
                     onMouseMove={() => setActiveIndex(index)}
                     onClick={() => go(item.href)}
                     className={clsx(
                       "mx-1 flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm",
-                      index === activeIndex
+                      index === active
                         ? "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-200"
                         : "text-slate-700 dark:text-slate-200"
                     )}
@@ -245,7 +249,7 @@ export default function CommandPalette({
                       className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400"
                     />
                     <span className="flex-1">{item.label}</span>
-                    {index === activeIndex && (
+                    {index === active && (
                       <Icon
                         name="arrowRight"
                         className="h-4 w-4 text-brand-500"

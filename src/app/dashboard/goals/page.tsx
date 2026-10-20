@@ -25,11 +25,10 @@ const PERIODS: { value: GoalPeriod; label: string; unit: string }[] = [
   { value: "yearly", label: "Yearly", unit: "year" },
 ];
 
-export default async function GoalsPage({
-  searchParams,
-}: {
-  searchParams: { period?: string; offset?: string };
+export default async function GoalsPage(props: {
+  searchParams: Promise<{ period?: string; offset?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("goals");
   const periodDef =
     PERIODS.find(p => p.value === searchParams.period) ?? PERIODS[0];

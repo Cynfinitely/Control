@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
-import { startOfDay, endOfDay, formatDate } from "@/lib/date";
+import { startOfDay, formatDate } from "@/lib/date";
 import {
   success,
   failure,

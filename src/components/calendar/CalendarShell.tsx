@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EventOccurrence } from "@/lib/calendar/types";
 import { addDays, startOfWeek, toDateInputValue, formatDate } from "@/lib/date";
@@ -65,6 +65,76 @@ function reviveOcc(o: SerializedOccurrence): EventOccurrence {
   };
 }
 
+function parseDay(dayValue: string): Date {
+  const d = new Date(dayValue + "T00:00:00");
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
+type EventFormState = { mode: "create" | "edit"; values: EventFormValues };
+type ReminderFormState = {
+  mode: "create" | "edit";
+  values: ReminderFormValues;
+};
+
+function newEventForm(day: Date, timezone: string): EventFormState {
+  const { startsAt, endsAt } = defaultEventTimes(day);
+  return {
+    mode: "create",
+    values: {
+      title: "",
+      description: "",
+      location: "",
+      allDay: false,
+      startsAt,
+      endsAt,
+      timezone,
+      rrule: null,
+      reminderOffsets: [15],
+    },
+  };
+}
+
+function occurrenceForm(
+  occ: EventOccurrence,
+  timezone: string
+): EventFormState {
+  return {
+    mode: "edit",
+    values: {
+      id: occ.eventId,
+      title: occ.title,
+      description: occ.description ?? "",
+      location: occ.location ?? "",
+      allDay: occ.allDay,
+      startsAt: occ.startsAt,
+      endsAt: occ.endsAt,
+      timezone,
+      rrule: occ.rrule,
+      originalStartsAt: occ.originalStartsAt,
+      isRecurring: occ.isRecurring,
+      reminderOffsets: occ.reminderOffsets ?? [],
+    },
+  };
+}
+
+function newReminderForm(day: Date): ReminderFormState {
+  const remindAt = new Date(day);
+  remindAt.setHours(9, 0, 0, 0);
+  return { mode: "create", values: { title: "", remindAt, rrule: null } };
+}
+
+function editReminderForm(rem: SerializedReminder): ReminderFormState {
+  return {
+    mode: "edit",
+    values: {
+      id: rem.id,
+      title: rem.title || "",
+      remindAt: new Date(rem.remindAt!),
+      rrule: rem.rrule,
+    },
+  };
+}
+
 function defaultEventTimes(day: Date): { startsAt: Date; endsAt: Date } {
   const startsAt = new Date(day);
   startsAt.setHours(10, 0, 0, 0);
@@ -89,16 +159,32 @@ export default function CalendarShell({
 }: Props) {
   const router = useRouter();
   const [view, setView] = useState<View>(initialView);
-  const [eventForm, setEventForm] = useState<{
-    mode: "create" | "edit";
-    values: EventFormValues;
-  } | null>(null);
-  const [reminderForm, setReminderForm] = useState<{
-    mode: "create" | "edit";
-    values: ReminderFormValues;
-  } | null>(null);
-  const [bootedCreate, setBootedCreate] = useState(false);
-  const [bootedFocus, setBootedFocus] = useState(false);
+  // ?new=… opens a create form and a notification link (?event=…&at=… or
+  // ?reminder=…) opens that item, once per mount. The link wins over ?new=.
+  const [eventForm, setEventForm] = useState<EventFormState | null>(() => {
+    if (focusEventId) {
+      const raw =
+        rawOccs.find(
+          o =>
+            o.eventId === focusEventId &&
+            (!focusAt ||
+              reviveOcc(o).originalStartsAt.toISOString() === focusAt)
+        ) ?? rawOccs.find(o => o.eventId === focusEventId);
+      if (raw) return occurrenceForm(reviveOcc(raw), timezone);
+    }
+    return initialCreate === "event"
+      ? newEventForm(parseDay(dayValue), timezone)
+      : null;
+  });
+  const [reminderForm, setReminderForm] = useState<ReminderFormState | null>(
+    () => {
+      if (!focusEventId && focusReminder?.remindAt)
+        return editReminderForm(focusReminder);
+      return initialCreate === "reminder"
+        ? newReminderForm(parseDay(dayValue))
+        : null;
+    }
+  );
 
   const occurrences = useMemo(() => rawOccs.map(reviveOcc), [rawOccs]);
   const reminders = useMemo(
@@ -113,72 +199,13 @@ export default function CalendarShell({
     [rawReminders]
   );
 
-  const day = useMemo(() => {
-    const d = new Date(dayValue + "T00:00:00");
-    return Number.isNaN(d.getTime()) ? new Date() : d;
-  }, [dayValue]);
+  const day = useMemo(() => parseDay(dayValue), [dayValue]);
 
   const weekStart = useMemo(() => startOfWeek(day), [day]);
-
-  useEffect(() => {
-    if (bootedCreate || !initialCreate) return;
-    setBootedCreate(true);
-    if (initialCreate === "event") {
-      const { startsAt, endsAt } = defaultEventTimes(day);
-      setEventForm({
-        mode: "create",
-        values: {
-          title: "",
-          description: "",
-          location: "",
-          allDay: false,
-          startsAt,
-          endsAt,
-          timezone,
-          rrule: null,
-          reminderOffsets: [15],
-        },
-      });
-    } else {
-      const remindAt = new Date(day);
-      remindAt.setHours(9, 0, 0, 0);
-      setReminderForm({
-        mode: "create",
-        values: { title: "", remindAt, rrule: null },
-      });
-    }
-  }, [bootedCreate, initialCreate, day, timezone]);
 
   function refresh() {
     router.refresh();
   }
-
-  // Open the item a notification linked to (?event=…&at=… or ?reminder=…).
-  useEffect(() => {
-    if (bootedFocus) return;
-    if (focusEventId) {
-      const occ =
-        occurrences.find(
-          o =>
-            o.eventId === focusEventId &&
-            (!focusAt || o.originalStartsAt.toISOString() === focusAt)
-        ) ?? occurrences.find(o => o.eventId === focusEventId);
-      setBootedFocus(true);
-      if (occ) openOccurrence(occ);
-    } else if (focusReminder?.remindAt) {
-      setBootedFocus(true);
-      setReminderForm({
-        mode: "edit",
-        values: {
-          id: focusReminder.id,
-          title: focusReminder.title || "",
-          remindAt: new Date(focusReminder.remindAt),
-          rrule: focusReminder.rrule,
-        },
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bootedFocus, focusEventId, focusAt, focusReminder, occurrences]);
 
   function setViewAndUrl(next: View) {
     setView(next);
@@ -190,64 +217,21 @@ export default function CalendarShell({
   }
 
   function openCreate(at?: Date) {
-    const { startsAt, endsAt } = defaultEventTimes(at ?? day);
-    setEventForm({
-      mode: "create",
-      values: {
-        title: "",
-        description: "",
-        location: "",
-        allDay: false,
-        startsAt,
-        endsAt,
-        timezone,
-        rrule: null,
-        reminderOffsets: [15],
-      },
-    });
+    setEventForm(newEventForm(at ?? day, timezone));
   }
 
   function openOccurrence(occ: EventOccurrence) {
-    setEventForm({
-      mode: "edit",
-      values: {
-        id: occ.eventId,
-        title: occ.title,
-        description: occ.description ?? "",
-        location: occ.location ?? "",
-        allDay: occ.allDay,
-        startsAt: occ.startsAt,
-        endsAt: occ.endsAt,
-        timezone,
-        rrule: occ.rrule,
-        originalStartsAt: occ.originalStartsAt,
-        isRecurring: occ.isRecurring,
-        reminderOffsets: occ.reminderOffsets ?? [],
-      },
-    });
+    setEventForm(occurrenceForm(occ, timezone));
   }
 
   function openReminder(id: string) {
     const rem = rawReminders.find(r => r.id === id);
     if (!rem || !rem.remindAt) return;
-    setReminderForm({
-      mode: "edit",
-      values: {
-        id: rem.id,
-        title: rem.title || "",
-        remindAt: new Date(rem.remindAt),
-        rrule: rem.rrule,
-      },
-    });
+    setReminderForm(editReminderForm(rem));
   }
 
   function openCreateReminder() {
-    const remindAt = new Date(day);
-    remindAt.setHours(9, 0, 0, 0);
-    setReminderForm({
-      mode: "create",
-      values: { title: "", remindAt, rrule: null },
-    });
+    setReminderForm(newReminderForm(day));
   }
 
   function selectDay(d: Date) {

@@ -51,7 +51,7 @@ function ToastItemView({
   item: ToastItem;
   onDismiss: (id: number) => void;
 }) {
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {

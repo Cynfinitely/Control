@@ -6,7 +6,8 @@ export function cacheTag(scope: string, userId: string) {
 
 export function revalidateUserCache(userId: string, ...scopes: string[]) {
   for (const scope of scopes) {
-    revalidateTag(cacheTag(scope, userId));
+    // Expire immediately so the next read after a write sees fresh data.
+    revalidateTag(cacheTag(scope, userId), { expire: 0 });
   }
 }
 

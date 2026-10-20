@@ -16,11 +16,10 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: "monthly", label: "Monthly" },
 ];
 
-export default async function ReportsPage({
-  searchParams,
-}: {
-  searchParams: { period?: string };
+export default async function ReportsPage(props: {
+  searchParams: Promise<{ period?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("reports");
   const period = (
     ["daily", "weekly", "monthly"].includes(searchParams.period ?? "")

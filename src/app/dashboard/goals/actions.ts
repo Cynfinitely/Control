@@ -4,12 +4,7 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, num, optStr } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { getPeriodKey, type GoalPeriod } from "@/lib/period";
-import {
-  success,
-  failure,
-  wrapFormAction,
-  type ActionResult,
-} from "@/lib/action-result";
+import { success, failure, type ActionResult } from "@/lib/action-result";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "goals", "dashboard");

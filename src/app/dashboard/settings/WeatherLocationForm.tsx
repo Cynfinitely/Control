@@ -34,15 +34,21 @@ export default function WeatherLocationForm({
   const [locating, setLocating] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    const q = query.trim();
-    if (q.length < 2) {
+  function changeQuery(next: string) {
+    setQuery(next);
+    const searchable = next.trim().length >= 2;
+    setSearching(searchable);
+    if (!searchable) {
       setResults([]);
       setSearchError(null);
-      return;
     }
+  }
+
+  // Debounced search; changeQuery already reset the results for short queries.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) return;
     let cancelled = false;
-    setSearching(true);
     const timer = setTimeout(async () => {
       const res = await searchWeatherLocations(q);
       if (cancelled) return;
@@ -66,8 +72,7 @@ export default function WeatherLocationForm({
       const res = await saveWeatherLocation(input);
       if (res.ok) {
         toast.success(res.message ?? "Saved");
-        setQuery("");
-        setResults([]);
+        changeQuery("");
         router.refresh();
       } else {
         toast.error(res.error);
@@ -167,7 +172,7 @@ export default function WeatherLocationForm({
             className="input"
             placeholder="City name, e.g. Helsinki"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={e => changeQuery(e.target.value)}
             autoComplete="off"
             aria-describedby="weather-search-hint"
             aria-controls="weather-search-results"

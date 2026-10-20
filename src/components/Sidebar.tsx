@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
+import { useIsMac } from "@/lib/use-client-store";
 import clsx from "clsx";
 import { visibleNavSections, type NavItem } from "@/lib/nav";
 import type { ModuleId } from "@/lib/modules";
@@ -31,16 +32,14 @@ export default function Sidebar({
   const [open, setOpen] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const [isMac, setIsMac] = useState(true);
-
-  useEffect(() => {
-    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
-  }, []);
+  const isMac = useIsMac();
 
   // Close the drawer whenever the route changes.
-  useEffect(() => {
+  const [drawerPathname, setDrawerPathname] = useState(pathname);
+  if (drawerPathname !== pathname) {
+    setDrawerPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (!open) return;

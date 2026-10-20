@@ -1,7 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
 import Icon from "@/components/Icon";
+import { useIsClient, useLocalStorage } from "@/lib/use-client-store";
 
 type Theme = "light" | "dark" | "system";
 
@@ -30,51 +36,32 @@ function applyThemeClass(resolved: "light" | "dark") {
   document.documentElement.classList.toggle("dark", resolved === "dark");
 }
 
+function subscribeSystemTheme(onChange: () => void) {
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+function isTheme(value: string | null): value is Theme {
+  return value === "light" || value === "dark" || value === "system";
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolved, setResolved] = useState<"light" | "dark">("light");
+  const [stored, setTheme] = useLocalStorage("control-theme");
+  const theme: Theme = isTheme(stored) ? stored : "system";
+  const system = useSyncExternalStore(
+    subscribeSystemTheme,
+    getSystemTheme,
+    (): "light" | "dark" => "light"
+  );
+  const resolved = theme === "system" ? system : theme;
   // The inline <head> script already applied the stored theme; don't touch the
-  // class until we've read the same stored value (avoids a light/dark flash).
-  const [hydrated, setHydrated] = useState(false);
+  // class until hydrated, when the stored value is read (avoids a flash).
+  const hydrated = useIsClient();
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("control-theme") as Theme | null;
-      if (stored === "light" || stored === "dark" || stored === "system")
-        setThemeState(stored);
-    } catch {
-      // storage unavailable (private mode) — stay on system
-    }
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    const next = theme === "system" ? getSystemTheme() : theme;
-    setResolved(next);
-    applyThemeClass(next);
-  }, [theme, hydrated]);
-
-  useEffect(() => {
-    if (theme !== "system") return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => {
-      const next = mq.matches ? "dark" : "light";
-      setResolved(next);
-      applyThemeClass(next);
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [theme]);
-
-  function setTheme(t: Theme) {
-    setThemeState(t);
-    try {
-      localStorage.setItem("control-theme", t);
-    } catch {
-      // ignore
-    }
-  }
+    if (hydrated) applyThemeClass(resolved);
+  }, [hydrated, resolved]);
 
   return (
     <ThemeContext.Provider value={{ theme, resolved, setTheme }}>

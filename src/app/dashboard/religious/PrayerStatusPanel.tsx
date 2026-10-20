@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import clsx from "clsx";
 import Icon from "@/components/Icon";
 import IconButton from "@/components/IconButton";
@@ -85,17 +85,17 @@ export default function PrayerStatusPanel({
   const [bulkPending, setBulkPending] = useState(false);
 
   // Drop local overrides once the server-rendered statuses catch up.
-  useEffect(() => {
-    setOverrides(current => {
-      let changed = false;
-      const next: Overrides = {};
-      for (const [prayer, value] of Object.entries(current)) {
-        if ((initialStatuses[prayer] ?? null) === value) changed = true;
-        else next[prayer] = value;
-      }
-      return changed ? next : current;
-    });
-  }, [initialStatuses]);
+  const [seenStatuses, setSeenStatuses] = useState(initialStatuses);
+  if (seenStatuses !== initialStatuses) {
+    setSeenStatuses(initialStatuses);
+    const next: Overrides = {};
+    let changed = false;
+    for (const [prayer, value] of Object.entries(overrides)) {
+      if ((initialStatuses[prayer] ?? null) === value) changed = true;
+      else next[prayer] = value;
+    }
+    if (changed) setOverrides(next);
+  }
 
   const statuses: PrayerStatus = Object.fromEntries(
     PRAYERS.map(p => [

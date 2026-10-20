@@ -5,10 +5,6 @@ import type {
 } from "./types";
 import { durationMs, expandRruleStarts } from "./rrule";
 
-function sameInstant(a: Date, b: Date): boolean {
-  return a.getTime() === b.getTime();
-}
-
 export function applyException(
   master: CalendarEventMaster,
   originalStartsAt: Date,

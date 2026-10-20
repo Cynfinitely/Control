@@ -19,11 +19,10 @@ import { createTodoForm } from "./actions";
 
 export const metadata = { title: "Todos" };
 
-export default async function TodosPage({
-  searchParams,
-}: {
-  searchParams: { day?: string; focus?: string };
+export default async function TodosPage(props: {
+  searchParams: Promise<{ day?: string; focus?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("todos");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);

@@ -26,11 +26,10 @@ import {
 
 export const metadata = { title: "Person" };
 
-export default async function ContactDetail({
-  params,
-}: {
-  params: { id: string };
+export default async function ContactDetail(props: {
+  params: Promise<{ id: string }>;
 }) {
+  const params = await props.params;
   const user = await requireModule("networking");
   const [contact, contacts, suggestedTopics] = await Promise.all([
     prisma.contact.findFirst({

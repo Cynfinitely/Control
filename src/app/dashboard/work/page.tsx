@@ -14,11 +14,10 @@ import { createFocusItemForm } from "./actions";
 
 export const metadata = { title: "Work" };
 
-export default async function WorkPage({
-  searchParams,
-}: {
-  searchParams: { day?: string; focus?: string };
+export default async function WorkPage(props: {
+  searchParams: Promise<{ day?: string; focus?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("work");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);

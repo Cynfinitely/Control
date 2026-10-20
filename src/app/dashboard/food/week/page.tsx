@@ -26,11 +26,10 @@ import FoodNav from "../FoodNav";
 
 export const metadata = { title: "Food · Week summary" };
 
-export default async function FoodWeekPage({
-  searchParams,
-}: {
-  searchParams: { week?: string };
+export default async function FoodWeekPage(props: {
+  searchParams: Promise<{ week?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("food");
   const weekStart = startOfWeek(parseDayParam(searchParams.week));
   const weekEnd = endOfDay(addDays(weekStart, 6));

@@ -71,11 +71,10 @@ function ProgressBar({
   );
 }
 
-export default async function ReligiousPage({
-  searchParams,
-}: {
-  searchParams: { day?: string };
+export default async function ReligiousPage(props: {
+  searchParams: Promise<{ day?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("religious");
   const now = new Date();
   const today = new Date(toDateInputValue(now) + "T00:00:00");

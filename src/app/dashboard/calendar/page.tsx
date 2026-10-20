@@ -24,10 +24,8 @@ import { expandRruleStarts } from "@/lib/calendar";
 
 export const metadata = { title: "Calendar" };
 
-export default async function CalendarPage({
-  searchParams,
-}: {
-  searchParams: {
+export default async function CalendarPage(props: {
+  searchParams: Promise<{
     view?: string;
     month?: string;
     day?: string;
@@ -35,8 +33,9 @@ export default async function CalendarPage({
     reminder?: string;
     at?: string;
     new?: string;
-  };
+  }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("calendar");
   const profile = await prisma.user.findUnique({
     where: { id: user.id },

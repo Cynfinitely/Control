@@ -15,11 +15,10 @@ const VIEWS = [
   { href: "/dashboard/weather?view=week", label: "Weekly", id: "week" },
 ] as const;
 
-export default async function WeatherPage({
-  searchParams,
-}: {
-  searchParams: { view?: string; day?: string };
+export default async function WeatherPage(props: {
+  searchParams: Promise<{ view?: string; day?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("weather");
   const weather = await getUserWeather(user.id);
   const view = searchParams.view === "week" ? "week" : "day";

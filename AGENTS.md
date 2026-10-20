@@ -30,10 +30,12 @@ Shared project knowledge for AI assistants. Commit this file.
 <!-- Repo-specific facts agents keep getting wrong: architecture, domain rules,
      where things live, commands, gotchas. One bullet per fact. -->
 
-- **Stack:** Next.js 14 (App Router) + TypeScript, Prisma 5, NextAuth 4, Tailwind 3, Vitest. npm, single package. Deployed on Vercel (`vercel.json` holds the build command and a daily reminders cron).
+- **Stack:** Next.js 16 (App Router, Turbopack) + React 19 + TypeScript, Prisma 5, NextAuth 4, Tailwind 3, Vitest. Auth gating lives in `src/proxy.ts` (Next 16's name for middleware). Page `params`/`searchParams` are Promises; await them. npm, single package. Deployed on Vercel (`vercel.json` holds the build command and a daily reminders cron).
 - **Layout:** each feature module lives in `src/app/dashboard/<module>/` with `page.tsx` plus server actions in `actions.ts`. Domain logic lives in `src/lib/`, with tests co-located as `*.test.ts`.
 - **Database provider swap:** `scripts/sync-prisma-provider.mjs` rewrites the `provider` (and `directUrl`) lines in `prisma/schema.prisma` from `DATABASE_URL`: SQLite locally, Postgres in production. `dev`, `build`, `postinstall` and every `db:*` script run it first. Never hand-edit those lines, and don't commit a provider flip caused by your local `DATABASE_URL`.
 - **Migrations:** `prisma/migrations/`. Generate with `npm run db:migrate -- --create-only --name <name>`. `.github/workflows/migrate.yml` applies them to production on push to `master` (via `scripts/setup-db.mjs`).
 - **Commands:** `npm run check` = typecheck + test + build. `npm run setup` creates and seeds a local database. `build` needs `DATABASE_URL`, `NEXTAUTH_SECRET` (32+ chars) and `NEXTAUTH_URL` (see `.env.example`), including when the pre-push hook runs it.
+- **Browser-only state:** read localStorage, the clock, or the platform through `src/lib/use-client-store.ts` (`useLocalStorage`, `useClientSnapshot`, `useIsClient`, `useIsMac`), not `useEffect` + `setState`. The React Compiler lint rules (`react-hooks/set-state-in-effect`, `refs`, `purity`) reject the effect pattern. Handle form results inside the `useActionState` action, not in an effect.
+- **Audit waiver:** `braces` (GHSA-vfj7-8cjw-p6xm) has no patched release and is reached only through dev tooling. It is waived in `scripts/npm-audit-allowlist.json` until 2027-01-20. Tailwind 3's `postcss-selector-parser`/`postcss-nested` are overridden to v7 in `package.json`; CSS output was verified byte-identical.
 - **Codebase map:** `graphify-out/GRAPH_REPORT.md` (gitignored, local only).
 - **Old history:** commits before dev-standards adoption contain AI `Co-Authored-By` trailers. Leave them; the gate only checks new commits.

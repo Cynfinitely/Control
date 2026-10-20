@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 
 type Props = {
   from: string;
@@ -23,8 +23,13 @@ export default function DateRangePicker({
   const [draftFrom, setDraftFrom] = useState(from);
   const [draftTo, setDraftTo] = useState(to);
 
-  useEffect(() => setDraftFrom(from), [from]);
-  useEffect(() => setDraftTo(to), [to]);
+  // Reset the drafts when the committed range changes from outside.
+  const [committed, setCommitted] = useState({ from, to });
+  if (committed.from !== from || committed.to !== to) {
+    setCommitted({ from, to });
+    setDraftFrom(from);
+    setDraftTo(to);
+  }
 
   const invalid = Boolean(draftFrom && draftTo && draftFrom > draftTo);
 

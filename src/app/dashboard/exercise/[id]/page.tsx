@@ -26,11 +26,10 @@ import DeleteWorkoutButton from "./DeleteWorkoutButton";
 
 export const metadata = { title: "Workout" };
 
-export default async function WorkoutDetail({
-  params,
-}: {
-  params: { id: string };
+export default async function WorkoutDetail(props: {
+  params: Promise<{ id: string }>;
 }) {
+  const params = await props.params;
   const user = await requireModule("exercise");
   const workout = await prisma.workout.findFirst({
     where: { id: params.id, userId: user.id, deletedAt: null },

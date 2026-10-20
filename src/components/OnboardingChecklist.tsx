@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import Icon from "@/components/Icon";
+import { useClientSnapshot, useLocalStorage } from "@/lib/use-client-store";
 
 // Suffixed with the user id so one person dismissing it on a shared browser
 // does not hide it for the next person.
 const STORAGE_KEY = "control-onboarding-dismissed";
+const SHOW_FOR_MS = 7 * 24 * 60 * 60 * 1000;
 
 type CheckItem = {
   id: string;
@@ -28,22 +29,18 @@ export default function OnboardingChecklist({
   userCreatedAt,
 }: Props) {
   const storageKey = `${STORAGE_KEY}:${userId}`;
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
-    try {
-      setDismissed(localStorage.getItem(storageKey) === "1");
-    } catch {
-      setDismissed(false);
-    }
-  }, [storageKey]);
-
-  const created = new Date(userCreatedAt);
-  const daysSince = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
+  const [dismissedValue, setDismissedValue] = useLocalStorage(storageKey);
+  const createdMs = new Date(userCreatedAt).getTime();
+  // Hidden on the server; shown only during the account's first week.
+  const isFirstWeek = useClientSnapshot(
+    () => Date.now() - createdMs <= SHOW_FOR_MS,
+    false
+  );
+  const dismissed = dismissedValue === "1";
   const doneCount = items.filter(i => i.done).length;
   const allDone = doneCount === items.length;
 
-  if (dismissed || daysSince > 7 || allDone) return null;
+  if (dismissed || !isFirstWeek || allDone) return null;
 
   return (
     <section
@@ -62,14 +59,7 @@ export default function OnboardingChecklist({
         </div>
         <button
           type="button"
-          onClick={() => {
-            try {
-              localStorage.setItem(storageKey, "1");
-            } catch {
-              // ignore private mode
-            }
-            setDismissed(true);
-          }}
+          onClick={() => setDismissedValue("1")}
           className="btn-ghost btn-sm min-h-[40px] shrink-0"
           aria-label="Dismiss setup checklist"
         >

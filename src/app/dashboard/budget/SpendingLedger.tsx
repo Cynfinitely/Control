@@ -29,7 +29,6 @@ type Props = {
   ledger: LedgerParams;
   rangeData: RangeData;
   categories: Category[];
-  dayValue: string;
   monthKey: string;
   refDay: Date;
   fromValue: string;
@@ -49,7 +48,6 @@ export default function SpendingLedger({
   ledger,
   rangeData,
   categories,
-  dayValue,
   monthKey,
   refDay,
   fromValue,

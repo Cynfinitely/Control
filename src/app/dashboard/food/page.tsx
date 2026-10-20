@@ -33,11 +33,10 @@ import type { DiaryEntry } from "./types";
 
 export const metadata = { title: "Food" };
 
-export default async function FoodPage({
-  searchParams,
-}: {
-  searchParams: { day?: string; focus?: string };
+export default async function FoodPage(props: {
+  searchParams: Promise<{ day?: string; focus?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("food");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);

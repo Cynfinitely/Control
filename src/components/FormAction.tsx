@@ -1,10 +1,7 @@
 "use client";
 
 import ActionForm, { type ConfirmOptions } from "@/components/ActionForm";
-import type {
-  FormAction as FormActionFn,
-  ActionResult,
-} from "@/lib/action-result";
+import type { FormAction as FormActionFn } from "@/lib/action-result";
 
 type Props = {
   action: FormActionFn;

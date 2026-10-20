@@ -14,11 +14,10 @@ import { StartWorkoutForm } from "../../ProgramsSection";
 
 export const metadata = { title: "Program" };
 
-export default async function WorkoutProgramDetail({
-  params,
-}: {
-  params: { id: string };
+export default async function WorkoutProgramDetail(props: {
+  params: Promise<{ id: string }>;
 }) {
+  const params = await props.params;
   const user = await requireModule("exercise");
   const program = await prisma.workoutProgram.findFirst({
     where: { id: params.id, userId: user.id },

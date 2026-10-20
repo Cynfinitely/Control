@@ -9,11 +9,10 @@ import JournalForm from "./JournalForm";
 
 export const metadata = { title: "Journal" };
 
-export default async function JournalPage({
-  searchParams,
-}: {
-  searchParams: { day?: string; focus?: string };
+export default async function JournalPage(props: {
+  searchParams: Promise<{ day?: string; focus?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("journal");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);

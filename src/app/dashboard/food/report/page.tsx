@@ -29,11 +29,10 @@ function dayStatus(day: {
   return notes.length > 0 ? notes.join(", ") : "On target";
 }
 
-export default async function FoodReportPage({
-  searchParams,
-}: {
-  searchParams: FoodRangeSearchParams;
+export default async function FoodReportPage(props: {
+  searchParams: Promise<FoodRangeSearchParams>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("food");
   const range = parseFoodRange(searchParams);
   const { entries, target, waterLogs } = await getFoodReportRange(

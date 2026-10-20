@@ -49,11 +49,10 @@ type SearchParams = {
 const HEADER_DESCRIPTION =
   "Import Nordea statements, categorize merchants, and review monthly spending.";
 
-export default async function BudgetPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
+export default async function BudgetPage(props: {
+  searchParams: Promise<SearchParams>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("budget");
   const day = parseDayParam(searchParams.day);
   const monthParam =
@@ -242,7 +241,6 @@ export default async function BudgetPage({
               ledger={ledger}
               rangeData={rangeData}
               categories={rangeData.categories}
-              dayValue={dayValue}
               monthKey={monthKey}
               refDay={day}
               fromValue={ledgerFromValue}

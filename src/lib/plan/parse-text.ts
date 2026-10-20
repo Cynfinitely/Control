@@ -1,7 +1,6 @@
 import { inferKindFromTitle } from "@/lib/plan/infer-kind";
 import type { PlanKind } from "@/lib/plan/kinds";
 import {
-  blockDurationMinutes,
   crossesMidnight,
   formatMinutesToTime,
   isValidTimeRange,

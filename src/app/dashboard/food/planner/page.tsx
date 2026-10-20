@@ -46,11 +46,10 @@ const WEEKDAYS = [
 type PlanItem = Awaited<ReturnType<typeof getWeekMealPlan>>[number];
 type DefaultMeals = Awaited<ReturnType<typeof getDefaultMeals>>;
 
-export default async function PlannerPage({
-  searchParams,
-}: {
-  searchParams: { week?: string };
+export default async function PlannerPage(props: {
+  searchParams: Promise<{ week?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("food");
   const weekStartKey = weekStartKeyFromParam(searchParams.week);
   const weekStart = new Date(weekStartKey + "T00:00:00");

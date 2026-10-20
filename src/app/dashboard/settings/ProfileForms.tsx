@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useFormState } from "react-dom";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SubmitButton from "@/components/SubmitButton";
@@ -37,11 +36,11 @@ export function ProfileForm({
   const { update } = useSession();
   const router = useRouter();
   const toast = useToast();
-  const [state, formAction] = useFormState(updateProfile, initialState);
+  const [state, formAction] = useActionState(updateProfile, initialState);
   const timezoneOptions = isValidTimezone(timezone)
     ? TIMEZONES
     : [timezone, ...TIMEZONES];
-  // useFormState returns a new object per submission; handle each result once.
+  // useActionState returns a new object per submission; handle each result once.
   const handledState = useRef(state);
 
   useEffect(() => {
@@ -117,7 +116,7 @@ export function ProfileForm({
 }
 
 export function PasswordForm() {
-  const [state, formAction] = useFormState(changePassword, initialState);
+  const [state, formAction] = useActionState(changePassword, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const toast = useToast();
   const [mismatch, setMismatch] = useState(false);

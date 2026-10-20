@@ -29,11 +29,10 @@ import { moduleFilter } from "@/lib/modules";
 
 export const metadata = { title: "Daily plan" };
 
-export default async function PlanPage({
-  searchParams,
-}: {
-  searchParams: { day?: string; focus?: string };
+export default async function PlanPage(props: {
+  searchParams: Promise<{ day?: string; focus?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("plan");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);

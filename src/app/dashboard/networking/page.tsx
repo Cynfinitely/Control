@@ -34,16 +34,15 @@ function parsePeriod(value: string | undefined): NetworkingPeriod {
   return "monthly";
 }
 
-export default async function NetworkingPage({
-  searchParams,
-}: {
-  searchParams: {
+export default async function NetworkingPage(props: {
+  searchParams: Promise<{
     tab?: string;
     relationship?: string;
     period?: string;
     person?: string;
-  };
+  }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("networking");
   const tab = parseNetworkingTab(searchParams.tab);
   const relationshipFilter = searchParams.relationship?.trim();

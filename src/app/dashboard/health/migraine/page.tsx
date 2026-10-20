@@ -13,11 +13,10 @@ import MigraineDiary from "./MigraineDiary";
 
 export const metadata = { title: "Migraine" };
 
-export default async function MigrainePage({
-  searchParams,
-}: {
-  searchParams: { month?: string; day?: string };
+export default async function MigrainePage(props: {
+  searchParams: Promise<{ month?: string; day?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("migraine");
   const monthDate = parseMonthParam(searchParams.month);
   const monthKey = toMonthKey(monthDate);

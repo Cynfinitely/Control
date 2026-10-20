@@ -115,11 +115,10 @@ function StageOptions() {
   );
 }
 
-export default async function CareerPage({
-  searchParams,
-}: {
-  searchParams: { tab?: string | string[] };
+export default async function CareerPage(props: {
+  searchParams: Promise<{ tab?: string | string[] }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("career");
   const userId = user.id;
   const now = new Date();
