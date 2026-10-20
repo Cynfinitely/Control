@@ -62,7 +62,9 @@ function reviveActivity(row: {
   };
 }
 
-export async function getComposerContacts(userId: string): Promise<ComposerContact[]> {
+export async function getComposerContacts(
+  userId: string
+): Promise<ComposerContact[]> {
   const rows = await cachedQuery(
     ["networking-composer-contacts", userId],
     networkingTags(userId),
@@ -101,7 +103,10 @@ export async function getSuggestedTopics(userId: string): Promise<string[]> {
   return topics.sort((a, b) => a.localeCompare(b));
 }
 
-export async function getRecentActivity(userId: string, take = 40): Promise<ActivityItem[]> {
+export async function getRecentActivity(
+  userId: string,
+  take = 40
+): Promise<ActivityItem[]> {
   const rows = await cachedQuery(
     ["networking-activity", userId, String(take)],
     networkingTags(userId),
@@ -124,7 +129,10 @@ export async function getRecentActivity(userId: string, take = 40): Promise<Acti
   return rows.map(reviveActivity);
 }
 
-export async function getPeopleRows(userId: string, now = new Date()): Promise<PersonRow[]> {
+export async function getPeopleRows(
+  userId: string,
+  now = new Date()
+): Promise<PersonRow[]> {
   const rows = await cachedQuery(
     ["networking-people", userId],
     networkingTags(userId),
@@ -133,14 +141,18 @@ export async function getPeopleRows(userId: string, now = new Date()): Promise<P
         where: { userId, deletedAt: null },
         orderBy: { name: "asc" },
         include: {
-          interactions: { orderBy: { date: "desc" }, take: 10, select: { date: true, type: true } },
+          interactions: {
+            orderBy: { date: "desc" },
+            take: 10,
+            select: { date: true, type: true },
+          },
         },
       })
   );
 
-  const people: PersonRow[] = rows.map((c) => {
+  const people: PersonRow[] = rows.map(c => {
     const last = c.interactions[0];
-    const lastCall = c.interactions.find((i) => i.type === "call");
+    const lastCall = c.interactions.find(i => i.type === "call");
     const lastTouch = last ? coerceDate(last.date) : null;
     return {
       id: c.id,
@@ -171,9 +183,13 @@ export async function getPeopleRows(userId: string, now = new Date()): Promise<P
   return people;
 }
 
-export async function getOverduePeople(userId: string, now = new Date(), take?: number): Promise<PersonRow[]> {
+export async function getOverduePeople(
+  userId: string,
+  now = new Date(),
+  take?: number
+): Promise<PersonRow[]> {
   const people = await getPeopleRows(userId, now);
-  const overdue = people.filter((p) => p.overdue);
+  const overdue = people.filter(p => p.overdue);
   return take ? overdue.slice(0, take) : overdue;
 }
 
@@ -193,12 +209,21 @@ export async function getInsightsSource(
             name: true,
             relationship: true,
             touchCadenceDays: true,
-            interactions: { orderBy: { date: "desc" }, take: 1, select: { date: true } },
+            interactions: {
+              orderBy: { date: "desc" },
+              take: 1,
+              select: { date: true },
+            },
           },
         })
     ),
     cachedQuery(
-      ["networking-insight-interactions", userId, range.from.toISOString(), range.to.toISOString()],
+      [
+        "networking-insight-interactions",
+        userId,
+        range.from.toISOString(),
+        range.to.toISOString(),
+      ],
       networkingTags(userId),
       () =>
         prisma.interaction.findMany({
@@ -220,14 +245,14 @@ export async function getInsightsSource(
   ]);
 
   return {
-    contacts: contactRows.map((c) => ({
+    contacts: contactRows.map(c => ({
       id: c.id,
       name: c.name,
       relationship: c.relationship,
       touchCadenceDays: c.touchCadenceDays,
       lastTouch: c.interactions[0] ? coerceDate(c.interactions[0].date) : null,
     })),
-    interactions: interactionRows.map((it) => ({
+    interactions: interactionRows.map(it => ({
       id: it.id,
       contactId: it.contactId,
       type: it.type,

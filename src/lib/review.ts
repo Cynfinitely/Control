@@ -12,13 +12,15 @@ export const REVIEW_STEPS = [
     id: "inbox",
     module: "todos",
     title: "Clear todos & backlog",
-    description: "Move unfinished todos from previous days into the backlog, then skim what's waiting.",
+    description:
+      "Move unfinished todos from previous days into the backlog, then skim what's waiting.",
   },
   {
     id: "goals",
     module: "goals",
     title: "Check weekly goals",
-    description: "Tick off what you finished and log any progress you haven't counted yet.",
+    description:
+      "Tick off what you finished and log any progress you haven't counted yet.",
   },
   {
     id: "prayers",
@@ -30,7 +32,8 @@ export const REVIEW_STEPS = [
     id: "spending",
     module: "budget",
     title: "Review spending",
-    description: "Look at what you spent this week and categorize anything new.",
+    description:
+      "Look at what you spent this week and categorize anything new.",
   },
   {
     id: "people",
@@ -41,28 +44,40 @@ export const REVIEW_STEPS = [
   {
     id: "plan-ahead",
     title: "Plan the week ahead",
-    description: "Block time for tomorrow, check the meal plan and shopping, and write a few lines.",
+    description:
+      "Block time for tomorrow, check the meal plan and shopping, and write a few lines.",
   },
-] as const satisfies readonly { id: string; module?: ModuleId; title: string; description: string }[];
+] as const satisfies readonly {
+  id: string;
+  module?: ModuleId;
+  title: string;
+  description: string;
+}[];
 
 export type ReviewStep = (typeof REVIEW_STEPS)[number];
 
 /** The steps that apply to a user, given the modules they switched off. */
-export function activeReviewSteps(disabledModules: readonly ModuleId[]): ReviewStep[] {
+export function activeReviewSteps(
+  disabledModules: readonly ModuleId[]
+): ReviewStep[] {
   const modules = moduleFilter(disabledModules);
-  return REVIEW_STEPS.filter((step) => !("module" in step) || modules.has(step.module));
+  return REVIEW_STEPS.filter(
+    step => !("module" in step) || modules.has(step.module)
+  );
 }
 
 export type ReviewStepId = (typeof REVIEW_STEPS)[number]["id"];
 
-const STEP_IDS: readonly string[] = REVIEW_STEPS.map((s) => s.id);
+const STEP_IDS: readonly string[] = REVIEW_STEPS.map(s => s.id);
 
 export function isReviewStepId(value: unknown): value is ReviewStepId {
   return typeof value === "string" && STEP_IDS.includes(value);
 }
 
 /** "inbox,goals" → Set{"inbox","goals"}; unknown ids and blanks are dropped. */
-export function parseCompletedSteps(csv: string | null | undefined): Set<ReviewStepId> {
+export function parseCompletedSteps(
+  csv: string | null | undefined
+): Set<ReviewStepId> {
   const result = new Set<ReviewStepId>();
   if (!csv) return result;
   for (const raw of csv.split(",")) {
@@ -75,13 +90,17 @@ export function parseCompletedSteps(csv: string | null | undefined): Set<ReviewS
 /** Stable CSV in step order, without duplicates or unknown ids. */
 export function serializeCompletedSteps(steps: Iterable<string>): string {
   const set = new Set<string>(steps);
-  return REVIEW_STEPS.filter((s) => set.has(s.id))
-    .map((s) => s.id)
+  return REVIEW_STEPS.filter(s => set.has(s.id))
+    .map(s => s.id)
     .join(",");
 }
 
 /** Set (done=true), clear (done=false) or flip (done omitted) one step; returns the new CSV. */
-export function toggleCompletedStep(csv: string | null | undefined, step: ReviewStepId, done?: boolean): string {
+export function toggleCompletedStep(
+  csv: string | null | undefined,
+  step: ReviewStepId,
+  done?: boolean
+): string {
   const set = parseCompletedSteps(csv);
   const next = done ?? !set.has(step);
   if (next) set.add(step);
@@ -94,7 +113,7 @@ export function reviewProgress(
   steps: readonly ReviewStep[] = REVIEW_STEPS
 ): { done: number; total: number } {
   const set = new Set<string>(completed);
-  const done = steps.filter((s) => set.has(s.id)).length;
+  const done = steps.filter(s => set.has(s.id)).length;
   return { done, total: steps.length };
 }
 
@@ -103,8 +122,11 @@ export function isReviewComplete(
   completed: Iterable<string> | string | null | undefined,
   steps: readonly ReviewStep[] = REVIEW_STEPS
 ): boolean {
-  const set = typeof completed === "string" || completed == null ? parseCompletedSteps(completed) : new Set(completed);
-  return steps.every((s) => set.has(s.id));
+  const set =
+    typeof completed === "string" || completed == null
+      ? parseCompletedSteps(completed)
+      : new Set(completed);
+  return steps.every(s => set.has(s.id));
 }
 
 /** Validates a client-supplied week key like "2026-W40". */

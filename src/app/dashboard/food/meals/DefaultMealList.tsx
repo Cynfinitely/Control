@@ -46,12 +46,20 @@ export default function DefaultMealList({ meals, mealLabels, usage }: Props) {
   return (
     <>
       <ul className="space-y-2">
-        {meals.map((meal) => (
+        {meals.map(meal => (
           <li key={meal.id} className="card py-3">
             {editingId === meal.id ? (
               <div className="space-y-2">
-                <DefaultMealForm meal={meal} mealLabels={mealLabels} onDone={() => setEditingId(null)} />
-                <button type="button" className="btn-ghost touch-target" onClick={() => setEditingId(null)}>
+                <DefaultMealForm
+                  meal={meal}
+                  mealLabels={mealLabels}
+                  onDone={() => setEditingId(null)}
+                />
+                <button
+                  type="button"
+                  className="btn-ghost touch-target"
+                  onClick={() => setEditingId(null)}
+                >
                   Cancel
                 </button>
               </div>
@@ -60,11 +68,15 @@ export default function DefaultMealList({ meals, mealLabels, usage }: Props) {
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2 font-medium text-slate-800 dark:text-slate-100">
                     {meal.name}
-                    {meal.meal && <span className="badge-muted">{displayMealLabel(meal.meal)}</span>}
+                    {meal.meal && (
+                      <span className="badge-muted">
+                        {displayMealLabel(meal.meal)}
+                      </span>
+                    )}
                   </p>
                   {meal.items.length > 0 && (
                     <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-                      {meal.items.map((i) => i.name).join(", ")}
+                      {meal.items.map(i => i.name).join(", ")}
                     </p>
                   )}
                   <p className="mt-0.5 text-xs text-muted">
@@ -72,7 +84,11 @@ export default function DefaultMealList({ meals, mealLabels, usage }: Props) {
                   </p>
                 </div>
                 <div className="-mr-2 -mt-2 flex shrink-0">
-                  <IconButton icon="pencil" onClick={() => setEditingId(meal.id)} aria-label={`Edit ${meal.name}`} />
+                  <IconButton
+                    icon="pencil"
+                    onClick={() => setEditingId(meal.id)}
+                    aria-label={`Edit ${meal.name}`}
+                  />
                   <IconButton
                     icon="trash"
                     tone="danger"
@@ -88,7 +104,7 @@ export default function DefaultMealList({ meals, mealLabels, usage }: Props) {
       </ul>
       <ConfirmDialog
         open={confirmId !== null}
-        title={`Remove “${meals.find((m) => m.id === confirmId)?.name ?? "this Default Meal"}”?`}
+        title={`Remove “${meals.find(m => m.id === confirmId)?.name ?? "this Default Meal"}”?`}
         message="Past diary entries and planned meals stay as they are."
         confirmLabel="Remove"
         onConfirm={() => {

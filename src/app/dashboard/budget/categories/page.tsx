@@ -1,5 +1,8 @@
 import { requireModule } from "@/lib/session";
-import { getBudgetCategories, getUncategorizedCount } from "@/lib/queries/budget";
+import {
+  getBudgetCategories,
+  getUncategorizedCount,
+} from "@/lib/queries/budget";
 import PageHeader from "@/components/PageHeader";
 import Breadcrumb from "@/components/Breadcrumb";
 import ActionForm from "@/components/ActionForm";
@@ -28,7 +31,7 @@ function CategorySection({
   kind: "income" | "expense";
   categories: Categories;
 }) {
-  const items = categories.filter((c) => c.kind === kind);
+  const items = categories.filter(c => c.kind === kind);
   const inputId = `new-category-${kind}`;
 
   return (
@@ -46,9 +49,18 @@ function CategorySection({
           <label className="label" htmlFor={inputId}>
             New {kind} category
           </label>
-          <input id={inputId} name="name" className="input" placeholder="Category name" required />
+          <input
+            id={inputId}
+            name="name"
+            className="input"
+            placeholder="Category name"
+            required
+          />
         </div>
-        <SubmitButton className="btn-primary touch-target" pendingLabel="Adding…">
+        <SubmitButton
+          className="btn-primary touch-target"
+          pendingLabel="Adding…"
+        >
           Add
         </SubmitButton>
       </ActionForm>
@@ -71,7 +83,10 @@ function CategorySection({
                 className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3"
               >
                 <div className="min-w-0 flex-1">
-                  <ActionForm action={renameCategory} className="flex flex-wrap items-center gap-2">
+                  <ActionForm
+                    action={renameCategory}
+                    className="flex flex-wrap items-center gap-2"
+                  >
                     <input type="hidden" name="id" value={cat.id} />
                     <label htmlFor={renameId} className="sr-only">
                       Name for {cat.name}
@@ -83,7 +98,10 @@ function CategorySection({
                       defaultValue={cat.name}
                       required
                     />
-                    <SubmitButton className="btn-ghost btn-sm min-h-[40px]" pendingLabel="Saving…">
+                    <SubmitButton
+                      className="btn-ghost btn-sm min-h-[40px]"
+                      pendingLabel="Saving…"
+                    >
                       Rename
                     </SubmitButton>
                   </ActionForm>
@@ -124,7 +142,10 @@ function CategorySection({
                       className="btn-ghost btn-sm min-h-[40px]"
                       aria-label={`${cat.isHidden ? "Show" : "Hide"} ${cat.name}`}
                     >
-                      <Icon name={cat.isHidden ? "eye" : "eyeOff"} className="h-4 w-4" />
+                      <Icon
+                        name={cat.isHidden ? "eye" : "eyeOff"}
+                        className="h-4 w-4"
+                      />
                       {cat.isHidden ? "Show" : "Hide"}
                     </SubmitButton>
                   </ActionForm>
@@ -147,16 +168,35 @@ export default async function BudgetCategoriesPage() {
 
   return (
     <div>
-      <PageHeader help="budget:categories"
+      <PageHeader
+        help="budget:categories"
         title="Budget categories"
         description="Rename, reorder or hide preset categories, or add your own. Hidden categories disappear from pickers."
-        breadcrumb={<Breadcrumb items={[{ label: "Budget", href: "/dashboard/budget" }, { label: "Categories" }]} />}
+        breadcrumb={
+          <Breadcrumb
+            items={[
+              { label: "Budget", href: "/dashboard/budget" },
+              { label: "Categories" },
+            ]}
+          />
+        }
       >
-        <BudgetNav active="categories" uncategorizedCount={uncategorizedCount} />
+        <BudgetNav
+          active="categories"
+          uncategorizedCount={uncategorizedCount}
+        />
       </PageHeader>
 
-      <CategorySection title="Expense categories" kind="expense" categories={categories} />
-      <CategorySection title="Income categories" kind="income" categories={categories} />
+      <CategorySection
+        title="Expense categories"
+        kind="expense"
+        categories={categories}
+      />
+      <CategorySection
+        title="Income categories"
+        kind="income"
+        categories={categories}
+      />
     </div>
   );
 }

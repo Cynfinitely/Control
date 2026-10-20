@@ -1,14 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { joinItems, splitItems } from "./items";
-import { displayMealLabel, isSnack, parseFoodMode, parseMealLabels, serializeMealLabels } from "./meals";
+import {
+  displayMealLabel,
+  isSnack,
+  parseFoodMode,
+  parseMealLabels,
+  serializeMealLabels,
+} from "./meals";
 
 describe("splitItems", () => {
   it("splits on commas, semicolons and newlines", () => {
-    expect(splitItems("rye bread, turkey; skyr\nbanana")).toEqual(["rye bread", "turkey", "skyr", "banana"]);
+    expect(splitItems("rye bread, turkey; skyr\nbanana")).toEqual([
+      "rye bread",
+      "turkey",
+      "skyr",
+      "banana",
+    ]);
   });
 
   it("trims, collapses whitespace and de-duplicates case-insensitively", () => {
-    expect(splitItems("  Rye   bread , rye bread,, Skyr ")).toEqual(["Rye bread", "Skyr"]);
+    expect(splitItems("  Rye   bread , rye bread,, Skyr ")).toEqual([
+      "Rye bread",
+      "Skyr",
+    ]);
   });
 
   it("returns an empty list for empty input", () => {
@@ -28,7 +42,10 @@ describe("meal labels", () => {
   });
 
   it("parses and de-duplicates custom labels", () => {
-    expect(parseMealLabels("Brunch\nDinner\nbrunch\n")).toEqual(["Brunch", "Dinner"]);
+    expect(parseMealLabels("Brunch\nDinner\nbrunch\n")).toEqual([
+      "Brunch",
+      "Dinner",
+    ]);
     expect(serializeMealLabels([" Brunch ", "Dinner"])).toBe("Brunch\nDinner");
   });
 

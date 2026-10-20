@@ -8,11 +8,19 @@ import FormField from "@/components/FormField";
 import PasswordInput from "@/components/PasswordInput";
 
 const VERIFY_ERRORS: Record<string, string> = {
-  missing_token: "This verification link is missing a token. Check the link from your email.",
-  invalid_token: "This verification link is invalid or has expired. Please register again or contact support.",
+  missing_token:
+    "This verification link is missing a token. Check the link from your email.",
+  invalid_token:
+    "This verification link is invalid or has expired. Please register again or contact support.",
 };
 
-function Alert({ tone, children }: { tone: "error" | "success"; children: React.ReactNode }) {
+function Alert({
+  tone,
+  children,
+}: {
+  tone: "error" | "success";
+  children: React.ReactNode;
+}) {
   return (
     <p
       role={tone === "error" ? "alert" : "status"}
@@ -48,7 +56,11 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      const res = await signIn("credentials", { email, password, redirect: false });
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
       if (res?.error) {
         setError(
           res.error === "EMAIL_NOT_VERIFIED"
@@ -61,7 +73,9 @@ function LoginForm() {
       router.push("/dashboard");
       router.refresh();
     } catch {
-      setError("Couldn't reach the server. Check your connection and try again.");
+      setError(
+        "Couldn't reach the server. Check your connection and try again."
+      );
       setLoading(false);
     }
   }
@@ -69,18 +83,22 @@ function LoginForm() {
   return (
     <div className="card">
       <h1 className="section-title mb-4">Sign in</h1>
-      {verified && <Alert tone="success">Email verified. You can sign in now.</Alert>}
-      {verifyError && VERIFY_ERRORS[verifyError] && <Alert tone="error">{VERIFY_ERRORS[verifyError]}</Alert>}
+      {verified && (
+        <Alert tone="success">Email verified. You can sign in now.</Alert>
+      )}
+      {verifyError && VERIFY_ERRORS[verifyError] && (
+        <Alert tone="error">{VERIFY_ERRORS[verifyError]}</Alert>
+      )}
       {error && <Alert tone="error">{error}</Alert>}
       <form onSubmit={onSubmit} className="space-y-4">
         <FormField label="Email">
-          {(id) => (
+          {id => (
             <input
               id={id}
               className="input"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               required
               autoComplete="email"
               autoFocus
@@ -88,11 +106,11 @@ function LoginForm() {
           )}
         </FormField>
         <FormField label="Password">
-          {(id) => (
+          {id => (
             <PasswordInput
               id={id}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               required
               autoComplete="current-password"
             />
@@ -104,7 +122,8 @@ function LoginForm() {
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
-        New here? Control is invite-only: open the invite link you were sent to create your account.
+        New here? Control is invite-only: open the invite link you were sent to
+        create your account.
       </p>
     </div>
   );

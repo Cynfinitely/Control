@@ -1,7 +1,11 @@
 import { requireModule } from "@/lib/session";
 import { formatRange } from "@/lib/date";
 import { RELATIONSHIP_LABELS } from "@/lib/contacts";
-import { buildNetworkingInsights, rangeForNetworkingPeriod, type NetworkingPeriod } from "@/lib/networking";
+import {
+  buildNetworkingInsights,
+  rangeForNetworkingPeriod,
+  type NetworkingPeriod,
+} from "@/lib/networking";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import TabNav from "@/components/TabNav";
@@ -30,11 +34,15 @@ function parsePeriod(value: string | undefined): NetworkingPeriod {
   return "monthly";
 }
 
-export default async function NetworkingPage({
-  searchParams,
-}: {
-  searchParams: { tab?: string; relationship?: string; period?: string; person?: string };
+export default async function NetworkingPage(props: {
+  searchParams: Promise<{
+    tab?: string;
+    relationship?: string;
+    period?: string;
+    person?: string;
+  }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("networking");
   const tab = parseNetworkingTab(searchParams.tab);
   const relationshipFilter = searchParams.relationship?.trim();
@@ -42,7 +50,8 @@ export default async function NetworkingPage({
 
   return (
     <div>
-      <PageHeader help={`networking:${tab}`}
+      <PageHeader
+        help={`networking:${tab}`}
         title="Networking"
         description="Log a call in a few taps. Add topics when you want the detail."
       >
@@ -59,7 +68,13 @@ export default async function NetworkingPage({
   );
 }
 
-async function LogTab({ userId, personId }: { userId: string; personId?: string }) {
+async function LogTab({
+  userId,
+  personId,
+}: {
+  userId: string;
+  personId?: string;
+}) {
   const [contacts, suggestedTopics, activity] = await Promise.all([
     getComposerContacts(userId),
     getSuggestedTopics(userId),
@@ -100,9 +115,15 @@ async function PeopleTab({
   relationshipFilter?: string;
 }) {
   const people = await getPeopleRows(userId);
-  const usedRelationships = [...new Set(people.map((p) => p.relationship).filter(Boolean) as string[])].sort();
+  const usedRelationships = [
+    ...new Set(people.map(p => p.relationship).filter(Boolean) as string[]),
+  ].sort();
   const filtered = relationshipFilter
-    ? people.filter((p) => (p.relationship ?? "other").toLowerCase() === relationshipFilter.toLowerCase())
+    ? people.filter(
+        p =>
+          (p.relationship ?? "other").toLowerCase() ===
+          relationshipFilter.toLowerCase()
+      )
     : people;
 
   function href(rel: string | null) {
@@ -124,10 +145,12 @@ async function PeopleTab({
           aria-label="Filter people by relationship"
           variant="pills"
           className="mb-4"
-          active={relationshipFilter ? relationshipFilter.toLowerCase() : "__all"}
+          active={
+            relationshipFilter ? relationshipFilter.toLowerCase() : "__all"
+          }
           items={[
             { id: "__all", href: href(null), label: "All people" },
-            ...usedRelationships.map((rel) => ({
+            ...usedRelationships.map(rel => ({
               id: rel.toLowerCase(),
               href: href(rel),
               label: RELATIONSHIP_LABELS[rel] ?? rel,
@@ -151,16 +174,22 @@ async function PeopleTab({
   );
 }
 
-async function InsightsTab({ userId, period }: { userId: string; period: NetworkingPeriod }) {
+async function InsightsTab({
+  userId,
+  period,
+}: {
+  userId: string;
+  period: NetworkingPeriod;
+}) {
   const now = new Date();
   const range = rangeForNetworkingPeriod(period, now);
   const { contacts, interactions } = await getInsightsSource(userId, range);
   const insights = buildNetworkingInsights(contacts, interactions, range, now);
-  const contactName = new Map(contacts.map((c) => [c.id, c.name]));
+  const contactName = new Map(contacts.map(c => [c.id, c.name]));
   const activity = interactions
     .slice()
     .sort((a, b) => b.date.getTime() - a.date.getTime())
-    .map((it) => ({
+    .map(it => ({
       id: it.id,
       type: it.type,
       topics: it.topics,
@@ -179,11 +208,13 @@ async function InsightsTab({ userId, period }: { userId: string; period: Network
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted">{formatRange(range.from, range.to)}</p>
+        <p className="text-sm text-muted">
+          {formatRange(range.from, range.to)}
+        </p>
         <SegmentedControl
           aria-label="Insights period"
           value={period}
-          options={periods.map((p) => ({
+          options={periods.map(p => ({
             value: p.id,
             label: p.label,
             href: `/dashboard/networking?tab=insights&period=${p.id}`,

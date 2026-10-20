@@ -1,4 +1,8 @@
-import { formatEuro, formatEuroSigned, type CategoryBreakdown } from "@/lib/budget";
+import {
+  formatEuro,
+  formatEuroSigned,
+  type CategoryBreakdown,
+} from "@/lib/budget";
 import { toDateInputValue } from "@/lib/date";
 import type { MerchantSpend, MonthOverMonth } from "@/lib/budget/analysis";
 
@@ -26,8 +30,13 @@ export type MonthBudgetPromptSnapshot = {
   entries: MonthBudgetPromptEntry[];
 };
 
-export function merchantLabel(entry: Pick<MonthBudgetPromptEntry, "rawDescription" | "note" | "merchantKey">): string {
-  return (entry.rawDescription || entry.note || entry.merchantKey || "").trim() || "Unknown";
+export function merchantLabel(
+  entry: Pick<MonthBudgetPromptEntry, "rawDescription" | "note" | "merchantKey">
+): string {
+  return (
+    (entry.rawDescription || entry.note || entry.merchantKey || "").trim() ||
+    "Unknown"
+  );
 }
 
 function percentOf(part: number, whole: number): string {
@@ -40,7 +49,9 @@ function formatDelta(cents: number): string {
   return `${sign}${formatEuro(cents)}`;
 }
 
-function incomeBreakdown(entries: MonthBudgetPromptEntry[]): CategoryBreakdown[] {
+function incomeBreakdown(
+  entries: MonthBudgetPromptEntry[]
+): CategoryBreakdown[] {
   const totals = new Map<string, number>();
   for (const entry of entries) {
     if (entry.type !== "income") continue;
@@ -52,11 +63,15 @@ function incomeBreakdown(entries: MonthBudgetPromptEntry[]): CategoryBreakdown[]
     .sort((a, b) => b.totalCents - a.totalCents);
 }
 
-function sortedEntries(entries: MonthBudgetPromptEntry[]): MonthBudgetPromptEntry[] {
+function sortedEntries(
+  entries: MonthBudgetPromptEntry[]
+): MonthBudgetPromptEntry[] {
   return [...entries].sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
-export function buildMonthBudgetPrompt(snapshot: MonthBudgetPromptSnapshot): string {
+export function buildMonthBudgetPrompt(
+  snapshot: MonthBudgetPromptSnapshot
+): string {
   const lines: string[] = [];
 
   lines.push(

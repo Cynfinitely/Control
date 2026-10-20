@@ -26,30 +26,36 @@ const PRAYER_KEYWORDS = [
 
 const WORKOUT_KEYWORDS = ["spor", "workout", "gym"];
 
-const MEAL_KEYWORDS = ["öğün", "ogun", "yemek", "kahvaltı", "kahvalti", "breakfast", "lunch", "dinner"];
+const MEAL_KEYWORDS = [
+  "öğün",
+  "ogun",
+  "yemek",
+  "kahvaltı",
+  "kahvalti",
+  "breakfast",
+  "lunch",
+  "dinner",
+];
 
 const BREAK_KEYWORDS = ["mola", "break", "uyku", "sleep", "alarm"];
 
 function normalizeForMatch(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "");
+  return text.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
 }
 
 export function inferKindFromTitle(title: string): PlanKind {
   const normalized = normalizeForMatch(title);
 
-  if (PRAYER_KEYWORDS.some((k) => normalized.includes(normalizeForMatch(k)))) {
+  if (PRAYER_KEYWORDS.some(k => normalized.includes(normalizeForMatch(k)))) {
     return "prayer";
   }
-  if (WORKOUT_KEYWORDS.some((k) => normalized.includes(k))) {
+  if (WORKOUT_KEYWORDS.some(k => normalized.includes(k))) {
     return "workout";
   }
-  if (MEAL_KEYWORDS.some((k) => normalized.includes(normalizeForMatch(k)))) {
+  if (MEAL_KEYWORDS.some(k => normalized.includes(normalizeForMatch(k)))) {
     return "meal";
   }
-  if (BREAK_KEYWORDS.some((k) => normalized.includes(k))) {
+  if (BREAK_KEYWORDS.some(k => normalized.includes(k))) {
     return "break";
   }
   return "custom";

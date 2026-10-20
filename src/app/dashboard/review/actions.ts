@@ -20,7 +20,9 @@ function resolveWeekKey(formData: FormData): string {
   return isWeekKey(raw) ? raw : getPeriodKey("weekly", new Date());
 }
 
-export async function toggleReviewStep(formData: FormData): Promise<ActionResult> {
+export async function toggleReviewStep(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const weekKey = resolveWeekKey(formData);
   const step = str(formData.get("step"));
@@ -32,7 +34,11 @@ export async function toggleReviewStep(formData: FormData): Promise<ActionResult
     where: { userId_weekKey: { userId, weekKey } },
     select: { completedSteps: true },
   });
-  const completedSteps = toggleCompletedStep(existing?.completedSteps, step, done);
+  const completedSteps = toggleCompletedStep(
+    existing?.completedSteps,
+    step,
+    done
+  );
 
   await prisma.weeklyReview.upsert({
     where: { userId_weekKey: { userId, weekKey } },
@@ -43,11 +49,14 @@ export async function toggleReviewStep(formData: FormData): Promise<ActionResult
   return success();
 }
 
-export async function saveReviewNotes(formData: FormData): Promise<ActionResult> {
+export async function saveReviewNotes(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const weekKey = resolveWeekKey(formData);
   const notes = str(formData.get("notes")) || null;
-  if (notes && notes.length > 10000) return failure("Notes are too long (max 10,000 characters)");
+  if (notes && notes.length > 10000)
+    return failure("Notes are too long (max 10,000 characters)");
 
   await prisma.weeklyReview.upsert({
     where: { userId_weekKey: { userId, weekKey } },
@@ -58,7 +67,9 @@ export async function saveReviewNotes(formData: FormData): Promise<ActionResult>
   return success("Notes saved");
 }
 
-export async function completeReview(formData: FormData): Promise<ActionResult> {
+export async function completeReview(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const weekKey = resolveWeekKey(formData);
   const now = new Date();

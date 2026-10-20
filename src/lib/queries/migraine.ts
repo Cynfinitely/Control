@@ -10,7 +10,10 @@ export type MigraineDayLog = {
   note: string | null;
 };
 
-export async function getMonthMigraineLogs(userId: string, monthKey: string): Promise<MigraineDayLog[]> {
+export async function getMonthMigraineLogs(
+  userId: string,
+  monthKey: string
+): Promise<MigraineDayLog[]> {
   const days = monthGridDays(monthKey);
   const from = startOfDay(days[0]!);
   const to = endOfDay(days[days.length - 1]!);
@@ -24,7 +27,7 @@ export async function getMonthMigraineLogs(userId: string, monthKey: string): Pr
         orderBy: { date: "asc" },
         select: { date: true, pain: true, durationMin: true, note: true },
       });
-      return rows.map((row) => ({
+      return rows.map(row => ({
         date: toDateInputValue(coerceDate(row.date)),
         pain: row.pain,
         durationMin: row.durationMin,

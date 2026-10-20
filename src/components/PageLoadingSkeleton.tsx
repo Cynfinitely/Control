@@ -18,7 +18,13 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={`skeleton ${className ?? ""}`} />;
 }
 
-function Wrapper({ className = "space-y-6", children }: { className?: string; children: React.ReactNode }) {
+function Wrapper({
+  className = "space-y-6",
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className={className} role="status" aria-busy="true">
       <span className="sr-only">Loading…</span>
@@ -27,7 +33,13 @@ function Wrapper({ className = "space-y-6", children }: { className?: string; ch
   );
 }
 
-function HeaderSkeleton({ titleWidth = "w-40", descWidth = "w-64" }: { titleWidth?: string; descWidth?: string }) {
+function HeaderSkeleton({
+  titleWidth = "w-40",
+  descWidth = "w-64",
+}: {
+  titleWidth?: string;
+  descWidth?: string;
+}) {
   return (
     <div>
       <Skeleton className={`h-8 ${titleWidth}`} />

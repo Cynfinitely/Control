@@ -14,7 +14,9 @@ export function parseDate(value: FormDataEntryValue | null): Date {
   return isNaN(d.getTime()) ? new Date() : d;
 }
 
-export function parseOptionalDate(value: FormDataEntryValue | null): Date | null {
+export function parseOptionalDate(
+  value: FormDataEntryValue | null
+): Date | null {
   if (!value || String(value).trim() === "") return null;
   const d = new Date(String(value));
   return isNaN(d.getTime()) ? null : d;

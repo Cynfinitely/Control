@@ -12,9 +12,13 @@ type Props = {
   overdueCount?: number;
 };
 
-export default function HomeTodosCard({ todos, dayValue, overdueCount = 0 }: Props) {
-  const open = todos.filter((t) => t.status === "open").length;
-  const done = todos.filter((t) => t.status === "done").length;
+export default function HomeTodosCard({
+  todos,
+  dayValue,
+  overdueCount = 0,
+}: Props) {
+  const open = todos.filter(t => t.status === "open").length;
+  const done = todos.filter(t => t.status === "done").length;
 
   return (
     <section className="card mb-6" aria-labelledby="home-todos-title">
@@ -30,7 +34,10 @@ export default function HomeTodosCard({ todos, dayValue, overdueCount = 0 }: Pro
                 : `${open} open · ${done} done`}
             </span>
             {overdueCount > 0 && (
-              <Link href="/dashboard/todos" className="badge-danger hover:underline">
+              <Link
+                href="/dashboard/todos"
+                className="badge-danger hover:underline"
+              >
                 {overdueCount} overdue
               </Link>
             )}

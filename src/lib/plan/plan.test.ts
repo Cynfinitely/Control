@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { blocksOverlap, findOverlappingBlock, sortBlocksByTime } from "@/lib/plan/overlap";
+import {
+  blocksOverlap,
+  findOverlappingBlock,
+  sortBlocksByTime,
+} from "@/lib/plan/overlap";
 import {
   isValidTimeRange,
   parseTimeToMinutes,
@@ -66,10 +70,18 @@ describe("plan overlap detection", () => {
   ];
 
   it("finds overlapping blocks", () => {
-    expect(blocksOverlap(blocks[0], { startTime: "09:30", endTime: "10:30" })).toBe(true);
-    expect(blocksOverlap(blocks[0], { startTime: "10:00", endTime: "11:00" })).toBe(false);
-    expect(findOverlappingBlock(blocks, { startTime: "09:30", endTime: "09:45" })?.id).toBe("a");
-    expect(findOverlappingBlock(blocks, { startTime: "10:00", endTime: "11:00" })).toBeNull();
+    expect(
+      blocksOverlap(blocks[0], { startTime: "09:30", endTime: "10:30" })
+    ).toBe(true);
+    expect(
+      blocksOverlap(blocks[0], { startTime: "10:00", endTime: "11:00" })
+    ).toBe(false);
+    expect(
+      findOverlappingBlock(blocks, { startTime: "09:30", endTime: "09:45" })?.id
+    ).toBe("a");
+    expect(
+      findOverlappingBlock(blocks, { startTime: "10:00", endTime: "11:00" })
+    ).toBeNull();
   });
 
   it("sorts blocks by start time", () => {
@@ -96,7 +108,11 @@ describe("parsePlanText", () => {
     const { entries, warnings } = parsePlanText(TURKISH_SAMPLE);
     expect(entries).toHaveLength(23);
     expect(warnings).toHaveLength(0);
-    expect(entries[0]).toMatchObject({ startTime: "02:55", endTime: "02:59", title: "Sabah alarm" });
+    expect(entries[0]).toMatchObject({
+      startTime: "02:55",
+      endTime: "02:59",
+      title: "Sabah alarm",
+    });
     expect(entries[entries.length - 1]).toMatchObject({
       startTime: "00:05",
       title: "Uyku",
@@ -111,8 +127,10 @@ describe("parsePlanText", () => {
   });
 
   it("warns on invalid lines without failing the whole import", () => {
-    const { entries, warnings } = parsePlanText(`09:00  Valid\nnot a line\n10:00  Also valid`);
+    const { entries, warnings } = parsePlanText(
+      `09:00  Valid\nnot a line\n10:00  Also valid`
+    );
     expect(entries).toHaveLength(2);
-    expect(warnings.some((w) => w.includes("Line 2"))).toBe(true);
+    expect(warnings.some(w => w.includes("Line 2"))).toBe(true);
   });
 });

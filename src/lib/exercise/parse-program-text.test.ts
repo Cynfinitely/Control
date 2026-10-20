@@ -38,7 +38,11 @@ describe("parseProgramText", () => {
     expect(result.error).toBeUndefined();
     expect(result.name).toBe("Push");
     expect(result.exercises).toEqual([
-      expect.objectContaining({ name: "Bench Press", plannedSets: 3, plannedReps: 8 }),
+      expect.objectContaining({
+        name: "Bench Press",
+        plannedSets: 3,
+        plannedReps: 8,
+      }),
     ]);
   });
 
@@ -56,9 +60,13 @@ describe("parseProgramText", () => {
 
     expect(result.error).toBeUndefined();
     expect(result.exercises).toEqual([
-      expect.objectContaining({ name: "Bench Press", plannedSets: 3, plannedReps: null }),
+      expect.objectContaining({
+        name: "Bench Press",
+        plannedSets: 3,
+        plannedReps: null,
+      }),
     ]);
-    expect(result.warnings.some((w) => /sets/i.test(w))).toBe(true);
+    expect(result.warnings.some(w => /sets/i.test(w))).toBe(true);
   });
 
   it("warns on junk lines and still parses valid exercises", () => {
@@ -67,7 +75,7 @@ describe("parseProgramText", () => {
     expect(result.error).toBeUndefined();
     expect(result.exercises).toHaveLength(1);
     expect(result.exercises[0].name).toBe("Bench Press");
-    expect(result.warnings.some((w) => /could not parse/i.test(w))).toBe(true);
+    expect(result.warnings.some(w => /could not parse/i.test(w))).toBe(true);
   });
 
   it("returns an error when input is empty", () => {

@@ -9,7 +9,12 @@ import CheckButton from "@/components/CheckButton";
 import IconButton from "@/components/IconButton";
 import { useToast } from "@/components/Toast";
 import CollapsibleSection from "@/components/CollapsibleSection";
-import { toggleFocusItem, skipFocusItem, deleteFocusItem, restoreFocusItem } from "./actions";
+import {
+  toggleFocusItem,
+  skipFocusItem,
+  deleteFocusItem,
+  restoreFocusItem,
+} from "./actions";
 import type { WorkFocusItemRow } from "@/lib/queries/work";
 
 type Props = {
@@ -21,18 +26,23 @@ type OptimisticAction =
   | { type: "skip"; id: string }
   | { type: "delete"; id: string };
 
-function applyOptimistic(items: WorkFocusItemRow[], action: OptimisticAction): WorkFocusItemRow[] {
+function applyOptimistic(
+  items: WorkFocusItemRow[],
+  action: OptimisticAction
+): WorkFocusItemRow[] {
   switch (action.type) {
     case "toggle":
-      return items.map((item) => {
+      return items.map(item => {
         if (item.id !== action.id) return item;
         if (item.status === "open") return { ...item, status: "done" };
         return { ...item, status: "open" }; // done or skipped → open (matches toggleFocusItem)
       });
     case "skip":
-      return items.map((item) => (item.id === action.id ? { ...item, status: "skipped" } : item));
+      return items.map(item =>
+        item.id === action.id ? { ...item, status: "skipped" } : item
+      );
     case "delete":
-      return items.filter((item) => item.id !== action.id);
+      return items.filter(item => item.id !== action.id);
   }
 }
 
@@ -53,7 +63,12 @@ function FocusRow({
   const isSkipped = item.status === "skipped";
 
   return (
-    <li className={clsx("flex items-center gap-3 px-4 py-3", (isDone || isSkipped) && "opacity-80")}>
+    <li
+      className={clsx(
+        "flex items-center gap-3 px-4 py-3",
+        (isDone || isSkipped) && "opacity-80"
+      )}
+    >
       <CheckButton
         checked={isDone}
         disabled={pending || isSkipped}
@@ -70,7 +85,9 @@ function FocusRow({
         <p
           className={clsx(
             "break-words",
-            isDone || isSkipped ? "text-muted line-through" : "font-medium text-slate-800 dark:text-slate-100"
+            isDone || isSkipped
+              ? "text-muted line-through"
+              : "font-medium text-slate-800 dark:text-slate-100"
           )}
         >
           {item.title}
@@ -78,7 +95,9 @@ function FocusRow({
         {(isSkipped || item.linkLabel) && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {isSkipped && <span className="badge-warning">Skipped</span>}
-            {item.linkLabel && <span className="badge-muted">{item.linkLabel}</span>}
+            {item.linkLabel && (
+              <span className="badge-muted">{item.linkLabel}</span>
+            )}
           </div>
         )}
       </div>
@@ -119,7 +138,10 @@ function FocusRow({
 
 export default function FocusList({ initialItems }: Props) {
   const [isPending, startTransition] = useTransition();
-  const [optimisticItems, updateOptimistic] = useOptimistic(initialItems, applyOptimistic);
+  const [optimisticItems, updateOptimistic] = useOptimistic(
+    initialItems,
+    applyOptimistic
+  );
   const router = useRouter();
   const { success, error } = useToast();
 
@@ -179,11 +201,11 @@ export default function FocusList({ initialItems }: Props) {
     );
   }
 
-  const open = optimisticItems.filter((i) => i.status === "open");
-  const closed = optimisticItems.filter((i) => i.status !== "open");
+  const open = optimisticItems.filter(i => i.status === "open");
+  const closed = optimisticItems.filter(i => i.status !== "open");
 
   const rows = (items: WorkFocusItemRow[]) =>
-    items.map((item) => (
+    items.map(item => (
       <FocusRow
         key={item.id}
         item={item}
@@ -207,13 +229,22 @@ export default function FocusList({ initialItems }: Props) {
       )}
       <div className="space-y-4">
         {open.length > 0 && (
-          <CollapsibleSection title="Open" count={open.length} defaultOpen as="h2">
-            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">{rows(open)}</ul>
+          <CollapsibleSection
+            title="Open"
+            count={open.length}
+            defaultOpen
+            as="h2"
+          >
+            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
+              {rows(open)}
+            </ul>
           </CollapsibleSection>
         )}
         {closed.length > 0 && (
           <CollapsibleSection title="Done" count={closed.length} as="h2">
-            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">{rows(closed)}</ul>
+            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
+              {rows(closed)}
+            </ul>
           </CollapsibleSection>
         )}
       </div>

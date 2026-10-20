@@ -11,7 +11,11 @@ describe("isNetworkError", () => {
   });
 
   it("treats Firefox and Safari fetch failures as network failures", () => {
-    expect(isNetworkError(new TypeError("NetworkError when attempting to fetch resource."))).toBe(true);
+    expect(
+      isNetworkError(
+        new TypeError("NetworkError when attempting to fetch resource.")
+      )
+    ).toBe(true);
     expect(isNetworkError(new TypeError("Load failed"))).toBe(true);
   });
 
@@ -27,11 +31,15 @@ describe("shouldPollNotifications", () => {
   it("polls only when the tab is visible and online", () => {
     expect(shouldPollNotifications({ hidden: false, online: true })).toBe(true);
     expect(shouldPollNotifications({ hidden: true, online: true })).toBe(false);
-    expect(shouldPollNotifications({ hidden: false, online: false })).toBe(false);
+    expect(shouldPollNotifications({ hidden: false, online: false })).toBe(
+      false
+    );
   });
 
   it("does not start a poll while a request is already in flight", () => {
-    expect(shouldPollNotifications({ hidden: false, online: true, inFlight: true })).toBe(false);
+    expect(
+      shouldPollNotifications({ hidden: false, online: true, inFlight: true })
+    ).toBe(false);
   });
 });
 
@@ -49,7 +57,9 @@ describe("notificationPollDecision", () => {
   });
 
   it("treats network errors as non-fatal", () => {
-    expect(notificationPollDecision({ error: new TypeError("Failed to fetch") })).toBe("ignore");
+    expect(
+      notificationPollDecision({ error: new TypeError("Failed to fetch") })
+    ).toBe("ignore");
   });
 
   it("stops polling after 401", () => {

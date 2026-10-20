@@ -24,7 +24,7 @@ export default function ModulePicker({ disabled, onChange, busy }: Props) {
     const next = new Set(off);
     if (on) next.delete(id);
     else next.add(id);
-    onChange(MODULES.filter((m) => next.has(m.id)).map((m) => m.id));
+    onChange(MODULES.filter(m => next.has(m.id)).map(m => m.id));
   }
 
   return (
@@ -34,14 +34,19 @@ export default function ModulePicker({ disabled, onChange, busy }: Props) {
           {enabledCount} of {MODULES.length} modules on
         </p>
         <div className="flex gap-2">
-          <button type="button" className="btn-ghost btn-sm" disabled={busy || off.size === 0} onClick={() => onChange([])}>
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            disabled={busy || off.size === 0}
+            onClick={() => onChange([])}
+          >
             Turn all on
           </button>
           <button
             type="button"
             className="btn-ghost btn-sm"
             disabled={busy || enabledCount === 0}
-            onClick={() => onChange(MODULES.map((m) => m.id))}
+            onClick={() => onChange(MODULES.map(m => m.id))}
           >
             Turn all off
           </button>
@@ -49,26 +54,44 @@ export default function ModulePicker({ disabled, onChange, busy }: Props) {
       </div>
 
       <div className="space-y-5">
-        {MODULE_SECTIONS.map((section) => (
+        {MODULE_SECTIONS.map(section => (
           <fieldset key={section}>
             <legend className="eyebrow mb-1">{section}</legend>
             <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-700 dark:border-slate-700">
-              {MODULES.filter((m) => m.section === section).map((m) => {
+              {MODULES.filter(m => m.section === section).map(m => {
                 const on = !off.has(m.id);
                 return (
-                  <li key={m.id} className="flex items-center gap-3 px-3 py-2.5">
+                  <li
+                    key={m.id}
+                    className="flex items-center gap-3 px-3 py-2.5"
+                  >
                     <Icon
                       name={m.icon}
-                      className={on ? "h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" : "h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500"}
+                      className={
+                        on
+                          ? "h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400"
+                          : "h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500"
+                      }
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
                         {m.label}
-                        {!on && <span className="ml-2 text-xs font-normal text-muted">Off</span>}
+                        {!on && (
+                          <span className="ml-2 text-xs font-normal text-muted">
+                            Off
+                          </span>
+                        )}
                       </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">{m.description}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                        {m.description}
+                      </p>
                     </div>
-                    <Switch checked={on} onChange={(next) => toggle(m.id, next)} label={`${m.label} module`} disabled={busy} />
+                    <Switch
+                      checked={on}
+                      onChange={next => toggle(m.id, next)}
+                      label={`${m.label} module`}
+                      disabled={busy}
+                    />
                   </li>
                 );
               })}

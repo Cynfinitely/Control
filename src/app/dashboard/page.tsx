@@ -3,7 +3,13 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { addDays, toDateInputValue } from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
-import { formatLongDateInZone, greetingForHour, hourInZone, isoWeekdayInZone, shouldNudgeWeeklyReview } from "@/lib/greeting";
+import {
+  formatLongDateInZone,
+  greetingForHour,
+  hourInZone,
+  isoWeekdayInZone,
+  shouldNudgeWeeklyReview,
+} from "@/lib/greeting";
 import { getDashboardStats, type DomainHealth } from "@/lib/queries/dashboard";
 import { getPlanPreviewBlocks, getPlanDayStats } from "@/lib/queries/plan";
 import { getInspirations } from "@/lib/queries/inspirations";
@@ -65,32 +71,59 @@ export default async function DashboardHome() {
   const modules = moduleFilter(disabledModules);
 
   const stats = await getDashboardStats(sessionUser.id, todayKey);
-  const [planPreview, planStats, inspirations, principlesReviewed, priorities, todayTodos, reviews, weather] = await Promise.all([
+  const [
+    planPreview,
+    planStats,
+    inspirations,
+    principlesReviewed,
+    priorities,
+    todayTodos,
+    reviews,
+    weather,
+  ] = await Promise.all([
     modules.has("plan") ? getPlanPreviewBlocks(sessionUser.id, todayKey) : null,
     modules.has("plan") ? getPlanDayStats(sessionUser.id, todayKey, now) : null,
     modules.has("inspirations") ? getInspirations(sessionUser.id) : null,
-    modules.has("principles") ? getPrincipleReviewedToday(sessionUser.id, now) : null,
+    modules.has("principles")
+      ? getPrincipleReviewedToday(sessionUser.id, now)
+      : null,
     modules.has("priorities") ? getLifePriorities(sessionUser.id) : null,
     modules.has("todos") ? getDayTodos(sessionUser.id, todayKey) : null,
-    modules.has("review") ? getRecentWeeklyReviews(sessionUser.id, [thisWeekKey, lastWeekKey]) : [],
+    modules.has("review")
+      ? getRecentWeeklyReviews(sessionUser.id, [thisWeekKey, lastWeekKey])
+      : [],
     modules.has("weather") ? getUserWeather(sessionUser.id) : null,
   ]);
 
-  const thisWeekReview = reviews.find((r) => r.weekKey === thisWeekKey);
-  const lastWeekReview = reviews.find((r) => r.weekKey === lastWeekKey);
-  const showReviewNudge = modules.has("review") && shouldNudgeWeeklyReview({
-    isoWeekday: isoWeekdayInZone(now, user.timezone),
-    thisWeekCompleted: Boolean(thisWeekReview?.completedAt),
-    lastWeekStartedNotCompleted: Boolean(lastWeekReview && !lastWeekReview.completedAt),
-  });
-  const reviewStarted = Boolean(thisWeekReview?.completedSteps || thisWeekReview?.completedAt);
+  const thisWeekReview = reviews.find(r => r.weekKey === thisWeekKey);
+  const lastWeekReview = reviews.find(r => r.weekKey === lastWeekKey);
+  const showReviewNudge =
+    modules.has("review") &&
+    shouldNudgeWeeklyReview({
+      isoWeekday: isoWeekdayInZone(now, user.timezone),
+      thisWeekCompleted: Boolean(thisWeekReview?.completedAt),
+      lastWeekStartedNotCompleted: Boolean(
+        lastWeekReview && !lastWeekReview.completedAt
+      ),
+    });
+  const reviewStarted = Boolean(
+    thisWeekReview?.completedSteps || thisWeekReview?.completedAt
+  );
 
   const goalTotal = stats.weeklyGoals + stats.weeklyGoalsCompleted;
 
   const [hasMeal, hasWeeklyGoal, hasPrayerDebt] = await Promise.all([
-    prisma.foodLogEntry.count({ where: { userId: sessionUser.id, deletedAt: null } }).then((n) => n > 0),
-    prisma.goal.count({ where: { userId: sessionUser.id, deletedAt: null, period: "weekly" } }).then((n) => n > 0),
-    prisma.prayerDebt.count({ where: { userId: sessionUser.id } }).then((n) => n > 0),
+    prisma.foodLogEntry
+      .count({ where: { userId: sessionUser.id, deletedAt: null } })
+      .then(n => n > 0),
+    prisma.goal
+      .count({
+        where: { userId: sessionUser.id, deletedAt: null, period: "weekly" },
+      })
+      .then(n => n > 0),
+    prisma.prayerDebt
+      .count({ where: { userId: sessionUser.id } })
+      .then(n => n > 0),
   ]);
 
   const cards = modules.keep<{
@@ -111,7 +144,8 @@ export default async function DashboardHome() {
       href: "/dashboard/goals",
       icon: "target",
       health: stats.health.goals,
-      progress: goalTotal > 0 ? (stats.weeklyGoalsCompleted / goalTotal) * 100 : 0,
+      progress:
+        goalTotal > 0 ? (stats.weeklyGoalsCompleted / goalTotal) * 100 : 0,
     },
     {
       module: "food",
@@ -152,16 +186,19 @@ export default async function DashboardHome() {
       module: "religious",
       label: "Prayers today",
       value: `${stats.prayersOnTime}/${PRAYERS}`,
-      sub: [
-        stats.prayersMissed > 0 ? `${stats.prayersMissed} missed` : null,
-        stats.prayersUnlogged > 0 ? `${stats.prayersUnlogged} not logged` : null,
-        stats.prayersMissed === 0 && stats.prayersUnlogged === 0
-          ? `${stats.weeklyPrayerRate}% on-time this week`
-          : null,
-        stats.pendingQaza > 0 ? `${stats.pendingQaza} qaza` : null,
-      ]
-        .filter(Boolean)
-        .join(" · ") || "not logged yet",
+      sub:
+        [
+          stats.prayersMissed > 0 ? `${stats.prayersMissed} missed` : null,
+          stats.prayersUnlogged > 0
+            ? `${stats.prayersUnlogged} not logged`
+            : null,
+          stats.prayersMissed === 0 && stats.prayersUnlogged === 0
+            ? `${stats.weeklyPrayerRate}% on-time this week`
+            : null,
+          stats.pendingQaza > 0 ? `${stats.pendingQaza} qaza` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "not logged yet",
       href: "/dashboard/religious",
       icon: "moon",
       health: stats.health.religious,
@@ -194,7 +231,8 @@ export default async function DashboardHome() {
 
   return (
     <div>
-      <PageHeader help="home"
+      <PageHeader
+        help="home"
         title={greetingForHour(hourInZone(now, user.timezone), displayName)}
         description={formatLongDateInZone(now, user.timezone)}
       />
@@ -205,7 +243,10 @@ export default async function DashboardHome() {
           aria-labelledby="review-nudge-title"
         >
           <div className="flex min-w-0 items-start gap-3">
-            <Icon name="clipboard" className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" />
+            <Icon
+              name="clipboard"
+              className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400"
+            />
             <div className="min-w-0">
               <h2 id="review-nudge-title" className="subsection-title">
                 Weekly review — not done yet this week
@@ -217,7 +258,10 @@ export default async function DashboardHome() {
               </p>
             </div>
           </div>
-          <Link href="/dashboard/review" className="btn-ghost btn-sm min-h-[40px] shrink-0 self-start sm:self-center">
+          <Link
+            href="/dashboard/review"
+            className="btn-ghost btn-sm min-h-[40px] shrink-0 self-start sm:self-center"
+          >
             {reviewStarted ? "Continue review" : "Start review"}
             <Icon name="arrowRight" className="h-3.5 w-3.5" />
           </Link>
@@ -227,7 +271,13 @@ export default async function DashboardHome() {
       <OnboardingChecklist
         userId={sessionUser.id}
         userCreatedAt={user.createdAt.toISOString()}
-        items={modules.keep<{ module: ModuleId; id: string; label: string; href: string; done: boolean }>([
+        items={modules.keep<{
+          module: ModuleId;
+          id: string;
+          label: string;
+          href: string;
+          done: boolean;
+        }>([
           {
             module: "food",
             id: "meal",
@@ -262,52 +312,72 @@ export default async function DashboardHome() {
       {priorities && <LifePrioritiesCard items={priorities} />}
 
       {(showMainColumn || showGlance) && (
-      <div className={showMainColumn && showGlance ? "mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3" : "mb-6"}>
-        {showMainColumn && (
-        <div className="min-w-0 lg:col-span-2">
-          {todayTodos && <HomeTodosCard todos={todayTodos} dayValue={todayKey} overdueCount={stats.overdueTodos} />}
-          {planPreview && planStats && (
-          <PlanPreview
-            blocks={planPreview.blocks}
-            stats={planStats}
-            currentBlockId={planPreview.currentBlockId}
-            isToday
-          />
+        <div
+          className={
+            showMainColumn && showGlance
+              ? "mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3"
+              : "mb-6"
+          }
+        >
+          {showMainColumn && (
+            <div className="min-w-0 lg:col-span-2">
+              {todayTodos && (
+                <HomeTodosCard
+                  todos={todayTodos}
+                  dayValue={todayKey}
+                  overdueCount={stats.overdueTodos}
+                />
+              )}
+              {planPreview && planStats && (
+                <PlanPreview
+                  blocks={planPreview.blocks}
+                  stats={planStats}
+                  currentBlockId={planPreview.currentBlockId}
+                  isToday
+                />
+              )}
+            </div>
+          )}
+          {showGlance && (
+            <aside aria-labelledby="glance-title" className="min-w-0">
+              <h2 id="glance-title" className="section-title mb-3">
+                Today at a glance
+              </h2>
+              {weather && <HomeWeatherCard weather={weather} />}
+              <div
+                className={
+                  showMainColumn
+                    ? "grid grid-cols-2 gap-2 lg:grid-cols-1"
+                    : "grid grid-cols-2 gap-2 lg:grid-cols-4"
+                }
+              >
+                {cards.map(c => (
+                  <StatCard
+                    key={c.label}
+                    label={c.label}
+                    value={c.value}
+                    hint={c.sub}
+                    href={c.href}
+                    icon={c.icon}
+                    tone={HEALTH[c.health].tone}
+                    status={HEALTH[c.health].status}
+                    progress={c.progress}
+                    size="sm"
+                  />
+                ))}
+              </div>
+            </aside>
           )}
         </div>
-        )}
-        {showGlance && (
-        <aside aria-labelledby="glance-title" className="min-w-0">
-          <h2 id="glance-title" className="section-title mb-3">
-            Today at a glance
-          </h2>
-          {weather && <HomeWeatherCard weather={weather} />}
-          <div className={showMainColumn ? "grid grid-cols-2 gap-2 lg:grid-cols-1" : "grid grid-cols-2 gap-2 lg:grid-cols-4"}>
-            {cards.map((c) => (
-              <StatCard
-                key={c.label}
-                label={c.label}
-                value={c.value}
-                hint={c.sub}
-                href={c.href}
-                icon={c.icon}
-                tone={HEALTH[c.health].tone}
-                status={HEALTH[c.health].status}
-                progress={c.progress}
-                size="sm"
-              />
-            ))}
-          </div>
-        </aside>
-        )}
-      </div>
       )}
 
       {(inspirations || principlesReviewed !== null) && (
-      <div className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
-        {inspirations && <InspirationSpotlight items={inspirations} />}
-        {principlesReviewed !== null && <PrincipleReviewCard reviewedToday={principlesReviewed} />}
-      </div>
+        <div className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {inspirations && <InspirationSpotlight items={inspirations} />}
+          {principlesReviewed !== null && (
+            <PrincipleReviewCard reviewedToday={principlesReviewed} />
+          )}
+        </div>
       )}
 
       <HomeQuickActions disabledModules={disabledModules} />

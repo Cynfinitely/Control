@@ -14,8 +14,9 @@ export default function ResetBudgetPanel() {
       className="border-red-200 dark:border-red-900"
     >
       <p className="text-sm text-slate-600 dark:text-slate-400">
-        Permanently deletes all transactions, import batches and merchant category rules. Categories are kept. Use this
-        to start over from a clean import.
+        Permanently deletes all transactions, import batches and merchant
+        category rules. Categories are kept. Use this to start over from a clean
+        import.
       </p>
       <FormAction
         action={resetBudgetDataForm}
@@ -43,7 +44,10 @@ export default function ResetBudgetPanel() {
             required
           />
         </div>
-        <SubmitButton className="btn-danger touch-target" pendingLabel="Clearing…">
+        <SubmitButton
+          className="btn-danger touch-target"
+          pendingLabel="Clearing…"
+        >
           Clear budget data
         </SubmitButton>
       </FormAction>

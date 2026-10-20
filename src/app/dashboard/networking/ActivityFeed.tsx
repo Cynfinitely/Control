@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/date";
-import { parseTopics, INTERACTION_TYPE_LABELS, formatActivityDate } from "@/lib/networking";
+import {
+  parseTopics,
+  INTERACTION_TYPE_LABELS,
+  formatActivityDate,
+} from "@/lib/networking";
 import Icon from "@/components/Icon";
 import ActionForm from "@/components/ActionForm";
 import EmptyState from "@/components/EmptyState";
@@ -18,17 +22,29 @@ export default function ActivityFeed({
   empty?: string;
 }) {
   if (items.length === 0) {
-    return <EmptyState variant="inline" headingLevel="h3" icon="users" title={empty} />;
+    return (
+      <EmptyState
+        variant="inline"
+        headingLevel="h3"
+        icon="users"
+        title={empty}
+      />
+    );
   }
 
   return (
     <ul className="divide-y divide-slate-100 dark:divide-slate-700">
-      {items.map((it) => {
+      {items.map(it => {
         const topics = parseTopics(it.topics);
         const typeLabel = INTERACTION_TYPE_LABELS[it.type] ?? it.type;
         return (
-          <li key={it.id} className="flex items-start gap-3 py-3 text-sm first:pt-0 last:pb-0">
-            <span className={`mt-0.5 capitalize ${it.type === "call" ? "badge-brand" : "badge-muted"}`}>
+          <li
+            key={it.id}
+            className="flex items-start gap-3 py-3 text-sm first:pt-0 last:pb-0"
+          >
+            <span
+              className={`mt-0.5 capitalize ${it.type === "call" ? "badge-brand" : "badge-muted"}`}
+            >
               {typeLabel}
             </span>
             <div className="min-w-0 flex-1">
@@ -41,18 +57,22 @@ export default function ActivityFeed({
                 </Link>
               )}
               {it.summary && (
-                <p className="whitespace-pre-line text-slate-700 dark:text-slate-200">{it.summary}</p>
+                <p className="whitespace-pre-line text-slate-700 dark:text-slate-200">
+                  {it.summary}
+                </p>
               )}
               {topics.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {topics.map((topic) => (
+                  {topics.map(topic => (
                     <span key={topic} className="badge-muted">
                       {topic}
                     </span>
                   ))}
                 </div>
               )}
-              <p className="mt-1 text-xs text-muted">{formatActivityDate(it.date)}</p>
+              <p className="mt-1 text-xs text-muted">
+                {formatActivityDate(it.date)}
+              </p>
             </div>
             <ActionForm
               action={deleteInteraction}

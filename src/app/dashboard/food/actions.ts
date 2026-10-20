@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
-import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import {
+  success,
+  failure,
+  wrapFormAction,
+  type ActionResult,
+} from "@/lib/action-result";
 import { endOfDay, parseDayParam, startOfDay } from "@/lib/date";
 import { joinItems, splitItems } from "@/lib/food/items";
 import { parseFoodMode, serializeMealLabels } from "@/lib/food/meals";
@@ -22,7 +27,12 @@ function invalidatePlanner(userId: string) {
   revalidatePath("/dashboard/food/planner");
 }
 
-type NutritionInput = { calories: number; protein: number; carbs: number; fat: number };
+type NutritionInput = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
 
 function readNutrition(formData: FormData): NutritionInput {
   return {
@@ -39,11 +49,17 @@ function readHunger(formData: FormData): number | null {
 }
 
 /** Reads `time` ("HH:MM") on the diary `day` in the user's timezone. */
-async function readEatenAt(formData: FormData, userId: string): Promise<Date | null> {
+async function readEatenAt(
+  formData: FormData,
+  userId: string
+): Promise<Date | null> {
   const time = str(formData.get("time"));
   if (!time) return null;
   const timeZone = await getUserTimezone(userId);
-  const day = str(formData.get("day")) || DateTime.now().setZone(timeZone).toISODate() || "";
+  const day =
+    str(formData.get("day")) ||
+    DateTime.now().setZone(timeZone).toISODate() ||
+    "";
   return instantFromLocal(day, time, timeZone);
 }
 
@@ -72,8 +88,13 @@ export async function logFood(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const name = str(formData.get("name"));
   if (!name) return failure("Food name is required");
-  const defaultMeal = await ownedDefaultMeal(userId, str(formData.get("defaultMealId")));
-  const eatenAt = (await readEatenAt(formData, userId)) ?? (formData.get("date") ? null : new Date());
+  const defaultMeal = await ownedDefaultMeal(
+    userId,
+    str(formData.get("defaultMealId"))
+  );
+  const eatenAt =
+    (await readEatenAt(formData, userId)) ??
+    (formData.get("date") ? null : new Date());
   await prisma.foodLogEntry.create({
     data: {
       userId,
@@ -92,11 +113,14 @@ export async function logFood(formData: FormData): Promise<ActionResult> {
   return success("Logged");
 }
 
-export const logFoodForm = wrapFormAction(logFood, "Logged");
-
-export async function logDefaultMeal(formData: FormData): Promise<ActionResult> {
+export async function logDefaultMeal(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
-  const meal = await ownedDefaultMeal(userId, str(formData.get("defaultMealId")));
+  const meal = await ownedDefaultMeal(
+    userId,
+    str(formData.get("defaultMealId"))
+  );
   if (!meal) return failure("Default Meal not found");
   const eatenAt = (await readEatenAt(formData, userId)) ?? new Date();
   await prisma.foodLogEntry.create({
@@ -104,7 +128,8 @@ export async function logDefaultMeal(formData: FormData): Promise<ActionResult> 
       userId,
       name: meal.name,
       meal: meal.meal,
-      items: meal.items.length > 0 ? joinItems(meal.items.map((i) => i.name)) : null,
+      items:
+        meal.items.length > 0 ? joinItems(meal.items.map(i => i.name)) : null,
       eatenAt,
       date: readDay(formData, eatenAt),
       defaultMealId: meal.id,
@@ -174,7 +199,9 @@ export async function logWater(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const glasses = num(formData.get("glasses"), 1);
   const day = str(formData.get("day")) || str(formData.get("date"));
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(day) ? parseDayParam(day) : parseDate(formData.get("date"));
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(day)
+    ? parseDayParam(day)
+    : parseDate(formData.get("date"));
   await prisma.waterLog.create({ data: { userId, date, glasses } });
   invalidateFood(userId);
   return success("Water logged");
@@ -193,7 +220,10 @@ export async function removeWater(formData: FormData): Promise<ActionResult> {
   });
   if (!latest) return failure("No water logged for this day");
   if (latest.glasses > 1) {
-    await prisma.waterLog.update({ where: { id: latest.id }, data: { glasses: { decrement: 1 } } });
+    await prisma.waterLog.update({
+      where: { id: latest.id },
+      data: { glasses: { decrement: 1 } },
+    });
   } else {
     await prisma.waterLog.delete({ where: { id: latest.id } });
   }
@@ -201,10 +231,14 @@ export async function removeWater(formData: FormData): Promise<ActionResult> {
   return success("Removed 1 glass");
 }
 
-export async function saveFoodPreferences(formData: FormData): Promise<ActionResult> {
+export async function saveFoodPreferences(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const mode = parseFoodMode(str(formData.get("mode")));
-  const mealLabels = serializeMealLabels(str(formData.get("mealLabels")).split(/\r?\n/));
+  const mealLabels = serializeMealLabels(
+    str(formData.get("mealLabels")).split(/\r?\n/)
+  );
   await prisma.foodPreference.upsert({
     where: { userId },
     update: { mode, mealLabels },
@@ -214,7 +248,10 @@ export async function saveFoodPreferences(formData: FormData): Promise<ActionRes
   return success("Preferences saved");
 }
 
-export const saveFoodPreferencesForm = wrapFormAction(saveFoodPreferences, "Preferences saved");
+export const saveFoodPreferencesForm = wrapFormAction(
+  saveFoodPreferences,
+  "Preferences saved"
+);
 
 function itemRows(itemsText: string) {
   return splitItems(itemsText).map((name, sortOrder) => ({ name, sortOrder }));
@@ -224,7 +261,9 @@ function itemRows(itemsText: string) {
  * Creates or updates a Default Meal. With `linkByName`, past entries with the exact same
  * name (not yet linked) are attributed to it so usage stats include them.
  */
-export async function upsertDefaultMeal(formData: FormData): Promise<ActionResult> {
+export async function upsertDefaultMeal(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const name = str(formData.get("name"));
@@ -243,7 +282,9 @@ export async function upsertDefaultMeal(formData: FormData): Promise<ActionResul
     await prisma.$transaction([
       prisma.defaultMeal.update({ where: { id }, data }),
       prisma.defaultMealItem.deleteMany({ where: { defaultMealId: id } }),
-      prisma.defaultMealItem.createMany({ data: items.map((i) => ({ ...i, defaultMealId: id })) }),
+      prisma.defaultMealItem.createMany({
+        data: items.map(i => ({ ...i, defaultMealId: id })),
+      }),
     ]);
     mealId = id;
   } else {
@@ -267,10 +308,14 @@ export async function upsertDefaultMeal(formData: FormData): Promise<ActionResul
 
 export const upsertDefaultMealForm = wrapFormAction(upsertDefaultMeal);
 
-export async function saveEntryAsDefault(formData: FormData): Promise<ActionResult> {
+export async function saveEntryAsDefault(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const entryId = str(formData.get("id"));
-  const entry = await prisma.foodLogEntry.findFirst({ where: { id: entryId, userId, deletedAt: null } });
+  const entry = await prisma.foodLogEntry.findFirst({
+    where: { id: entryId, userId, deletedAt: null },
+  });
   if (!entry) return failure("Entry not found");
   if (entry.defaultMealId) return failure("Already logged from a Default Meal");
   const created = await prisma.defaultMeal.create({
@@ -294,7 +339,9 @@ export async function saveEntryAsDefault(formData: FormData): Promise<ActionResu
   return success(`Saved "${entry.name}" as a Default Meal`);
 }
 
-export async function deleteDefaultMeal(formData: FormData): Promise<ActionResult> {
+export async function deleteDefaultMeal(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   await prisma.defaultMeal.updateMany({
@@ -315,7 +362,9 @@ export async function logFromPlan(formData: FormData): Promise<ActionResult> {
   });
   if (!item) return failure("Planned meal not found");
   if (item.loggedAt && !formData.get("again")) {
-    return failure(`“${item.name}” is already in your diary. Use “Log again” to add it twice.`);
+    return failure(
+      `“${item.name}” is already in your diary. Use “Log again” to add it twice.`
+    );
   }
   await prisma.$transaction([
     prisma.foodLogEntry.create({
@@ -323,7 +372,10 @@ export async function logFromPlan(formData: FormData): Promise<ActionResult> {
         userId,
         name: item.name,
         meal: item.meal,
-        items: item.ingredients.length > 0 ? joinItems(item.ingredients.map((i) => i.name)) : null,
+        items:
+          item.ingredients.length > 0
+            ? joinItems(item.ingredients.map(i => i.name))
+            : null,
         defaultMealId: item.defaultMealId,
         calories: item.calories,
         protein: item.protein,
@@ -332,7 +384,10 @@ export async function logFromPlan(formData: FormData): Promise<ActionResult> {
         date: item.date,
       },
     }),
-    prisma.mealPlanItem.update({ where: { id: item.id }, data: { loggedAt: new Date() } }),
+    prisma.mealPlanItem.update({
+      where: { id: item.id },
+      data: { loggedAt: new Date() },
+    }),
   ]);
   invalidateFood(userId);
   invalidatePlanner(userId);
@@ -341,7 +396,10 @@ export async function logFromPlan(formData: FormData): Promise<ActionResult> {
 
 export async function addPlanItem(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
-  const defaultMeal = await ownedDefaultMeal(userId, str(formData.get("defaultMealId")));
+  const defaultMeal = await ownedDefaultMeal(
+    userId,
+    str(formData.get("defaultMealId"))
+  );
   const name = str(formData.get("name")) || defaultMeal?.name || "";
   if (!name) return failure("Pick a Default Meal or type a meal name");
   const nutrition = readNutrition(formData);
@@ -363,7 +421,12 @@ export async function addPlanItem(formData: FormData): Promise<ActionResult> {
           }
         : nutrition),
       ingredients: defaultMeal
-        ? { create: defaultMeal.items.map((i) => ({ name: i.name, quantity: i.quantity })) }
+        ? {
+            create: defaultMeal.items.map(i => ({
+              name: i.name,
+              quantity: i.quantity,
+            })),
+          }
         : undefined,
     },
   });
@@ -371,7 +434,9 @@ export async function addPlanItem(formData: FormData): Promise<ActionResult> {
   return success(`Planned “${name}”`);
 }
 
-export async function deletePlanItem(formData: FormData): Promise<ActionResult> {
+export async function deletePlanItem(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const result = await prisma.mealPlanItem.updateMany({
@@ -383,7 +448,9 @@ export async function deletePlanItem(formData: FormData): Promise<ActionResult> 
   return success("Removed from plan");
 }
 
-export async function addShoppingItem(formData: FormData): Promise<ActionResult> {
+export async function addShoppingItem(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const mealPlanItemId = str(formData.get("mealPlanItemId"));
   const name = str(formData.get("name"));
@@ -399,7 +466,9 @@ export async function addShoppingItem(formData: FormData): Promise<ActionResult>
   return success(`Added “${name}” to the shopping list`);
 }
 
-export async function toggleShoppingItem(formData: FormData): Promise<ActionResult> {
+export async function toggleShoppingItem(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const toChecked = await prisma.shoppingItem.updateMany({

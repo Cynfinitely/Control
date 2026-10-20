@@ -11,7 +11,12 @@ export default function AppError({
 }) {
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-4">
-      <ErrorRecovery error={error} reset={reset} homeHref="/dashboard" autoRecover="reset" />
+      <ErrorRecovery
+        error={error}
+        reset={reset}
+        homeHref="/dashboard"
+        autoRecover="reset"
+      />
     </div>
   );
 }

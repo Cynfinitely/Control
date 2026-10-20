@@ -1,6 +1,16 @@
 import { requireModule } from "@/lib/session";
-import { addDays, endOfDay, parseDayParam, startOfWeek, toDateInputValue } from "@/lib/date";
-import { getDefaultMeals, getFoodRange, getUserTimezone } from "@/lib/queries/food";
+import {
+  addDays,
+  endOfDay,
+  parseDayParam,
+  startOfWeek,
+  toDateInputValue,
+} from "@/lib/date";
+import {
+  getDefaultMeals,
+  getFoodRange,
+  getUserTimezone,
+} from "@/lib/queries/food";
 import {
   type CountedLabel,
   formatMinutes,
@@ -16,7 +26,10 @@ import FoodNav from "../FoodNav";
 
 export const metadata = { title: "Food · Week summary" };
 
-export default async function FoodWeekPage({ searchParams }: { searchParams: { week?: string } }) {
+export default async function FoodWeekPage(props: {
+  searchParams: Promise<{ week?: string }>;
+}) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("food");
   const weekStart = startOfWeek(parseDayParam(searchParams.week));
   const weekEnd = endOfDay(addDays(weekStart, 6));
@@ -31,15 +44,19 @@ export default async function FoodWeekPage({ searchParams }: { searchParams: { w
 
   const summary = weeklyFoodSummary(entries, {
     timeZone,
-    defaultMealNames: new Map(defaults.map((d) => [d.id, d.name])),
+    defaultMealNames: new Map(defaults.map(d => [d.id, d.name])),
   });
-  const observations = weeklyObservations(summary, isCurrentWeek ? "this week" : "that week");
+  const observations = weeklyObservations(
+    summary,
+    isCurrentWeek ? "this week" : "that week"
+  );
   const firstMeal = summary.firstMealWindow;
   const nutrition = summary.nutrition;
 
   return (
     <div>
-      <PageHeader help="food:week"
+      <PageHeader
+        help="food:week"
         title="Week summary"
         description="One week at a glance: what you ate, when, and which meals you repeat. For trends over any range, see Trends."
       >
@@ -47,14 +64,26 @@ export default async function FoodWeekPage({ searchParams }: { searchParams: { w
       </PageHeader>
 
       <div className="mb-6">
-        <WeekNavigator basePath="/dashboard/food/week" weekValue={toDateInputValue(weekStart)} noFuture />
+        <WeekNavigator
+          basePath="/dashboard/food/week"
+          weekValue={toDateInputValue(weekStart)}
+          noFuture
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard size="sm" label="Days logged" value={`${summary.daysLogged}/${summary.daysInPeriod}`} />
+        <StatCard
+          size="sm"
+          label="Days logged"
+          value={`${summary.daysLogged}/${summary.daysInPeriod}`}
+        />
         <StatCard size="sm" label="Meals logged" value={summary.totalMeals} />
         <StatCard size="sm" label="Snack days" value={summary.snackDays} />
-        <StatCard size="sm" label="Default Meal uses" value={summary.defaultMealUses} />
+        <StatCard
+          size="sm"
+          label="Default Meal uses"
+          value={summary.defaultMealUses}
+        />
       </div>
 
       <section className="card mt-6">
@@ -64,13 +93,17 @@ export default async function FoodWeekPage({ searchParams }: { searchParams: { w
             variant="inline"
             headingLevel="h3"
             icon="food"
-            title={isCurrentWeek ? "Nothing logged this week yet" : "Nothing logged that week"}
+            title={
+              isCurrentWeek
+                ? "Nothing logged this week yet"
+                : "Nothing logged that week"
+            }
             actionLabel={isCurrentWeek ? "Log food" : undefined}
             actionHref={isCurrentWeek ? "/dashboard/food?focus=log" : undefined}
           />
         ) : (
           <ul className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
-            {observations.map((o) => (
+            {observations.map(o => (
               <li key={o}>{o}</li>
             ))}
           </ul>
@@ -79,7 +112,11 @@ export default async function FoodWeekPage({ searchParams }: { searchParams: { w
 
       {summary.totalMeals > 0 && (
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <RankedList title="Most frequent meals" rows={summary.topMeals} empty="No meals logged." />
+          <RankedList
+            title="Most frequent meals"
+            rows={summary.topMeals}
+            empty="No meals logged."
+          />
           <RankedList
             title="Frequent foods"
             rows={summary.topFoods}
@@ -120,13 +157,35 @@ export default async function FoodWeekPage({ searchParams }: { searchParams: { w
         <div className="card mt-6">
           <CollapsibleSection title="Nutrition" as="h2">
             <p className="mb-3 text-xs text-muted">
-              Based on {nutrition.daysWithData} {nutrition.daysWithData === 1 ? "day" : "days"} with nutrition data.
+              Based on {nutrition.daysWithData}{" "}
+              {nutrition.daysWithData === 1 ? "day" : "days"} with nutrition
+              data.
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatCard size="sm" surface="tile" label="Avg kcal / day" value={Math.round(nutrition.calories / nutrition.daysWithData)} />
-              <StatCard size="sm" surface="tile" label="Avg protein / day" value={`${Math.round(nutrition.protein / nutrition.daysWithData)}g`} />
-              <StatCard size="sm" surface="tile" label="Avg carbs / day" value={`${Math.round(nutrition.carbs / nutrition.daysWithData)}g`} />
-              <StatCard size="sm" surface="tile" label="Avg fat / day" value={`${Math.round(nutrition.fat / nutrition.daysWithData)}g`} />
+              <StatCard
+                size="sm"
+                surface="tile"
+                label="Avg kcal / day"
+                value={Math.round(nutrition.calories / nutrition.daysWithData)}
+              />
+              <StatCard
+                size="sm"
+                surface="tile"
+                label="Avg protein / day"
+                value={`${Math.round(nutrition.protein / nutrition.daysWithData)}g`}
+              />
+              <StatCard
+                size="sm"
+                surface="tile"
+                label="Avg carbs / day"
+                value={`${Math.round(nutrition.carbs / nutrition.daysWithData)}g`}
+              />
+              <StatCard
+                size="sm"
+                surface="tile"
+                label="Avg fat / day"
+                value={`${Math.round(nutrition.fat / nutrition.daysWithData)}g`}
+              />
             </div>
           </CollapsibleSection>
         </div>
@@ -135,7 +194,15 @@ export default async function FoodWeekPage({ searchParams }: { searchParams: { w
   );
 }
 
-function RankedList({ title, rows, empty }: { title: string; rows: CountedLabel[]; empty: string }) {
+function RankedList({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: CountedLabel[];
+  empty: string;
+}) {
   return (
     <section className="card min-w-0">
       <h2 className="section-title mb-2">{title}</h2>
@@ -143,8 +210,11 @@ function RankedList({ title, rows, empty }: { title: string; rows: CountedLabel[
         <p className="text-sm text-muted">{empty}</p>
       ) : (
         <ul className="space-y-1 text-sm">
-          {rows.map((r) => (
-            <li key={r.label} className="flex justify-between gap-3 text-slate-700 dark:text-slate-200">
+          {rows.map(r => (
+            <li
+              key={r.label}
+              className="flex justify-between gap-3 text-slate-700 dark:text-slate-200"
+            >
               <span className="min-w-0 truncate">{r.label}</span>
               <span className="shrink-0 tabular-nums text-muted">
                 {r.count}× · {r.days} {r.days === 1 ? "day" : "days"}

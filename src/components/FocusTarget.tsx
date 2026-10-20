@@ -15,16 +15,21 @@ type Props = {
  * Opens any collapsed <details> inside first so deep links like
  * "/dashboard/goals?focus=add" land on a usable form.
  */
-export default function FocusTarget({ param = "focus", value, children }: Props) {
+export default function FocusTarget({
+  param = "focus",
+  value,
+  children,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const current = searchParams.get(param);
-  const shouldFocus = current !== null && (value === undefined || current === value);
+  const shouldFocus =
+    current !== null && (value === undefined || current === value);
 
   useEffect(() => {
     const root = ref.current;
     if (!shouldFocus || !root) return;
-    root.querySelectorAll("details").forEach((d) => {
+    root.querySelectorAll("details").forEach(d => {
       if (!d.open) d.open = true;
     });
     // Let the opened <details> render before focusing.

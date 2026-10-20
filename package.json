@@ -6,7 +6,7 @@
     "dev": "node scripts/sync-prisma-provider.mjs && prisma generate && next dev",
     "build": "node scripts/sync-prisma-provider.mjs && prisma generate && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --max-warnings 0",
     "postinstall": "node scripts/sync-prisma-provider.mjs && prisma generate",
     "db:push": "node scripts/sync-prisma-provider.mjs && prisma db push",
     "db:migrate": "node scripts/sync-prisma-provider.mjs && prisma migrate dev",
@@ -16,7 +16,15 @@
     "setup": "node scripts/sync-prisma-provider.mjs && prisma generate && node scripts/setup-db.mjs && tsx prisma/seed.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "check": "npm run typecheck && npm run test && npm run build",
+    "prepare": "sh -c '[ -n \"$CI\" ] || [ ! -d .git ] || husky'",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "knip": "knip --no-config-hints",
+    "audit:ci": "sh scripts/npm-audit-ci.sh",
+    "check:ai-attribution": "node scripts/check-ai-attribution.mjs",
+    "test:ai-attribution": "node --test scripts/check-ai-attribution.test.mjs",
+    "test:commitlint": "node --test scripts/commitlint-config.test.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -26,25 +34,48 @@
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "luxon": "^3.7.2",
-    "next": "^14.2.33",
-    "next-auth": "^4.24.8",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "next": "^16.4.2",
+    "next-auth": "^4.24.15",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "rrule": "^2.8.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/luxon": "^3.7.2",
     "@types/node": "^20.16.11",
-    "@types/react": "^18.3.11",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.2",
+    "husky": "^9.1.7",
+    "knip": "^6.42.1",
+    "lint-staged": "^17.6.0",
     "postcss": "^8.4.47",
+    "prettier": "^3.9.10",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.13",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.12"
+  },
+  "lint-staged": {
+    "*.{js,jsx,mjs,cjs,ts,tsx}": [
+      "eslint --max-warnings 0 --fix",
+      "prettier --write --ignore-unknown"
+    ],
+    "*.{json,css,scss,md,yml,yaml}": [
+      "prettier --write --ignore-unknown"
+    ]
+  },
+  "overrides": {
+    "tailwindcss": {
+      "postcss-selector-parser": "^7.1.6",
+      "postcss-nested": "^7.0.2"
+    }
   }
 }

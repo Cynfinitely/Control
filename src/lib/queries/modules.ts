@@ -10,16 +10,20 @@ export type ModuleState = {
 };
 
 export function getModuleState(userId: string): Promise<ModuleState> {
-  return cachedQuery(["module-state", userId], [cacheTag("modules", userId)], async () => {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { disabledModules: true, needsOnboarding: true },
-    });
-    return {
-      disabled: parseDisabledModules(user?.disabledModules),
-      needsOnboarding: user?.needsOnboarding ?? false,
-    };
-  });
+  return cachedQuery(
+    ["module-state", userId],
+    [cacheTag("modules", userId)],
+    async () => {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { disabledModules: true, needsOnboarding: true },
+      });
+      return {
+        disabled: parseDisabledModules(user?.disabledModules),
+        needsOnboarding: user?.needsOnboarding ?? false,
+      };
+    }
+  );
 }
 
 export async function getDisabledModules(userId: string): Promise<ModuleId[]> {

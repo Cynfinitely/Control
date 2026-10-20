@@ -5,7 +5,9 @@ import { useToast } from "@/components/Toast";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { ActionResult } from "@/lib/action-result";
 
-export type ServerFormAction = (formData: FormData) => Promise<ActionResult | void | unknown>;
+export type ServerFormAction = (
+  formData: FormData
+) => Promise<ActionResult | void | unknown>;
 
 export type ConfirmOptions = {
   title: string;
@@ -14,7 +16,10 @@ export type ConfirmOptions = {
   variant?: "danger" | "default";
 };
 
-type Props = Omit<React.FormHTMLAttributes<HTMLFormElement>, "action" | "onSubmit"> & {
+type Props = Omit<
+  React.FormHTMLAttributes<HTMLFormElement>,
+  "action" | "onSubmit"
+> & {
   action: ServerFormAction;
   /** Ask before submitting. Use for every destructive action. */
   confirm?: ConfirmOptions;
@@ -75,13 +80,16 @@ export default function ActionForm({
       return;
     }
 
-    const message = (isActionResult(result) && result.ok && result.message) || successMessage;
+    const message =
+      (isActionResult(result) && result.ok && result.message) || successMessage;
     if (message) toast.success(message);
 
     if (resetOnSuccess && formRef.current) {
       formRef.current.reset();
       formRef.current
-        .querySelector<HTMLElement>("input:not([type=hidden]):not([type=submit]), textarea")
+        .querySelector<HTMLElement>(
+          "input:not([type=hidden]):not([type=submit]), textarea"
+        )
         ?.focus();
     }
     onSuccess?.(isActionResult(result) ? result : undefined);
@@ -93,13 +101,14 @@ export default function ActionForm({
         {...formProps}
         ref={formRef}
         action={run}
-        onSubmit={(e) => {
+        onSubmit={e => {
           if (!confirm || confirmedRef.current) {
             confirmedRef.current = false;
             return;
           }
           e.preventDefault();
-          submitterRef.current = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+          submitterRef.current = (e.nativeEvent as SubmitEvent)
+            .submitter as HTMLElement | null;
           setConfirmOpen(true);
         }}
       >
@@ -118,7 +127,8 @@ export default function ActionForm({
             confirmedRef.current = true;
             const submitter = submitterRef.current;
             formRef.current?.requestSubmit(
-              submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement
+              submitter instanceof HTMLButtonElement ||
+                submitter instanceof HTMLInputElement
                 ? submitter
                 : undefined
             );

@@ -16,17 +16,21 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: "monthly", label: "Monthly" },
 ];
 
-export default async function ReportsPage({
-  searchParams,
-}: {
-  searchParams: { period?: string };
+export default async function ReportsPage(props: {
+  searchParams: Promise<{ period?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("reports");
-  const period = (["daily", "weekly", "monthly"].includes(searchParams.period ?? "")
-    ? searchParams.period
-    : "daily") as Period;
+  const period = (
+    ["daily", "weekly", "monthly"].includes(searchParams.period ?? "")
+      ? searchParams.period
+      : "daily"
+  ) as Period;
 
-  const [report, disabledModules] = await Promise.all([buildReport(user.id, period), getDisabledModules(user.id)]);
+  const [report, disabledModules] = await Promise.all([
+    buildReport(user.id, period),
+    getDisabledModules(user.id),
+  ]);
   const sections = moduleFilter(disabledModules).keep(report.sections);
   const range =
     formatDate(report.from) === formatDate(report.to)
@@ -39,7 +43,7 @@ export default async function ReportsPage({
         <SegmentedControl
           aria-label="Report period"
           value={period}
-          options={PERIODS.map((p) => ({
+          options={PERIODS.map(p => ({
             value: p.value,
             label: p.label,
             href: `/dashboard/reports?period=${p.value}`,
@@ -57,11 +61,15 @@ export default async function ReportsPage({
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {sections.map((section) => (
-            <section key={section.title} className="card" aria-label={section.title}>
+          {sections.map(section => (
+            <section
+              key={section.title}
+              className="card"
+              aria-label={section.title}
+            >
               <h2 className="section-title mb-3">{section.title}</h2>
               <div className="grid grid-cols-2 gap-3">
-                {section.stats.map((s) => (
+                {section.stats.map(s => (
                   <StatCard
                     key={s.label}
                     surface="tile"
@@ -70,7 +78,11 @@ export default async function ReportsPage({
                     value={s.value}
                     href={s.href}
                     icon={s.href ? "arrowRight" : undefined}
-                    className={s.href ? "hover:bg-brand-50 dark:hover:bg-brand-950/60" : undefined}
+                    className={
+                      s.href
+                        ? "hover:bg-brand-50 dark:hover:bg-brand-950/60"
+                        : undefined
+                    }
                   />
                 ))}
               </div>

@@ -10,17 +10,36 @@ type Props = {
 };
 
 /** Budget section navigation. Render it as PageHeader children. */
-export default function BudgetNav({ active, uncategorizedCount, monthParam }: Props) {
+export default function BudgetNav({
+  active,
+  uncategorizedCount,
+  monthParam,
+}: Props) {
   const month = monthParam ? `month=${monthParam}` : "";
   const items = [
-    { id: "overview", href: month ? `/dashboard/budget?${month}` : "/dashboard/budget", label: "Overview" },
+    {
+      id: "overview",
+      href: month ? `/dashboard/budget?${month}` : "/dashboard/budget",
+      label: "Overview",
+    },
     {
       id: "uncategorized",
       href: `/dashboard/budget?view=uncategorized${month ? `&${month}` : ""}`,
       label: "Uncategorized",
       count: uncategorizedCount,
     },
-    { id: "categories", href: "/dashboard/budget/categories", label: "Categories" },
+    {
+      id: "categories",
+      href: "/dashboard/budget/categories",
+      label: "Categories",
+    },
   ];
-  return <TabNav items={items} active={active} aria-label="Budget sections" className="mb-0" />;
+  return (
+    <TabNav
+      items={items}
+      active={active}
+      aria-label="Budget sections"
+      className="mb-0"
+    />
+  );
 }

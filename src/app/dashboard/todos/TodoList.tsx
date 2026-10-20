@@ -29,15 +29,20 @@ const PRIORITY: Record<string, { label: string; className: string }> = {
   low: { label: "Low", className: "badge-muted" },
 };
 
-function applyOptimistic(todos: TodoItem[], action: OptimisticAction): TodoItem[] {
+function applyOptimistic(
+  todos: TodoItem[],
+  action: OptimisticAction
+): TodoItem[] {
   switch (action.type) {
     case "toggle":
-      return todos.map((t) =>
-        t.id === action.id ? { ...t, status: t.status === "done" ? "open" : "done" } : t
+      return todos.map(t =>
+        t.id === action.id
+          ? { ...t, status: t.status === "done" ? "open" : "done" }
+          : t
       );
     case "delete":
     case "backlog":
-      return todos.filter((t) => t.id !== action.id);
+      return todos.filter(t => t.id !== action.id);
   }
 }
 
@@ -64,19 +69,28 @@ function TodoRow({
   const priority = PRIORITY[todo.priority] ?? PRIORITY.medium;
 
   return (
-    <li className={clsx("flex items-center gap-3", compact ? "py-2" : "px-4 py-3")}>
+    <li
+      className={clsx(
+        "flex items-center gap-3",
+        compact ? "py-2" : "px-4 py-3"
+      )}
+    >
       <CheckButton
         checked={isDone}
         disabled={pending}
         onChange={() => onToggle(todo.id)}
-        label={isDone ? `Mark “${todo.title}” not done` : `Mark “${todo.title}” done`}
+        label={
+          isDone ? `Mark “${todo.title}” not done` : `Mark “${todo.title}” done`
+        }
       />
       <div className="min-w-0 flex-1">
         <p
           className={clsx(
             "break-words",
             compact && "text-sm",
-            isDone ? "text-muted line-through" : "font-medium text-slate-800 dark:text-slate-100"
+            isDone
+              ? "text-muted line-through"
+              : "font-medium text-slate-800 dark:text-slate-100"
           )}
         >
           {todo.title}
@@ -87,12 +101,16 @@ function TodoRow({
               <span className="sr-only">Priority: </span>
               {priority.label}
             </span>
-            {todo.category && <span className="badge-brand">{todo.category}</span>}
+            {todo.category && (
+              <span className="badge-brand">{todo.category}</span>
+            )}
             {todo.dueDate && (
               <span
                 className={clsx(
                   "text-xs",
-                  isOverdue ? "font-medium text-red-700 dark:text-red-400" : "text-muted"
+                  isOverdue
+                    ? "font-medium text-red-700 dark:text-red-400"
+                    : "text-muted"
                 )}
               >
                 Due {formatDate(todo.dueDate)}
@@ -130,7 +148,10 @@ function TodoRow({
 
 export default function TodoList({ initialTodos, compact = false }: Props) {
   const [isPending, startTransition] = useTransition();
-  const [optimisticTodos, updateOptimistic] = useOptimistic(initialTodos, applyOptimistic);
+  const [optimisticTodos, updateOptimistic] = useOptimistic(
+    initialTodos,
+    applyOptimistic
+  );
   const router = useRouter();
   const { success, error } = useToast();
 
@@ -153,7 +174,10 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
         return;
       }
       if (after) {
-        success(after.message, after.undo ? { label: "Undo", onClick: after.undo } : undefined);
+        success(
+          after.message,
+          after.undo ? { label: "Undo", onClick: after.undo } : undefined
+        );
       }
     });
   }
@@ -185,14 +209,16 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   function handleBacklog(id: string) {
     const fd = new FormData();
     fd.set("id", id);
-    runAction({ type: "backlog", id }, () => moveToBacklog(fd), { message: "Moved to backlog" });
+    runAction({ type: "backlog", id }, () => moveToBacklog(fd), {
+      message: "Moved to backlog",
+    });
   }
 
-  const open = optimisticTodos.filter((t) => t.status === "open");
-  const done = optimisticTodos.filter((t) => t.status === "done");
+  const open = optimisticTodos.filter(t => t.status === "open");
+  const done = optimisticTodos.filter(t => t.status === "done");
 
   const renderRows = (items: TodoItem[]) =>
-    items.map((t) => (
+    items.map(t => (
       <TodoRow
         key={t.id}
         todo={t}
@@ -229,13 +255,22 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
       )}
       <div className="space-y-4">
         {open.length > 0 && (
-          <CollapsibleSection title="Open" count={open.length} defaultOpen as="h2">
-            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">{renderRows(open)}</ul>
+          <CollapsibleSection
+            title="Open"
+            count={open.length}
+            defaultOpen
+            as="h2"
+          >
+            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
+              {renderRows(open)}
+            </ul>
           </CollapsibleSection>
         )}
         {done.length > 0 && (
           <CollapsibleSection title="Done" count={done.length} as="h2">
-            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">{renderRows(done)}</ul>
+            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
+              {renderRows(done)}
+            </ul>
           </CollapsibleSection>
         )}
       </div>

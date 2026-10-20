@@ -1,0 +1,9 @@
+[
+  {
+    "advisory": "GHSA-vfj7-8cjw-p6xm",
+    "package": "braces",
+    "workspaces": ["Control"],
+    "reason": "No patched braces release exists (all versions affected). Reached only through dev/build-time tooling: tailwindcss 3 content scanning and @next/eslint-plugin-next (already latest), both via fast-glob/micromatch. No runtime path; inputs are repo globs, not user data.",
+    "review_by": "2027-01-20"
+  }
+]

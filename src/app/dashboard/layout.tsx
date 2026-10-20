@@ -14,15 +14,26 @@ export default async function DashboardLayout({
 }) {
   const user = await requireUser();
   const isAdmin = user.role === "admin";
-  const { disabled: disabledModules, needsOnboarding } = await getModuleState(user.id);
+  const { disabled: disabledModules, needsOnboarding } = await getModuleState(
+    user.id
+  );
   // A new account chooses its modules before it sees the app.
   if (needsOnboarding) redirect("/onboarding");
 
   return (
     <Providers>
       <div className="flex min-h-screen">
-        <Sidebar name={user.name ?? "User"} email={user.email ?? ""} isAdmin={isAdmin} disabledModules={disabledModules} />
-        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-x-clip pt-14 outline-none md:pt-0">
+        <Sidebar
+          name={user.name ?? "User"}
+          email={user.email ?? ""}
+          isAdmin={isAdmin}
+          disabledModules={disabledModules}
+        />
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="min-w-0 flex-1 overflow-x-clip pt-14 outline-none md:pt-0"
+        >
           <ModulesProvider disabled={disabledModules}>
             <MainContainer>{children}</MainContainer>
           </ModulesProvider>

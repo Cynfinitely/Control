@@ -53,7 +53,10 @@ export default function CheckButton({
         className
       )}
     >
-      <Icon name="check" className={size === "md" ? "h-4 w-4" : "h-3.5 w-3.5"} />
+      <Icon
+        name="check"
+        className={size === "md" ? "h-4 w-4" : "h-3.5 w-3.5"}
+      />
     </button>
   );
 }

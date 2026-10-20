@@ -5,11 +5,15 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const schemaPath = path.join(__dirname, "..", "prisma", "schema.prisma");
 const url = process.env.DATABASE_URL ?? "";
-const isPostgres = url.startsWith("postgresql://") || url.startsWith("postgres://");
+const isPostgres =
+  url.startsWith("postgresql://") || url.startsWith("postgres://");
 const provider = isPostgres ? "postgresql" : "sqlite";
 
 let schema = fs.readFileSync(schemaPath, "utf8");
-schema = schema.replace(/provider = "(sqlite|postgresql)"/, `provider = "${provider}"`);
+schema = schema.replace(
+  /provider = "(sqlite|postgresql)"/,
+  `provider = "${provider}"`
+);
 
 if (isPostgres) {
   if (!schema.includes("directUrl")) {
@@ -20,7 +24,10 @@ if (isPostgres) {
   }
 } else {
   schema = schema.replace(/\n\s*directUrl = env\("DIRECT_URL"\)/, "");
-  schema = schema.replace(/url\s+= env\("DATABASE_URL"\)/, `url      = env("DATABASE_URL")`);
+  schema = schema.replace(
+    /url\s+= env\("DATABASE_URL"\)/,
+    `url      = env("DATABASE_URL")`
+  );
 }
 
 fs.writeFileSync(schemaPath, schema);

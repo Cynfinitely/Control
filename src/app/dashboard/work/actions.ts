@@ -6,7 +6,12 @@ import { getUserId, str, optStr, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay } from "@/lib/date";
 import { ownsLink } from "@/lib/ownership";
-import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import {
+  success,
+  failure,
+  wrapFormAction,
+  type ActionResult,
+} from "@/lib/action-result";
 
 const MAX_FOCUS_ITEMS = 8;
 const LINK_TYPES = new Set(["career_goal", "skill"]);
@@ -16,13 +21,17 @@ function invalidateWork(userId: string) {
   revalidatePath("/dashboard/work");
 }
 
-function parseLink(raw: string | null): { linkType: string | null; linkId: string | null } {
+function parseLink(raw: string | null): {
+  linkType: string | null;
+  linkId: string | null;
+} {
   if (!raw) return { linkType: null, linkId: null };
   const sep = raw.indexOf(":");
   if (sep <= 0) return { linkType: null, linkId: null };
   const linkType = raw.slice(0, sep);
   const linkId = raw.slice(sep + 1);
-  if (!LINK_TYPES.has(linkType) || !linkId) return { linkType: null, linkId: null };
+  if (!LINK_TYPES.has(linkType) || !linkId)
+    return { linkType: null, linkId: null };
   return { linkType, linkId };
 }
 
@@ -34,7 +43,9 @@ async function ensureWorkDay(userId: string, date: Date) {
   });
 }
 
-export async function createFocusItem(formData: FormData): Promise<ActionResult> {
+export async function createFocusItem(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const title = str(formData.get("title"));
   if (!title) return failure("Title is required");
@@ -73,9 +84,14 @@ export async function createFocusItem(formData: FormData): Promise<ActionResult>
   return success("Focus item added");
 }
 
-export const createFocusItemForm = wrapFormAction(createFocusItem, "Focus item added");
+export const createFocusItemForm = wrapFormAction(
+  createFocusItem,
+  "Focus item added"
+);
 
-export async function toggleFocusItem(formData: FormData): Promise<ActionResult> {
+export async function toggleFocusItem(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid item");
@@ -86,7 +102,12 @@ export async function toggleFocusItem(formData: FormData): Promise<ActionResult>
   });
   if (openToDone.count === 0) {
     await prisma.workFocusItem.updateMany({
-      where: { id, userId, deletedAt: null, status: { in: ["done", "skipped"] } },
+      where: {
+        id,
+        userId,
+        deletedAt: null,
+        status: { in: ["done", "skipped"] },
+      },
       data: { status: "open", completedAt: null },
     });
   }
@@ -109,7 +130,9 @@ export async function skipFocusItem(formData: FormData): Promise<ActionResult> {
   return success("Marked skipped");
 }
 
-export async function deleteFocusItem(formData: FormData): Promise<ActionResult> {
+export async function deleteFocusItem(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid item");
@@ -123,7 +146,9 @@ export async function deleteFocusItem(formData: FormData): Promise<ActionResult>
   return success("Focus item removed");
 }
 
-export async function restoreFocusItem(formData: FormData): Promise<ActionResult> {
+export async function restoreFocusItem(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid item");
@@ -151,5 +176,3 @@ export async function saveWorkLog(formData: FormData): Promise<ActionResult> {
   invalidateWork(userId);
   return success("Work log saved");
 }
-
-export const saveWorkLogForm = wrapFormAction(saveWorkLog, "Work log saved");

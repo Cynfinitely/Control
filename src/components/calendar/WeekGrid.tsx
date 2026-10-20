@@ -2,7 +2,12 @@
 
 import clsx from "clsx";
 import type { EventOccurrence } from "@/lib/calendar/types";
-import { dayKey, formatOccurrenceTime, occurrenceDayKey, weekDays } from "@/lib/calendar/format";
+import {
+  dayKey,
+  formatOccurrenceTime,
+  occurrenceDayKey,
+  weekDays,
+} from "@/lib/calendar/format";
 import Icon from "@/components/Icon";
 
 type ReminderChip = { id: string; title: string; remindAt: Date };
@@ -31,12 +36,20 @@ export default function WeekGrid({
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-7 md:gap-2">
-      {days.map((day) => {
+      {days.map(day => {
         const key = dayKey(day);
-        const dayOccs = occurrences.filter((o) => occurrenceDayKey(o.startsAt, timezone) === key);
-        const dayRems = reminders.filter((r) => occurrenceDayKey(r.remindAt, timezone) === key);
+        const dayOccs = occurrences.filter(
+          o => occurrenceDayKey(o.startsAt, timezone) === key
+        );
+        const dayRems = reminders.filter(
+          r => occurrenceDayKey(r.remindAt, timezone) === key
+        );
         const isToday = key === todayKey;
-        const dateLabel = day.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+        const dateLabel = day.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        });
 
         return (
           <section
@@ -44,7 +57,9 @@ export default function WeekGrid({
             aria-label={isToday ? `${dateLabel} (today)` : dateLabel}
             className={clsx(
               "flex min-h-[8rem] flex-col rounded-xl border bg-white p-2 dark:bg-slate-800",
-              isToday ? "border-brand-400 dark:border-brand-700" : "border-slate-200 dark:border-slate-700"
+              isToday
+                ? "border-brand-400 dark:border-brand-700"
+                : "border-slate-200 dark:border-slate-700"
             )}
           >
             <div className="mb-2 flex items-center justify-between gap-1">
@@ -55,7 +70,9 @@ export default function WeekGrid({
                 <span
                   className={clsx(
                     "inline-flex h-6 min-w-6 items-center justify-center rounded-full text-sm font-semibold",
-                    isToday ? "bg-brand-600 px-1.5 text-white" : "text-slate-900 dark:text-slate-100"
+                    isToday
+                      ? "bg-brand-600 px-1.5 text-white"
+                      : "text-slate-900 dark:text-slate-100"
                   )}
                 >
                   {day.getDate()}
@@ -72,7 +89,7 @@ export default function WeekGrid({
               </button>
             </div>
             <div className="space-y-1">
-              {dayOccs.map((occ) => (
+              {dayOccs.map(occ => (
                 <button
                   key={`${occ.eventId}-${occ.originalStartsAt.toISOString()}`}
                   type="button"
@@ -80,12 +97,19 @@ export default function WeekGrid({
                   className="block w-full rounded-md bg-brand-100 px-2 py-1.5 text-left text-xs text-brand-900 hover:bg-brand-200 dark:bg-brand-900 dark:text-brand-100 dark:hover:bg-brand-800"
                 >
                   <span className="block text-[11px] opacity-80">
-                    {formatOccurrenceTime(occ.startsAt, occ.endsAt, occ.allDay, timezone)}
+                    {formatOccurrenceTime(
+                      occ.startsAt,
+                      occ.endsAt,
+                      occ.allDay,
+                      timezone
+                    )}
                   </span>
-                  <span className="block truncate font-medium">{occ.title}</span>
+                  <span className="block truncate font-medium">
+                    {occ.title}
+                  </span>
                 </button>
               ))}
-              {dayRems.map((r) => (
+              {dayRems.map(r => (
                 <button
                   key={`${r.id}-${r.remindAt.toISOString()}`}
                   type="button"
@@ -98,7 +122,9 @@ export default function WeekGrid({
                 </button>
               ))}
               {dayOccs.length === 0 && dayRems.length === 0 && (
-                <p className="px-1 text-xs text-slate-500 dark:text-slate-400 md:sr-only">Nothing scheduled</p>
+                <p className="px-1 text-xs text-slate-500 dark:text-slate-400 md:sr-only">
+                  Nothing scheduled
+                </p>
               )}
             </div>
           </section>

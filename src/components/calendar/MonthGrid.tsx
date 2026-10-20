@@ -61,8 +61,11 @@ export default function MonthGrid({
 
   return (
     <div className="card overflow-hidden p-0">
-      <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400" aria-hidden="true">
-        {WEEKDAYS.map((d) => (
+      <div
+        className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400"
+        aria-hidden="true"
+      >
+        {WEEKDAYS.map(d => (
           <div key={d} className="px-0.5 py-2">
             <span className="sm:hidden">{d[0]}</span>
             <span className="hidden sm:inline">{d}</span>
@@ -70,16 +73,27 @@ export default function MonthGrid({
         ))}
       </div>
       <div className="grid grid-cols-7">
-        {days.map((day) => {
+        {days.map(day => {
           const key = dayKey(day);
           const inMonth = day.getMonth() === m! - 1 && day.getFullYear() === y;
           const dayOccs = byDay.get(key) ?? [];
           const dayRems = remByDay.get(key) ?? [];
           const isToday = key === todayKey;
           const shownOccs = dayOccs.slice(0, MAX_CHIPS);
-          const shownRems = dayRems.slice(0, Math.max(0, MAX_CHIPS - shownOccs.length));
-          const hidden = dayOccs.length + dayRems.length - shownOccs.length - shownRems.length;
-          const dateLabel = day.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+          const shownRems = dayRems.slice(
+            0,
+            Math.max(0, MAX_CHIPS - shownOccs.length)
+          );
+          const hidden =
+            dayOccs.length +
+            dayRems.length -
+            shownOccs.length -
+            shownRems.length;
+          const dateLabel = day.toLocaleDateString("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          });
           const summary = [
             isToday ? "Today" : null,
             dayOccs.length ? plural(dayOccs.length, "event") : null,
@@ -129,7 +143,7 @@ export default function MonthGrid({
                 </button>
               </div>
               <div className="relative mt-0.5 hidden space-y-0.5 sm:block">
-                {shownOccs.map((occ) => (
+                {shownOccs.map(occ => (
                   <button
                     key={`${occ.eventId}-${occ.originalStartsAt.toISOString()}`}
                     type="button"
@@ -139,7 +153,7 @@ export default function MonthGrid({
                     {occ.title}
                   </button>
                 ))}
-                {shownRems.map((r) => (
+                {shownRems.map(r => (
                   <button
                     key={`${r.id}-${r.remindAt.toISOString()}`}
                     type="button"
@@ -161,9 +175,16 @@ export default function MonthGrid({
                   </button>
                 )}
               </div>
-              <div className="pointer-events-none relative mt-1 flex gap-1 sm:hidden" aria-hidden="true">
-                {dayOccs.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />}
-                {dayRems.length > 0 && <span className="h-1.5 w-1.5 rounded-sm bg-amber-500" />}
+              <div
+                className="pointer-events-none relative mt-1 flex gap-1 sm:hidden"
+                aria-hidden="true"
+              >
+                {dayOccs.length > 0 && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+                )}
+                {dayRems.length > 0 && (
+                  <span className="h-1.5 w-1.5 rounded-sm bg-amber-500" />
+                )}
               </div>
             </div>
           );

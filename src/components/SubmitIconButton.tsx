@@ -4,13 +4,21 @@ import clsx from "clsx";
 import { useFormStatus } from "react-dom";
 import Spinner from "./Spinner";
 
-type Props = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "aria-label"> & {
+type Props = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "aria-label"
+> & {
   icon: React.ReactNode;
   /** Required: icon-only buttons need an accessible name. */
   "aria-label": string;
 };
 
-export default function SubmitIconButton({ icon, disabled, className, ...props }: Props) {
+export default function SubmitIconButton({
+  icon,
+  disabled,
+  className,
+  ...props
+}: Props) {
   const { pending } = useFormStatus();
 
   return (

@@ -8,7 +8,9 @@ export async function GET(req: Request) {
     return NextResponse.redirect(`${origin}/login?error=missing_token`);
   }
 
-  const record = await prisma.verificationToken.findUnique({ where: { token } });
+  const record = await prisma.verificationToken.findUnique({
+    where: { token },
+  });
   if (!record || record.expiresAt < new Date()) {
     return NextResponse.redirect(`${origin}/login?error=invalid_token`);
   }

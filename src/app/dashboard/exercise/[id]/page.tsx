@@ -26,7 +26,10 @@ import DeleteWorkoutButton from "./DeleteWorkoutButton";
 
 export const metadata = { title: "Workout" };
 
-export default async function WorkoutDetail({ params }: { params: { id: string } }) {
+export default async function WorkoutDetail(props: {
+  params: Promise<{ id: string }>;
+}) {
+  const params = await props.params;
   const user = await requireModule("exercise");
   const workout = await prisma.workout.findFirst({
     where: { id: params.id, userId: user.id, deletedAt: null },
@@ -49,7 +52,8 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
 
   return (
     <div>
-      <PageHeader help="exercise:workout"
+      <PageHeader
+        help="exercise:workout"
         breadcrumb={
           <Breadcrumb
             items={[
@@ -65,29 +69,50 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
             {workout.program && (
               <>
                 {" · From "}
-                <Link href={`/dashboard/exercise/programs/${workout.program.id}`} className="link">
+                <Link
+                  href={`/dashboard/exercise/programs/${workout.program.id}`}
+                  className="link"
+                >
                   {workout.program.name}
                 </Link>
               </>
             )}
           </>
         }
-        action={<DeleteWorkoutButton id={workout.id} name={workout.name} isGym={isGym} />}
+        action={
+          <DeleteWorkoutButton
+            id={workout.id}
+            name={workout.name}
+            isGym={isGym}
+          />
+        }
       />
 
-      {workout.notes && <p className="mb-6 text-sm text-muted">{workout.notes}</p>}
+      {workout.notes && (
+        <p className="mb-6 text-sm text-muted">{workout.notes}</p>
+      )}
 
       {!isGym && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <StatCard
             label="Distance"
-            value={workout.distanceM ? formatDistance(workout.activityType, workout.distanceM) : "—"}
+            value={
+              workout.distanceM
+                ? formatDistance(workout.activityType, workout.distanceM)
+                : "—"
+            }
           />
-          <StatCard label="Duration" value={workout.durationMin ? `${workout.durationMin} min` : "—"} />
+          <StatCard
+            label="Duration"
+            value={workout.durationMin ? `${workout.durationMin} min` : "—"}
+          />
           {pace ? (
             <StatCard label="Average pace" value={pace} />
           ) : workout.walkKind ? (
-            <StatCard label="Type" value={workout.walkKind === "indoor" ? "Indoor" : "Outdoor"} />
+            <StatCard
+              label="Type"
+              value={workout.walkKind === "indoor" ? "Indoor" : "Outdoor"}
+            />
           ) : null}
         </div>
       )}
@@ -103,12 +128,16 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
           )}
 
           <div className="space-y-4">
-            {workout.exercises.map((ex) => {
+            {workout.exercises.map(ex => {
               const plan = formatPlan(ex.plannedSets, ex.plannedReps);
               const progress = setProgress(ex.sets.length, ex.plannedSets);
               const prefill = nextSetPrefill(ex.sets, ex.plannedReps);
               return (
-                <section key={ex.id} className="card" aria-labelledby={`ex-title-${ex.id}`}>
+                <section
+                  key={ex.id}
+                  className="card"
+                  aria-labelledby={`ex-title-${ex.id}`}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h2
@@ -121,8 +150,16 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
                           {plan && <span>Planned {plan}</span>}
                           {progress && (
-                            <span className={progress.complete ? "badge-success" : "badge-muted"}>
-                              {progress.complete && <Icon name="check" className="h-3.5 w-3.5" />}
+                            <span
+                              className={
+                                progress.complete
+                                  ? "badge-success"
+                                  : "badge-muted"
+                              }
+                            >
+                              {progress.complete && (
+                                <Icon name="check" className="h-3.5 w-3.5" />
+                              )}
                               {progress.label}
                             </span>
                           )}
@@ -141,7 +178,11 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
                       }}
                     >
                       <input type="hidden" name="id" value={ex.id} />
-                      <input type="hidden" name="workoutId" value={workout.id} />
+                      <input
+                        type="hidden"
+                        name="workoutId"
+                        value={workout.id}
+                      />
                       <SubmitIconButton
                         className="btn-icon-danger"
                         aria-label={`Remove ${ex.name}`}
@@ -153,13 +194,23 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
                   {ex.sets.length > 0 && (
                     <div className="table-wrap mt-3">
                       <table className="w-full min-w-[20rem] text-sm">
-                        <caption className="sr-only">Sets for {ex.name}</caption>
+                        <caption className="sr-only">
+                          Sets for {ex.name}
+                        </caption>
                         <thead>
                           <tr className="text-left text-xs text-muted">
-                            <th scope="col" className="pb-1 font-medium">Set</th>
-                            <th scope="col" className="pb-1 font-medium">Reps</th>
-                            <th scope="col" className="pb-1 font-medium">Weight (kg)</th>
-                            <th scope="col" className="pb-1 font-medium">Time (s)</th>
+                            <th scope="col" className="pb-1 font-medium">
+                              Set
+                            </th>
+                            <th scope="col" className="pb-1 font-medium">
+                              Reps
+                            </th>
+                            <th scope="col" className="pb-1 font-medium">
+                              Weight (kg)
+                            </th>
+                            <th scope="col" className="pb-1 font-medium">
+                              Time (s)
+                            </th>
                             <th scope="col" className="pb-1">
                               <span className="sr-only">Actions</span>
                             </th>
@@ -167,23 +218,40 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
                         </thead>
                         <tbody>
                           {ex.sets.map((s, i) => (
-                            <tr key={s.id} className="border-t border-slate-100 dark:border-slate-700">
+                            <tr
+                              key={s.id}
+                              className="border-t border-slate-100 dark:border-slate-700"
+                            >
                               <td className="py-0.5 text-muted">{i + 1}</td>
-                              <td className="py-0.5 tabular-nums">{s.reps ?? "—"}</td>
-                              <td className="py-0.5 tabular-nums">{s.weightKg ?? "—"}</td>
-                              <td className="py-0.5 tabular-nums">{s.durationSec ?? "—"}</td>
+                              <td className="py-0.5 tabular-nums">
+                                {s.reps ?? "—"}
+                              </td>
+                              <td className="py-0.5 tabular-nums">
+                                {s.weightKg ?? "—"}
+                              </td>
+                              <td className="py-0.5 tabular-nums">
+                                {s.durationSec ?? "—"}
+                              </td>
                               <td className="py-0.5 text-right">
                                 <ActionForm
                                   action={deleteSet}
                                   className="inline-block"
-                                  confirm={{ title: `Delete set ${i + 1} of ${ex.name}?` }}
+                                  confirm={{
+                                    title: `Delete set ${i + 1} of ${ex.name}?`,
+                                  }}
                                 >
                                   <input type="hidden" name="id" value={s.id} />
-                                  <input type="hidden" name="workoutId" value={workout.id} />
+                                  <input
+                                    type="hidden"
+                                    name="workoutId"
+                                    value={workout.id}
+                                  />
                                   <SubmitIconButton
                                     className="btn-icon-danger"
                                     aria-label={`Delete set ${i + 1} of ${ex.name}`}
-                                    icon={<Icon name="trash" className="h-4 w-4" />}
+                                    icon={
+                                      <Icon name="trash" className="h-4 w-4" />
+                                    }
                                   />
                                 </ActionForm>
                               </td>
@@ -199,10 +267,15 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
                     action={addSet}
                     className={clsx(
                       "mt-3 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-end",
-                      ex.sets.length > 0 && "border-t border-slate-100 pt-3 dark:border-slate-700"
+                      ex.sets.length > 0 &&
+                        "border-t border-slate-100 pt-3 dark:border-slate-700"
                     )}
                   >
-                    <input type="hidden" name="workoutExerciseId" value={ex.id} />
+                    <input
+                      type="hidden"
+                      name="workoutExerciseId"
+                      value={ex.id}
+                    />
                     <input type="hidden" name="workoutId" value={workout.id} />
                     <FormField label="Reps">
                       {(_id, aria) => (
@@ -266,9 +339,19 @@ export default async function WorkoutDetail({ params }: { params: { id: string }
             >
               <input type="hidden" name="workoutId" value={workout.id} />
               <FormField label="Add exercise" className="min-w-0 flex-1">
-                {(_id, aria) => <input {...aria} name="name" className="input" placeholder="e.g. Bench press" required />}
+                {(_id, aria) => (
+                  <input
+                    {...aria}
+                    name="name"
+                    className="input"
+                    placeholder="e.g. Bench press"
+                    required
+                  />
+                )}
               </FormField>
-              <SubmitButton className="btn-primary touch-target">Add</SubmitButton>
+              <SubmitButton className="btn-primary touch-target">
+                Add
+              </SubmitButton>
             </ActionForm>
           </div>
         </>

@@ -5,10 +5,6 @@ import type {
 } from "./types";
 import { durationMs, expandRruleStarts } from "./rrule";
 
-function sameInstant(a: Date, b: Date): boolean {
-  return a.getTime() === b.getTime();
-}
-
 export function applyException(
   master: CalendarEventMaster,
   originalStartsAt: Date,
@@ -24,8 +20,12 @@ export function applyException(
     startsAt: exception?.startsAt ?? originalStartsAt,
     endsAt: exception?.endsAt ?? endsAt,
     title: exception?.title ?? master.title,
-    description: exception?.description !== undefined ? exception.description : master.description,
-    location: exception?.location !== undefined ? exception.location : master.location,
+    description:
+      exception?.description !== undefined
+        ? exception.description
+        : master.description,
+    location:
+      exception?.location !== undefined ? exception.location : master.location,
     allDay: exception?.allDay ?? master.allDay,
     isException,
     isRecurring: Boolean(master.rrule),
@@ -42,7 +42,7 @@ export function expandEventOccurrences(
   if (master.status === "cancelled") return [];
 
   const exceptionMap = new Map(
-    exceptions.map((e) => [e.originalStartsAt.getTime(), e] as const)
+    exceptions.map(e => [e.originalStartsAt.getTime(), e] as const)
   );
   const duration = durationMs(master.startsAt, master.endsAt);
   const results: EventOccurrence[] = [];
@@ -73,7 +73,7 @@ export function expandEventOccurrences(
     if (ex.cancelled || !ex.startsAt) continue;
     if (ex.startsAt >= rangeStart && ex.startsAt <= rangeEnd) {
       const key = ex.originalStartsAt.getTime();
-      if (!starts.some((s) => s.getTime() === key)) {
+      if (!starts.some(s => s.getTime() === key)) {
         starts.push(ex.originalStartsAt);
       }
     }
@@ -89,11 +89,4 @@ export function expandEventOccurrences(
   }
 
   return results;
-}
-
-export function findException(
-  exceptions: CalendarEventExceptionInput[],
-  originalStartsAt: Date
-): CalendarEventExceptionInput | undefined {
-  return exceptions.find((e) => sameInstant(e.originalStartsAt, originalStartsAt));
 }

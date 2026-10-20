@@ -19,17 +19,20 @@ import SuggestionPanel from "./SuggestionPanel";
 import TemplatePicker, { CopyPreviousDay } from "./TemplatePicker";
 import PlanTextImport from "./PlanTextImport";
 import { createPlanBlock, applyPlanTemplate } from "./actions";
-import { PLAN_KIND_LABELS, PLAN_KIND_MODULES, type PlanKind } from "@/lib/plan/kinds";
+import {
+  PLAN_KIND_LABELS,
+  PLAN_KIND_MODULES,
+  type PlanKind,
+} from "@/lib/plan/kinds";
 import { getDisabledModules } from "@/lib/queries/modules";
 import { moduleFilter } from "@/lib/modules";
 
 export const metadata = { title: "Daily plan" };
 
-export default async function PlanPage({
-  searchParams,
-}: {
-  searchParams: { day?: string; focus?: string };
+export default async function PlanPage(props: {
+  searchParams: Promise<{ day?: string; focus?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("plan");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
@@ -46,28 +49,36 @@ export default async function PlanPage({
 
   // Only suggest blocks from modules that are switched on.
   const modules = moduleFilter(await getDisabledModules(user.id));
-  const suggestions = (await getPlanSuggestions(user.id, dayValue, dismissedKeys)).filter((s) => {
+  const suggestions = (
+    await getPlanSuggestions(user.id, dayValue, dismissedKeys)
+  ).filter(s => {
     const kindModule = PLAN_KIND_MODULES[s.kind as PlanKind];
     return !kindModule || modules.has(kindModule);
   });
 
   const defaultTemplate = templates.find(
-    (t) => t.isDefault && t.dayOfWeek === day.getDay()
+    t => t.isDefault && t.dayOfWeek === day.getDay()
   );
 
   return (
     <div>
-      <PageHeader help="plan"
+      <PageHeader
+        help="plan"
         title="Daily plan"
         description="Time-block your day — schedule tasks, meals, prayers, and more."
       />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <DayNavigator basePath="/dashboard/plan" dayValue={dayValue} dayLabel={dayLabel} />
+        <DayNavigator
+          basePath="/dashboard/plan"
+          dayValue={dayValue}
+          dayLabel={dayLabel}
+        />
         {stats.totalBlocks > 0 && (
           <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
             <span>
-              {stats.doneBlocks}/{stats.totalBlocks} done · {stats.completionPct}% complete
+              {stats.doneBlocks}/{stats.totalBlocks} done ·{" "}
+              {stats.completionPct}% complete
             </span>
             {stats.hasOverlaps && (
               <span className="badge-danger">
@@ -80,12 +91,19 @@ export default async function PlanPage({
       </div>
 
       {blocks.length === 0 && defaultTemplate && (
-        <section className="card mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" aria-label="Default template">
+        <section
+          className="card mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          aria-label="Default template"
+        >
           <div className="flex min-w-0 items-start gap-3">
-            <Icon name="clipboard" className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" />
+            <Icon
+              name="clipboard"
+              className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400"
+            />
             <p className="text-sm text-slate-700 dark:text-slate-200">
               This day is empty. Start from your default template{" "}
-              <span className="font-medium">“{defaultTemplate.name}”</span> ({defaultTemplate.blockCount} block
+              <span className="font-medium">“{defaultTemplate.name}”</span> (
+              {defaultTemplate.blockCount} block
               {defaultTemplate.blockCount === 1 ? "" : "s"})?
             </p>
           </div>
@@ -102,7 +120,11 @@ export default async function PlanPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="min-w-0 lg:col-span-2">
           <h2 className="section-title mb-3">Timeline</h2>
-          <PlanTimeline initialBlocks={blocks} isToday={isToday} showCurrentTimeLine />
+          <PlanTimeline
+            initialBlocks={blocks}
+            isToday={isToday}
+            showCurrentTimeLine
+          />
 
           <h2 className="section-title mb-3 mt-8 scroll-mt-6" id="add-block">
             Add block
@@ -119,25 +141,51 @@ export default async function PlanPage({
                   <label htmlFor="plan-title" className="label">
                     Title
                   </label>
-                  <input id="plan-title" name="title" className="input" placeholder="e.g. Deep work" required autoComplete="off" />
+                  <input
+                    id="plan-title"
+                    name="title"
+                    className="input"
+                    placeholder="e.g. Deep work"
+                    required
+                    autoComplete="off"
+                  />
                 </div>
                 <div>
                   <label htmlFor="plan-start" className="label">
                     Start
                   </label>
-                  <input id="plan-start" name="startTime" type="time" className="input" defaultValue="09:00" required />
+                  <input
+                    id="plan-start"
+                    name="startTime"
+                    type="time"
+                    className="input"
+                    defaultValue="09:00"
+                    required
+                  />
                 </div>
                 <div>
                   <label htmlFor="plan-end" className="label">
                     End
                   </label>
-                  <input id="plan-end" name="endTime" type="time" className="input" defaultValue="10:00" required />
+                  <input
+                    id="plan-end"
+                    name="endTime"
+                    type="time"
+                    className="input"
+                    defaultValue="10:00"
+                    required
+                  />
                 </div>
                 <div>
                   <label htmlFor="plan-kind" className="label">
                     Kind
                   </label>
-                  <select id="plan-kind" name="kind" className="input" defaultValue="custom">
+                  <select
+                    id="plan-kind"
+                    name="kind"
+                    className="input"
+                    defaultValue="custom"
+                  >
                     {Object.entries(PLAN_KIND_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>
                         {label}
@@ -149,10 +197,18 @@ export default async function PlanPage({
                   <label htmlFor="plan-notes" className="label">
                     Notes
                   </label>
-                  <input id="plan-notes" name="notes" className="input" placeholder="Optional" />
+                  <input
+                    id="plan-notes"
+                    name="notes"
+                    className="input"
+                    placeholder="Optional"
+                  />
                 </div>
                 <div className="sm:col-span-2">
-                  <SubmitButton className="btn-primary touch-target w-full sm:w-auto" pendingLabel="Adding…">
+                  <SubmitButton
+                    className="btn-primary touch-target w-full sm:w-auto"
+                    pendingLabel="Adding…"
+                  >
                     Add block
                   </SubmitButton>
                 </div>
@@ -170,14 +226,20 @@ export default async function PlanPage({
           <section>
             <h2 className="section-title mb-3">Quick start</h2>
             <div className="card">
-              <p className="mb-3 text-sm text-muted">Reuse the day before as a starting point.</p>
+              <p className="mb-3 text-sm text-muted">
+                Reuse the day before as a starting point.
+              </p>
               <CopyPreviousDay dayValue={dayValue} isToday={isToday} />
             </div>
           </section>
 
           <section>
             <h2 className="section-title mb-3">Templates</h2>
-            <TemplatePicker templates={templates} dayValue={dayValue} blockCount={blocks.length} />
+            <TemplatePicker
+              templates={templates}
+              dayValue={dayValue}
+              blockCount={blocks.length}
+            />
           </section>
 
           <PlanTextImport dayValue={dayValue} blockCount={blocks.length} />

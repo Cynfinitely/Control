@@ -26,7 +26,9 @@ describe("juzForPage", () => {
 
 describe("advanceBookmark", () => {
   it("advances currentPage as the next page to read", () => {
-    expect(advanceBookmark({ currentPage: 127, khatmsCompleted: 0, pagesRead: 5 })).toEqual({
+    expect(
+      advanceBookmark({ currentPage: 127, khatmsCompleted: 0, pagesRead: 5 })
+    ).toEqual({
       currentPage: 132,
       khatmsCompleted: 0,
       fromPage: 127,
@@ -35,7 +37,9 @@ describe("advanceBookmark", () => {
   });
 
   it("wraps from the end of the mushaf and increments khatms", () => {
-    expect(advanceBookmark({ currentPage: 602, khatmsCompleted: 0, pagesRead: 5 })).toEqual({
+    expect(
+      advanceBookmark({ currentPage: 602, khatmsCompleted: 0, pagesRead: 5 })
+    ).toEqual({
       currentPage: 3,
       khatmsCompleted: 1,
       fromPage: 602,
@@ -44,7 +48,9 @@ describe("advanceBookmark", () => {
   });
 
   it("completes a khatm exactly at page 604", () => {
-    expect(advanceBookmark({ currentPage: 600, khatmsCompleted: 1, pagesRead: 5 })).toEqual({
+    expect(
+      advanceBookmark({ currentPage: 600, khatmsCompleted: 1, pagesRead: 5 })
+    ).toEqual({
       currentPage: 1,
       khatmsCompleted: 2,
       fromPage: 600,
@@ -53,7 +59,9 @@ describe("advanceBookmark", () => {
   });
 
   it("ignores non-positive page counts", () => {
-    expect(advanceBookmark({ currentPage: 10, khatmsCompleted: 0, pagesRead: 0 })).toEqual({
+    expect(
+      advanceBookmark({ currentPage: 10, khatmsCompleted: 0, pagesRead: 0 })
+    ).toEqual({
       currentPage: 10,
       khatmsCompleted: 0,
       fromPage: 10,

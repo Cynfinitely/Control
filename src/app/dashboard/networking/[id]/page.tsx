@@ -19,11 +19,17 @@ import CollapsibleSection from "@/components/CollapsibleSection";
 import LogComposer from "../LogComposer";
 import ActivityFeed from "../ActivityFeed";
 import { logTouchForm, updateContact, deleteContact } from "../actions";
-import { getComposerContacts, getSuggestedTopics } from "@/lib/queries/networking";
+import {
+  getComposerContacts,
+  getSuggestedTopics,
+} from "@/lib/queries/networking";
 
 export const metadata = { title: "Person" };
 
-export default async function ContactDetail({ params }: { params: { id: string } }) {
+export default async function ContactDetail(props: {
+  params: Promise<{ id: string }>;
+}) {
+  const params = await props.params;
   const user = await requireModule("networking");
   const [contact, contacts, suggestedTopics] = await Promise.all([
     prisma.contact.findFirst({
@@ -39,15 +45,19 @@ export default async function ContactDetail({ params }: { params: { id: string }
   if (!contact) notFound();
 
   const last = contact.interactions[0];
-  const lastCall = contact.interactions.find((i) => i.type === "call");
-  const overdue = isOverdue(last?.date ?? null, contact.touchCadenceDays, new Date());
+  const lastCall = contact.interactions.find(i => i.type === "call");
+  const overdue = isOverdue(
+    last?.date ?? null,
+    contact.touchCadenceDays,
+    new Date()
+  );
   const cadenceDays = contact.touchCadenceDays ?? DEFAULT_CADENCE_DAYS;
   const relLabel = relationshipLabel(contact.relationship);
   const descriptionParts = isPersonalRelationship(contact.relationship)
     ? [relLabel].filter(Boolean)
     : [contact.role, contact.org, relLabel].filter(Boolean);
 
-  const activity = contact.interactions.map((it) => ({
+  const activity = contact.interactions.map(it => ({
     id: it.id,
     type: it.type,
     topics: it.topics,
@@ -72,19 +82,28 @@ export default async function ContactDetail({ params }: { params: { id: string }
           { label: contact.name },
         ]}
       />
-      <PageHeader help="networking:person"
+      <PageHeader
+        help="networking:person"
         title={contact.name}
         description={descriptionParts.join(" · ") || undefined}
         action={
           contact.phone || contact.email ? (
             <>
               {contact.phone && (
-                <a href={`tel:${contact.phone}`} className="btn-ghost touch-target" aria-label={`Call ${contact.name} (${contact.phone})`}>
+                <a
+                  href={`tel:${contact.phone}`}
+                  className="btn-ghost touch-target"
+                  aria-label={`Call ${contact.name} (${contact.phone})`}
+                >
                   <Icon name="phone" className="h-4 w-4" /> Call
                 </a>
               )}
               {contact.email && (
-                <a href={`mailto:${contact.email}`} className="btn-ghost touch-target" aria-label={`Email ${contact.name} (${contact.email})`}>
+                <a
+                  href={`mailto:${contact.email}`}
+                  className="btn-ghost touch-target"
+                  aria-label={`Email ${contact.name} (${contact.email})`}
+                >
                   <Icon name="mail" className="h-4 w-4" /> Email
                 </a>
               )}
@@ -102,7 +121,9 @@ export default async function ContactDetail({ params }: { params: { id: string }
           {last && (
             <p className="text-xs text-muted">
               {formatDate(last.date)}
-              {lastCall && last.type !== "call" ? ` · last call ${formatDaysAgo(lastCall.date)}` : ""}
+              {lastCall && last.type !== "call"
+                ? ` · last call ${formatDaysAgo(lastCall.date)}`
+                : ""}
             </p>
           )}
         </div>
@@ -122,19 +143,40 @@ export default async function ContactDetail({ params }: { params: { id: string }
 
       <div className="card mb-6">
         <h2 className="section-title mb-3">Timeline</h2>
-        <ActivityFeed items={activity} showPerson={false} empty="No logs with this person yet." />
+        <ActivityFeed
+          items={activity}
+          showPerson={false}
+          empty="No logs with this person yet."
+        />
       </div>
 
       <CollapsibleSection title="Edit person" variant="card" icon="pencil">
-        <ActionForm action={updateContact} successMessage="Saved" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <ActionForm
+          action={updateContact}
+          successMessage="Saved"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+        >
           <input type="hidden" name="id" value={contact.id} />
           <FormField label="Name" required>
-            {(_id, aria) => <input {...aria} name="name" className="input" defaultValue={contact.name} required />}
+            {(_id, aria) => (
+              <input
+                {...aria}
+                name="name"
+                className="input"
+                defaultValue={contact.name}
+                required
+              />
+            )}
           </FormField>
           <FormField label="Relationship">
             {(_id, aria) => (
-              <select {...aria} name="relationship" className="input" defaultValue={contact.relationship ?? "other"}>
-                {RELATIONSHIPS.map((r) => (
+              <select
+                {...aria}
+                name="relationship"
+                className="input"
+                defaultValue={contact.relationship ?? "other"}
+              >
+                {RELATIONSHIPS.map(r => (
                   <option key={r} value={r}>
                     {RELATIONSHIP_LABELS[r]}
                   </option>
@@ -143,25 +185,63 @@ export default async function ContactDetail({ params }: { params: { id: string }
             )}
           </FormField>
           <FormField label="Organization" hint="Optional, for work contacts">
-            {(_id, aria) => <input {...aria} name="org" className="input" defaultValue={contact.org ?? ""} />}
+            {(_id, aria) => (
+              <input
+                {...aria}
+                name="org"
+                className="input"
+                defaultValue={contact.org ?? ""}
+              />
+            )}
           </FormField>
           <FormField label="Role" hint="Optional">
-            {(_id, aria) => <input {...aria} name="role" className="input" defaultValue={contact.role ?? ""} />}
+            {(_id, aria) => (
+              <input
+                {...aria}
+                name="role"
+                className="input"
+                defaultValue={contact.role ?? ""}
+              />
+            )}
           </FormField>
           <FormField label="Email">
             {(_id, aria) => (
-              <input {...aria} name="email" type="email" autoComplete="off" className="input" defaultValue={contact.email ?? ""} />
+              <input
+                {...aria}
+                name="email"
+                type="email"
+                autoComplete="off"
+                className="input"
+                defaultValue={contact.email ?? ""}
+              />
             )}
           </FormField>
           <FormField label="Phone">
             {(_id, aria) => (
-              <input {...aria} name="phone" type="tel" autoComplete="off" className="input" defaultValue={contact.phone ?? ""} />
+              <input
+                {...aria}
+                name="phone"
+                type="tel"
+                autoComplete="off"
+                className="input"
+                defaultValue={contact.phone ?? ""}
+              />
             )}
           </FormField>
           <FormField label="Tags">
-            {(_id, aria) => <input {...aria} name="tags" className="input" defaultValue={contact.tags ?? ""} />}
+            {(_id, aria) => (
+              <input
+                {...aria}
+                name="tags"
+                className="input"
+                defaultValue={contact.tags ?? ""}
+              />
+            )}
           </FormField>
-          <FormField label="Touch every (days)" hint={`Defaults to ${DEFAULT_CADENCE_DAYS} days`}>
+          <FormField
+            label="Touch every (days)"
+            hint={`Defaults to ${DEFAULT_CADENCE_DAYS} days`}
+          >
             {(_id, aria) => (
               <input
                 {...aria}
@@ -175,7 +255,15 @@ export default async function ContactDetail({ params }: { params: { id: string }
             )}
           </FormField>
           <FormField label="Notes" className="sm:col-span-2">
-            {(_id, aria) => <textarea {...aria} name="notes" className="input" rows={2} defaultValue={contact.notes ?? ""} />}
+            {(_id, aria) => (
+              <textarea
+                {...aria}
+                name="notes"
+                className="input"
+                rows={2}
+                defaultValue={contact.notes ?? ""}
+              />
+            )}
           </FormField>
           <div className="sm:col-span-2">
             <SubmitButton className="btn-primary">Save changes</SubmitButton>
@@ -186,7 +274,8 @@ export default async function ContactDetail({ params }: { params: { id: string }
             action={deleteContact}
             confirm={{
               title: `Delete “${contact.name}”?`,
-              message: "Their logs will no longer appear in your timeline or insights.",
+              message:
+                "Their logs will no longer appear in your timeline or insights.",
               confirmLabel: "Delete person",
             }}
             successMessage={false}

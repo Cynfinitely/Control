@@ -15,7 +15,9 @@ export type NotificationFeed = {
   items: NotificationFeedItem[];
 };
 
-export async function getNotificationFeed(userId: string): Promise<NotificationFeed> {
+export async function getNotificationFeed(
+  userId: string
+): Promise<NotificationFeed> {
   const [items, unreadCount] = await Promise.all([
     prisma.notification.findMany({
       where: { userId },
@@ -26,7 +28,7 @@ export async function getNotificationFeed(userId: string): Promise<NotificationF
   ]);
   return {
     unreadCount,
-    items: items.map((n) => ({
+    items: items.map(n => ({
       id: n.id,
       title: n.title,
       body: n.body,

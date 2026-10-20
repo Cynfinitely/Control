@@ -4,8 +4,14 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import Icon from "@/components/Icon";
-import { useNotificationFeed, type NotificationItem } from "@/components/NotificationProvider";
-import { markAllNotificationsRead, markNotificationRead } from "@/app/dashboard/notifications/actions";
+import {
+  useNotificationFeed,
+  type NotificationItem,
+} from "@/components/NotificationProvider";
+import {
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/app/dashboard/notifications/actions";
 import { isNetworkError } from "@/lib/network-error";
 import { formatDateTime } from "@/lib/date";
 
@@ -37,7 +43,11 @@ export default function NotificationBell({ align = "right" }: Props) {
     }
     function onPointer(e: PointerEvent) {
       const target = e.target as Node;
-      if (!panelRef.current?.contains(target) && !buttonRef.current?.contains(target)) setOpen(false);
+      if (
+        !panelRef.current?.contains(target) &&
+        !buttonRef.current?.contains(target)
+      )
+        setOpen(false);
     }
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onPointer);
@@ -75,10 +85,12 @@ export default function NotificationBell({ align = "right" }: Props) {
         ref={buttonRef}
         type="button"
         className="btn-icon relative"
-        aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
+        aria-label={
+          unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"
+        }
         aria-expanded={open}
         aria-haspopup="dialog"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
       >
         <Icon name="bell" className="h-5 w-5" />
         {unreadCount > 0 && (
@@ -107,7 +119,11 @@ export default function NotificationBell({ align = "right" }: Props) {
               Notifications
             </h2>
             {unreadCount > 0 && (
-              <button type="button" className="btn-ghost btn-sm" onClick={onMarkAll}>
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={onMarkAll}
+              >
                 Mark all read
               </button>
             )}
@@ -118,7 +134,7 @@ export default function NotificationBell({ align = "right" }: Props) {
                 {pending ? "Loading…" : "You're all caught up."}
               </li>
             )}
-            {items.map((item) => {
+            {items.map(item => {
               const unread = !item.readAt;
               return (
                 <li key={item.id}>
@@ -131,18 +147,28 @@ export default function NotificationBell({ align = "right" }: Props) {
                     )}
                   >
                     <span
-                      className={clsx("mt-1.5 h-2 w-2 shrink-0 rounded-full", unread ? "bg-brand-600" : "bg-transparent")}
+                      className={clsx(
+                        "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                        unread ? "bg-brand-600" : "bg-transparent"
+                      )}
                       aria-hidden="true"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline gap-2">
-                        <span className={clsx("text-slate-900 dark:text-slate-100", unread ? "font-semibold" : "font-medium")}>
+                        <span
+                          className={clsx(
+                            "text-slate-900 dark:text-slate-100",
+                            unread ? "font-semibold" : "font-medium"
+                          )}
+                        >
                           {item.title}
                         </span>
                         {unread && <span className="sr-only">(unread)</span>}
                       </span>
                       {item.body && (
-                        <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-400">{item.body}</span>
+                        <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-400">
+                          {item.body}
+                        </span>
                       )}
                       <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                         {formatDateTime(item.dueAt)}

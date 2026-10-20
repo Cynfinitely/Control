@@ -44,7 +44,12 @@ export default function ConfirmDialog({
       initialFocusRef={variant === "danger" ? cancelRef : confirmRef}
       footer={
         <>
-          <button ref={cancelRef} type="button" onClick={onCancel} className="btn-ghost">
+          <button
+            ref={cancelRef}
+            type="button"
+            onClick={onCancel}
+            className="btn-ghost"
+          >
             {cancelLabel}
           </button>
           <button
@@ -52,7 +57,9 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={pending}
-            className={clsx(variant === "danger" ? "btn-danger-solid" : "btn-primary")}
+            className={clsx(
+              variant === "danger" ? "btn-danger-solid" : "btn-primary"
+            )}
           >
             {pending && <Spinner />}
             {confirmLabel}

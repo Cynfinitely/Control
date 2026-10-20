@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildFoodRangePrompt, type FoodRangePromptSnapshot } from "./prompt";
 
-function snapshot(overrides: Partial<FoodRangePromptSnapshot> = {}): FoodRangePromptSnapshot {
+function snapshot(
+  overrides: Partial<FoodRangePromptSnapshot> = {}
+): FoodRangePromptSnapshot {
   return {
     label: "27 Aug 2026 – 02 Sep 2026",
     from: new Date(2026, 7, 27),

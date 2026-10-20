@@ -19,8 +19,12 @@ export function formatActivityDate(date: Date | string): string {
   return ago === exact ? exact : `${exact} · ${ago}`;
 }
 
-export const INTERACTION_TYPES = ["call", "meeting", "message", "event"] as const;
-export type InteractionType = (typeof INTERACTION_TYPES)[number];
+export const INTERACTION_TYPES = [
+  "call",
+  "meeting",
+  "message",
+  "event",
+] as const;
 
 export const INTERACTION_TYPE_LABELS: Record<string, string> = {
   call: "Call",
@@ -55,7 +59,11 @@ export type FrequencyPoint = { weekStart: string; count: number };
 export type TypeMix = { type: string; count: number };
 export type RelationshipMix = { relationship: string; count: number };
 export type TopicPerson = { id: string; name: string; count: number };
-export type TopicTrend = { topic: string; count: number; people: TopicPerson[] };
+export type TopicTrend = {
+  topic: string;
+  count: number;
+  people: TopicPerson[];
+};
 export type OverdueContact = {
   id: string;
   name: string;
@@ -106,19 +114,31 @@ export function isOverdue(
   return lastTouch < threshold;
 }
 
-export function countOverdueContacts(contacts: ContactTouch[], now: Date): number {
-  return contacts.filter((c) => isOverdue(c.lastTouch, c.touchCadenceDays, now)).length;
+export function countOverdueContacts(
+  contacts: ContactTouch[],
+  now: Date
+): number {
+  return contacts.filter(c => isOverdue(c.lastTouch, c.touchCadenceDays, now))
+    .length;
 }
 
-export function rangeForNetworkingPeriod(period: NetworkingPeriod, ref = new Date()) {
+export function rangeForNetworkingPeriod(
+  period: NetworkingPeriod,
+  ref = new Date()
+) {
   const at = new Date(ref);
   if (period === "90d") {
-    return { from: addDays(startOfDay(new Date(at)), -89), to: endOfDay(new Date(at)) };
+    return {
+      from: addDays(startOfDay(new Date(at)), -89),
+      to: endOfDay(new Date(at)),
+    };
   }
   return rangeFor(period, at);
 }
 
-export function networkingHealth(overdueCount: number): "good" | "warn" | "bad" {
+export function networkingHealth(
+  overdueCount: number
+): "good" | "warn" | "bad" {
   if (overdueCount > 5) return "bad";
   if (overdueCount === 0) return "good";
   return "warn";
@@ -130,11 +150,15 @@ export function buildNetworkingInsights(
   range: { from: Date; to: Date },
   now: Date
 ): NetworkingInsights {
-  const inPeriod = interactions.filter((it) => it.date >= range.from && it.date <= range.to);
-  const contactById = new Map(contacts.map((c) => [c.id, c]));
+  const inPeriod = interactions.filter(
+    it => it.date >= range.from && it.date <= range.to
+  );
+  const contactById = new Map(contacts.map(c => [c.id, c]));
 
-  const typeCounts = new Map<string, number>(INTERACTION_TYPES.map((t) => [t, 0]));
-  const relCounts = new Map<string, number>(RELATIONSHIPS.map((r) => [r, 0]));
+  const typeCounts = new Map<string, number>(
+    INTERACTION_TYPES.map(t => [t, 0])
+  );
+  const relCounts = new Map<string, number>(RELATIONSHIPS.map(r => [r, 0]));
   const unique = new Set<string>();
   const weekCounts = new Map<string, number>();
 
@@ -150,7 +174,9 @@ export function buildNetworkingInsights(
     unique.add(it.contactId);
     typeCounts.set(it.type, (typeCounts.get(it.type) ?? 0) + 1);
     const rel = contactById.get(it.contactId)?.relationship ?? "other";
-    const relKey = RELATIONSHIPS.includes(rel as (typeof RELATIONSHIPS)[number]) ? rel : "other";
+    const relKey = RELATIONSHIPS.includes(rel as (typeof RELATIONSHIPS)[number])
+      ? rel
+      : "other";
     relCounts.set(relKey, (relCounts.get(relKey) ?? 0) + 1);
     const weekKey = toDateInputValue(startOfWeek(new Date(it.date)));
     if (weekCounts.has(weekKey)) {
@@ -158,7 +184,10 @@ export function buildNetworkingInsights(
     }
   }
 
-  const topicMap = new Map<string, { topic: string; count: number; people: Map<string, number> }>();
+  const topicMap = new Map<
+    string,
+    { topic: string; count: number; people: Map<string, number> }
+  >();
   for (const it of inPeriod) {
     const contact = contactById.get(it.contactId);
     for (const topic of parseTopics(it.topics)) {
@@ -176,7 +205,7 @@ export function buildNetworkingInsights(
   }
 
   const topics: TopicTrend[] = [...topicMap.values()]
-    .map((entry) => ({
+    .map(entry => ({
       topic: entry.topic,
       count: entry.count,
       people: [...entry.people.entries()]
@@ -190,8 +219,8 @@ export function buildNetworkingInsights(
     .sort((a, b) => b.count - a.count || a.topic.localeCompare(b.topic));
 
   const overdue: OverdueContact[] = contacts
-    .filter((c) => isOverdue(c.lastTouch, c.touchCadenceDays, now))
-    .map((c) => ({
+    .filter(c => isOverdue(c.lastTouch, c.touchCadenceDays, now))
+    .map(c => ({
       id: c.id,
       name: c.name,
       relationship: c.relationship,
@@ -202,11 +231,17 @@ export function buildNetworkingInsights(
 
   return {
     touches: inPeriod.length,
-    calls: inPeriod.filter((it) => it.type === "call").length,
+    calls: inPeriod.filter(it => it.type === "call").length,
     uniquePeople: unique.size,
-    frequency: [...weekCounts.entries()].map(([weekStart, count]) => ({ weekStart, count })),
-    typeMix: INTERACTION_TYPES.map((type) => ({ type, count: typeCounts.get(type) ?? 0 })),
-    relationshipMix: RELATIONSHIPS.map((relationship) => ({
+    frequency: [...weekCounts.entries()].map(([weekStart, count]) => ({
+      weekStart,
+      count,
+    })),
+    typeMix: INTERACTION_TYPES.map(type => ({
+      type,
+      count: typeCounts.get(type) ?? 0,
+    })),
+    relationshipMix: RELATIONSHIPS.map(relationship => ({
       relationship,
       count: relCounts.get(relationship) ?? 0,
     })),

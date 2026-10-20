@@ -69,7 +69,9 @@ type GeocodingResponse = {
   }[];
 };
 
-export async function searchLocations(query: string): Promise<LocationResult[]> {
+export async function searchLocations(
+  query: string
+): Promise<LocationResult[]> {
   const name = query.trim();
   if (name.length < 2) return [];
   const url = `${GEOCODING_URL}?${new URLSearchParams({ name, count: "6", language: "en", format: "json" })}`;
@@ -79,9 +81,10 @@ export async function searchLocations(query: string): Promise<LocationResult[]> 
 }
 
 export function normalizeLocations(data: GeocodingResponse): LocationResult[] {
-  return (data.results ?? []).map((r) => ({
+  return (data.results ?? []).map(r => ({
     name: r.name,
-    region: [r.admin1, r.country].filter((p) => p && p !== r.name).join(", ") || null,
+    region:
+      [r.admin1, r.country].filter(p => p && p !== r.name).join(", ") || null,
     latitude: r.latitude,
     longitude: r.longitude,
   }));
@@ -126,7 +129,11 @@ function roundCoord(n: number) {
   return n.toFixed(2);
 }
 
-export function forecastUrl(latitude: number, longitude: number, units: WeatherUnits) {
+export function forecastUrl(
+  latitude: number,
+  longitude: number,
+  units: WeatherUnits
+) {
   const params = new URLSearchParams({
     latitude: roundCoord(latitude),
     longitude: roundCoord(longitude),
@@ -134,7 +141,8 @@ export function forecastUrl(latitude: number, longitude: number, units: WeatherU
     forecast_days: "7",
     current:
       "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,is_day",
-    hourly: "temperature_2m,precipitation_probability,weather_code,wind_speed_10m,is_day",
+    hourly:
+      "temperature_2m,precipitation_probability,weather_code,wind_speed_10m,is_day",
     daily:
       "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset",
   });
@@ -155,10 +163,16 @@ export async function getForecast(
     next: { revalidate: FORECAST_REVALIDATE_SECONDS, tags: ["weather"] },
   });
   if (!res.ok) throw new Error(`Forecast failed: ${res.status}`);
-  return normalizeForecast((await res.json()) as OpenMeteoForecastResponse, units);
+  return normalizeForecast(
+    (await res.json()) as OpenMeteoForecastResponse,
+    units
+  );
 }
 
-export function normalizeForecast(data: OpenMeteoForecastResponse, units: WeatherUnits): Forecast {
+export function normalizeForecast(
+  data: OpenMeteoForecastResponse,
+  units: WeatherUnits
+): Forecast {
   const { current: c, hourly: h, daily: d } = data;
   return {
     timezone: data.timezone,
@@ -200,6 +214,9 @@ export function normalizeForecast(data: OpenMeteoForecastResponse, units: Weathe
 export function hoursForDay(forecast: Forecast, day: string): HourlyWeather[] {
   const nowHour = forecast.current.time.slice(0, 13);
   return forecast.hourly.filter(
-    (hour) => hour.time.startsWith(day) && (day !== forecast.current.time.slice(0, 10) || hour.time.slice(0, 13) >= nowHour)
+    hour =>
+      hour.time.startsWith(day) &&
+      (day !== forecast.current.time.slice(0, 10) ||
+        hour.time.slice(0, 13) >= nowHour)
   );
 }

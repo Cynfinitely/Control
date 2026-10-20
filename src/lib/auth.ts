@@ -22,7 +22,10 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email.toLowerCase() },
         });
         if (!user) return null;
-        const ok = await bcrypt.compare(credentials.password, user.passwordHash);
+        const ok = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash
+        );
         if (!ok) return null;
         if (!user.emailVerifiedAt) {
           throw new Error("EMAIL_NOT_VERIFIED");

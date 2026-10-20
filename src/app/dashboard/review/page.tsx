@@ -3,14 +3,25 @@ import clsx from "clsx";
 import { prisma } from "@/lib/db";
 import { requireModule } from "@/lib/session";
 import { getPeriodKey } from "@/lib/period";
-import { startOfWeek, addDays, toDateInputValue, formatDate, endOfDay } from "@/lib/date";
+import {
+  startOfWeek,
+  addDays,
+  toDateInputValue,
+  formatDate,
+  endOfDay,
+} from "@/lib/date";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
 import { getBacklogTodos, getStaleOpenTodoCount } from "@/lib/queries/todos";
 import { getGoalsForPeriod } from "@/lib/queries/goals";
 import { getWeekExpenseTotal } from "@/lib/queries/budget";
 import { getOverduePeople } from "@/lib/queries/networking";
 import { formatEuro } from "@/lib/budget";
-import { activeReviewSteps, parseCompletedSteps, reviewProgress, type ReviewStepId } from "@/lib/review";
+import {
+  activeReviewSteps,
+  parseCompletedSteps,
+  reviewProgress,
+  type ReviewStepId,
+} from "@/lib/review";
 import { getDisabledModules } from "@/lib/queries/modules";
 import { moduleFilter } from "@/lib/modules";
 import PageHeader from "@/components/PageHeader";
@@ -81,18 +92,21 @@ export default async function WeeklyReviewPage() {
   const steps = activeReviewSteps(disabledModules);
 
   const pendingQaza = pendingQazaDaily + historicalDebtRemaining(prayerDebts);
-  const completedGoals = goals.filter((g) => g.status === "completed").length;
+  const completedGoals = goals.filter(g => g.status === "completed").length;
   const activeGoals = goals.length - completedGoals;
 
   const doneSteps = parseCompletedSteps(review?.completedSteps);
   const progress = reviewProgress(doneSteps, steps);
   const remaining = progress.total - progress.done;
   const isCompleted = Boolean(review?.completedAt);
-  const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+  const pct =
+    progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
 
   const description = [
     `Week of ${formatDate(weekStart)}`,
-    lastCompleted?.completedAt ? `Last completed ${formatDate(lastCompleted.completedAt)}` : "Not completed yet",
+    lastCompleted?.completedAt
+      ? `Last completed ${formatDate(lastCompleted.completedAt)}`
+      : "Not completed yet",
   ].join(" · ");
 
   const stepBody: Record<ReviewStepId, React.ReactNode> = {
@@ -101,22 +115,36 @@ export default async function WeeklyReviewPage() {
         {staleCount > 0 ? (
           <StaleBacklogButton count={staleCount} className="btn-ghost" />
         ) : (
-          <p className="text-sm text-muted">No stale open todos — you&apos;re caught up.</p>
+          <p className="text-sm text-muted">
+            No stale open todos — you&apos;re caught up.
+          </p>
         )}
         <div>
           <h3 className="subsection-title mb-2">Backlog ({backlog.length})</h3>
           {backlog.length === 0 ? (
-            <EmptyState variant="inline" headingLevel="h3" icon="check" title="Backlog is empty — nice work" />
+            <EmptyState
+              variant="inline"
+              headingLevel="h3"
+              icon="check"
+              title="Backlog is empty — nice work"
+            />
           ) : (
             <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
-              {backlog.slice(0, 8).map((t) => (
+              {backlog.slice(0, 8).map(t => (
                 <li key={t.id}>{t.title}</li>
               ))}
-              {backlog.length > 8 && <li className="list-none text-muted">…and {backlog.length - 8} more</li>}
+              {backlog.length > 8 && (
+                <li className="list-none text-muted">
+                  …and {backlog.length - 8} more
+                </li>
+              )}
             </ul>
           )}
         </div>
-        <Link href="/dashboard/todos" className="link inline-flex min-h-[36px] items-center text-sm">
+        <Link
+          href="/dashboard/todos"
+          className="link inline-flex min-h-[36px] items-center text-sm"
+        >
           Open todos →
         </Link>
       </div>
@@ -140,7 +168,10 @@ export default async function WeeklyReviewPage() {
           <div className="tile overflow-hidden p-0">
             <GoalList initialGoals={goals} compact />
           </div>
-          <Link href="/dashboard/goals" className="link inline-flex min-h-[36px] items-center text-sm">
+          <Link
+            href="/dashboard/goals"
+            className="link inline-flex min-h-[36px] items-center text-sm"
+          >
             Manage goals →
           </Link>
         </div>
@@ -152,7 +183,10 @@ export default async function WeeklyReviewPage() {
             ? `${pendingQaza} qaza prayer${pendingQaza === 1 ? "" : "s"} waiting (daily misses + historical debt).`
             : "No pending qaza — keep it up."}
         </p>
-        <Link href="/dashboard/religious" className="link inline-flex min-h-[36px] items-center text-sm">
+        <Link
+          href="/dashboard/religious"
+          className="link inline-flex min-h-[36px] items-center text-sm"
+        >
           Open religious →
         </Link>
       </div>
@@ -160,9 +194,16 @@ export default async function WeeklyReviewPage() {
     spending: (
       <div className="space-y-3">
         <p className="text-sm text-slate-700 dark:text-slate-300">
-          You spent <span className="font-semibold tabular-nums">{formatEuro(weekExpensesCents)}</span> this week.
+          You spent{" "}
+          <span className="font-semibold tabular-nums">
+            {formatEuro(weekExpensesCents)}
+          </span>{" "}
+          this week.
         </p>
-        <Link href="/dashboard/budget" className="link inline-flex min-h-[36px] items-center text-sm">
+        <Link
+          href="/dashboard/budget"
+          className="link inline-flex min-h-[36px] items-center text-sm"
+        >
           Open budget →
         </Link>
       </div>
@@ -170,22 +211,32 @@ export default async function WeeklyReviewPage() {
     people: (
       <div className="space-y-3">
         {overduePeople.length === 0 ? (
-          <EmptyState variant="inline" headingLevel="h3" icon="users" title="Everyone is within cadence" />
+          <EmptyState
+            variant="inline"
+            headingLevel="h3"
+            icon="users"
+            title="Everyone is within cadence"
+          />
         ) : (
           <ul className="space-y-1.5 text-sm">
-            {overduePeople.map((p) => (
+            {overduePeople.map(p => (
               <li key={p.id} className="flex flex-wrap items-baseline gap-x-2">
                 <Link href={`/dashboard/networking/${p.id}`} className="link">
                   {p.name}
                 </Link>
                 <span className="text-muted">
-                  {p.lastTouch ? `last contact ${formatDate(p.lastTouch)}` : "no contact yet"}
+                  {p.lastTouch
+                    ? `last contact ${formatDate(p.lastTouch)}`
+                    : "no contact yet"}
                 </span>
               </li>
             ))}
           </ul>
         )}
-        <Link href="/dashboard/networking" className="link inline-flex min-h-[36px] items-center text-sm">
+        <Link
+          href="/dashboard/networking"
+          className="link inline-flex min-h-[36px] items-center text-sm"
+        >
           Log a call →
         </Link>
       </div>
@@ -200,22 +251,32 @@ export default async function WeeklyReviewPage() {
           </p>
         ) : (
           <p className="text-sm text-slate-700 dark:text-slate-300">
-            Decide the two or three things that matter most next week, and write them in the notes below.
+            Decide the two or three things that matter most next week, and write
+            them in the notes below.
           </p>
         )}
         <div className="flex flex-wrap gap-2">
           {modules.has("plan") && (
-            <Link href={`/dashboard/plan?day=${toDateInputValue(addDays(now, 1))}`} className="btn-ghost btn-sm min-h-[36px]">
+            <Link
+              href={`/dashboard/plan?day=${toDateInputValue(addDays(now, 1))}`}
+              className="btn-ghost btn-sm min-h-[36px]"
+            >
               Plan tomorrow
             </Link>
           )}
           {modules.has("food") && (
-            <Link href="/dashboard/food/planner" className="btn-ghost btn-sm min-h-[36px]">
+            <Link
+              href="/dashboard/food/planner"
+              className="btn-ghost btn-sm min-h-[36px]"
+            >
               Meal planner
             </Link>
           )}
           {modules.has("journal") && (
-            <Link href="/dashboard/journal" className="btn-ghost btn-sm min-h-[36px]">
+            <Link
+              href="/dashboard/journal"
+              className="btn-ghost btn-sm min-h-[36px]"
+            >
               Write journal
             </Link>
           )}
@@ -226,40 +287,61 @@ export default async function WeeklyReviewPage() {
 
   return (
     <div>
-      <PageHeader help="review" title="Weekly review" description={description} />
+      <PageHeader
+        help="review"
+        title="Weekly review"
+        description={description}
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
-        {modules.has("todos") && <StatCard size="sm" label="Backlog" value={backlog.length} href={`#${stepAnchor("inbox")}`} />}
-        {modules.has("goals") && <StatCard
-          size="sm"
-          label="Goals done"
-          value={`${completedGoals}/${goals.length}`}
-          href={`#${stepAnchor("goals")}`}
-        />}
-        {modules.has("religious") && <StatCard
-          size="sm"
-          label="Qaza pending"
-          value={pendingQaza}
-          href={`#${stepAnchor("prayers")}`}
-        />}
-        {modules.has("budget") && <StatCard
-          size="sm"
-          label="Spent this week"
-          value={formatEuro(weekExpensesCents)}
-          href={`#${stepAnchor("spending")}`}
-        />}
-        {modules.has("networking") && <StatCard
-          size="sm"
-          label="Overdue people"
-          value={overduePeople.length}
-          href={`#${stepAnchor("people")}`}
-        />}
-        {modules.has("food") && <StatCard
-          size="sm"
-          label="Shopping left"
-          value={shoppingRemaining}
-          href={`#${stepAnchor("plan-ahead")}`}
-        />}
+        {modules.has("todos") && (
+          <StatCard
+            size="sm"
+            label="Backlog"
+            value={backlog.length}
+            href={`#${stepAnchor("inbox")}`}
+          />
+        )}
+        {modules.has("goals") && (
+          <StatCard
+            size="sm"
+            label="Goals done"
+            value={`${completedGoals}/${goals.length}`}
+            href={`#${stepAnchor("goals")}`}
+          />
+        )}
+        {modules.has("religious") && (
+          <StatCard
+            size="sm"
+            label="Qaza pending"
+            value={pendingQaza}
+            href={`#${stepAnchor("prayers")}`}
+          />
+        )}
+        {modules.has("budget") && (
+          <StatCard
+            size="sm"
+            label="Spent this week"
+            value={formatEuro(weekExpensesCents)}
+            href={`#${stepAnchor("spending")}`}
+          />
+        )}
+        {modules.has("networking") && (
+          <StatCard
+            size="sm"
+            label="Overdue people"
+            value={overduePeople.length}
+            href={`#${stepAnchor("people")}`}
+          />
+        )}
+        {modules.has("food") && (
+          <StatCard
+            size="sm"
+            label="Shopping left"
+            value={shoppingRemaining}
+            href={`#${stepAnchor("plan-ahead")}`}
+          />
+        )}
       </div>
 
       <section aria-labelledby="review-progress-heading" className="card mb-6">
@@ -283,14 +365,23 @@ export default async function WeeklyReviewPage() {
               aria-valuetext={`${progress.done} of ${progress.total} steps`}
             >
               <div
-                className={clsx("h-full rounded-full transition-all", isCompleted ? "bg-green-500" : "bg-brand-500")}
+                className={clsx(
+                  "h-full rounded-full transition-all",
+                  isCompleted ? "bg-green-500" : "bg-brand-500"
+                )}
                 style={{ width: `${pct}%` }}
               />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {isCompleted && <span className="badge-success">Done this week</span>}
-            <ReviewCompleteButton weekKey={weekKey} completed={isCompleted} remaining={remaining} />
+            {isCompleted && (
+              <span className="badge-success">Done this week</span>
+            )}
+            <ReviewCompleteButton
+              weekKey={weekKey}
+              completed={isCompleted}
+              remaining={remaining}
+            />
           </div>
         </div>
       </section>
@@ -303,7 +394,10 @@ export default async function WeeklyReviewPage() {
               <section
                 id={stepAnchor(step.id)}
                 aria-labelledby={`${stepAnchor(step.id)}-title`}
-                className={clsx("card scroll-mt-4", done && "bg-slate-50/60 dark:bg-slate-800/60")}
+                className={clsx(
+                  "card scroll-mt-4",
+                  done && "bg-slate-50/60 dark:bg-slate-800/60"
+                )}
               >
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3">
@@ -319,14 +413,24 @@ export default async function WeeklyReviewPage() {
                       {i + 1}
                     </span>
                     <div className="min-w-0">
-                      <h2 id={`${stepAnchor(step.id)}-title`} className="section-title">
+                      <h2
+                        id={`${stepAnchor(step.id)}-title`}
+                        className="section-title"
+                      >
                         <span className="sr-only">Step {i + 1}: </span>
                         {step.title}
                       </h2>
-                      <p className="mt-0.5 text-sm text-muted">{step.description}</p>
+                      <p className="mt-0.5 text-sm text-muted">
+                        {step.description}
+                      </p>
                     </div>
                   </div>
-                  <ReviewStepCheck weekKey={weekKey} step={step.id} title={step.title} done={done} />
+                  <ReviewStepCheck
+                    weekKey={weekKey}
+                    step={step.id}
+                    title={step.title}
+                    done={done}
+                  />
                 </div>
                 <div className="sm:pl-10">{stepBody[step.id]}</div>
               </section>
@@ -339,7 +443,9 @@ export default async function WeeklyReviewPage() {
         <h2 id="review-notes-heading" className="section-title mb-1">
           Notes
         </h2>
-        <p className="mb-3 text-sm text-muted">Anything worth remembering from this week.</p>
+        <p className="mb-3 text-sm text-muted">
+          Anything worth remembering from this week.
+        </p>
         <ReviewNotes weekKey={weekKey} notes={review?.notes ?? ""} />
       </section>
 
@@ -348,7 +454,11 @@ export default async function WeeklyReviewPage() {
           <p className="text-sm text-muted">
             {progress.done} of {progress.total} steps done
           </p>
-          <ReviewCompleteButton weekKey={weekKey} completed={false} remaining={remaining} />
+          <ReviewCompleteButton
+            weekKey={weekKey}
+            completed={false}
+            remaining={remaining}
+          />
         </div>
       )}
     </div>

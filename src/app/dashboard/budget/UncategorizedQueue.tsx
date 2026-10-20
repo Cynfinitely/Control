@@ -27,10 +27,13 @@ type Props = {
   total: number;
 };
 
-const CHECKBOX = "h-5 w-5 cursor-pointer rounded border-slate-400 accent-brand-600 dark:border-slate-500";
+const CHECKBOX =
+  "h-5 w-5 cursor-pointer rounded border-slate-400 accent-brand-600 dark:border-slate-500";
 
 function describe(entry: Entry): string {
-  return entry.rawDescription || entry.note || entry.merchantKey || "Transaction";
+  return (
+    entry.rawDescription || entry.note || entry.merchantKey || "Transaction"
+  );
 }
 
 function typeLabel(type: string, plural = false): string {
@@ -38,21 +41,38 @@ function typeLabel(type: string, plural = false): string {
   return plural ? "expenses" : "expense";
 }
 
-export default function UncategorizedQueue({ entries, categories, total }: Props) {
+export default function UncategorizedQueue({
+  entries,
+  categories,
+  total,
+}: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   // Rows disappear once categorized; only count selections that are still listed.
-  const selectedEntries = useMemo(() => entries.filter((e) => selected.has(e.id)), [entries, selected]);
-  const selectedExpenses = selectedEntries.filter((e) => e.type !== "income").length;
-  const selectedIncome = selectedEntries.filter((e) => e.type === "income").length;
+  const selectedEntries = useMemo(
+    () => entries.filter(e => selected.has(e.id)),
+    [entries, selected]
+  );
+  const selectedExpenses = selectedEntries.filter(
+    e => e.type !== "income"
+  ).length;
+  const selectedIncome = selectedEntries.filter(
+    e => e.type === "income"
+  ).length;
   const mixed = selectedExpenses > 0 && selectedIncome > 0;
-  const bulkKind = selectedEntries.length > 0 && !mixed ? (selectedIncome > 0 ? "income" : "expense") : null;
+  const bulkKind =
+    selectedEntries.length > 0 && !mixed
+      ? selectedIncome > 0
+        ? "income"
+        : "expense"
+      : null;
   const bulkCategories = useMemo(
-    () => (bulkKind ? categories.filter((c) => c.kind === bulkKind) : []),
+    () => (bulkKind ? categories.filter(c => c.kind === bulkKind) : []),
     [categories, bulkKind]
   );
-  const allSelected = entries.length > 0 && selectedEntries.length === entries.length;
+  const allSelected =
+    entries.length > 0 && selectedEntries.length === entries.length;
   const someSelected = selectedEntries.length > 0 && !allSelected;
 
   useEffect(() => {
@@ -60,7 +80,7 @@ export default function UncategorizedQueue({ entries, categories, total }: Props
   }, [someSelected]);
 
   function toggle(id: string) {
-    setSelected((prev) => {
+    setSelected(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -70,7 +90,13 @@ export default function UncategorizedQueue({ entries, categories, total }: Props
 
   function keepOnly(type: "income" | "expense") {
     setSelected(
-      new Set(selectedEntries.filter((e) => (type === "income" ? e.type === "income" : e.type !== "income")).map((e) => e.id))
+      new Set(
+        selectedEntries
+          .filter(e =>
+            type === "income" ? e.type === "income" : e.type !== "income"
+          )
+          .map(e => e.id)
+      )
     );
   }
 
@@ -83,11 +109,17 @@ export default function UncategorizedQueue({ entries, categories, total }: Props
             type="checkbox"
             className={CHECKBOX}
             checked={allSelected}
-            onChange={() => setSelected(allSelected ? new Set() : new Set(entries.map((e) => e.id)))}
+            onChange={() =>
+              setSelected(
+                allSelected ? new Set() : new Set(entries.map(e => e.id))
+              )
+            }
           />
           {allSelected ? "Deselect all" : `Select all ${entries.length}`}
           {selectedEntries.length > 0 && !allSelected && (
-            <span className="font-normal text-muted">({selectedEntries.length} selected)</span>
+            <span className="font-normal text-muted">
+              ({selectedEntries.length} selected)
+            </span>
           )}
         </label>
         <p className="text-sm text-muted" aria-live="polite">
@@ -103,18 +135,31 @@ export default function UncategorizedQueue({ entries, categories, total }: Props
           className="card border-amber-200 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/30"
         >
           <p className="flex items-start gap-2 text-sm text-slate-800 dark:text-slate-100">
-            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
+            <Icon
+              name="info"
+              className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400"
+            />
             <span>
-              Your selection mixes {selectedExpenses} {selectedExpenses === 1 ? "expense" : "expenses"} and{" "}
-              {selectedIncome} income {selectedIncome === 1 ? "row" : "rows"}. Categories are either for expenses or for
-              income, so bulk categorize works on one type at a time.
+              Your selection mixes {selectedExpenses}{" "}
+              {selectedExpenses === 1 ? "expense" : "expenses"} and{" "}
+              {selectedIncome} income {selectedIncome === 1 ? "row" : "rows"}.
+              Categories are either for expenses or for income, so bulk
+              categorize works on one type at a time.
             </span>
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="btn-ghost btn-sm min-h-[36px]" onClick={() => keepOnly("expense")}>
+            <button
+              type="button"
+              className="btn-ghost btn-sm min-h-[36px]"
+              onClick={() => keepOnly("expense")}
+            >
               Keep only expenses ({selectedExpenses})
             </button>
-            <button type="button" className="btn-ghost btn-sm min-h-[36px]" onClick={() => keepOnly("income")}>
+            <button
+              type="button"
+              className="btn-ghost btn-sm min-h-[36px]"
+              onClick={() => keepOnly("income")}
+            >
               Keep only income ({selectedIncome})
             </button>
           </div>
@@ -128,33 +173,44 @@ export default function UncategorizedQueue({ entries, categories, total }: Props
           onSuccess={() => setSelected(new Set())}
           className="card flex flex-col items-stretch gap-3 border-brand-200 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-950/50 sm:flex-row sm:flex-wrap sm:items-end"
         >
-          {selectedEntries.map((e) => (
+          {selectedEntries.map(e => (
             <input key={e.id} type="hidden" name="ids" value={e.id} />
           ))}
           <div className="min-w-0 flex-1 sm:min-w-[12rem]">
             <label className="label" htmlFor="bulk-category">
-              Category for {selectedEntries.length} selected {typeLabel(bulkKind, selectedEntries.length !== 1)}
+              Category for {selectedEntries.length} selected{" "}
+              {typeLabel(bulkKind, selectedEntries.length !== 1)}
             </label>
-            <select key={bulkKind} id="bulk-category" name="categoryId" className="input" required defaultValue="">
+            <select
+              key={bulkKind}
+              id="bulk-category"
+              name="categoryId"
+              className="input"
+              required
+              defaultValue=""
+            >
               <option value="" disabled>
                 Choose a category…
               </option>
-              {bulkCategories.map((c) => (
+              {bulkCategories.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))}
             </select>
           </div>
-          <SubmitButton className="btn-primary touch-target" pendingLabel="Applying…">
+          <SubmitButton
+            className="btn-primary touch-target"
+            pendingLabel="Applying…"
+          >
             Apply to {selectedEntries.length}
           </SubmitButton>
         </ActionForm>
       )}
 
       <ul className="space-y-2">
-        {entries.map((entry) => {
-          const filtered = categories.filter((c) => c.kind === entry.type);
+        {entries.map(entry => {
+          const filtered = categories.filter(c => c.kind === entry.type);
           const income = entry.type === "income";
           const amount = `${income ? "+" : "−"}${formatEuro(entry.amountCents)}`;
           const selectId = `uncat-category-${entry.id}`;
@@ -173,18 +229,25 @@ export default function UncategorizedQueue({ entries, categories, total }: Props
                   </span>
                 </label>
                 <div className="min-w-0 flex-1">
-                  <p className="break-words font-medium text-slate-800 dark:text-slate-100">{describe(entry)}</p>
+                  <p className="break-words font-medium text-slate-800 dark:text-slate-100">
+                    {describe(entry)}
+                  </p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
                     <span>{formatDate(entry.date)}</span>
-                    <span className={income ? "badge-success" : "badge-muted"}>{income ? "Income" : "Expense"}</span>
-                    {entry.merchantKey && entry.merchantKey !== describe(entry) && (
-                      <span className="break-all">{entry.merchantKey}</span>
-                    )}
+                    <span className={income ? "badge-success" : "badge-muted"}>
+                      {income ? "Income" : "Expense"}
+                    </span>
+                    {entry.merchantKey &&
+                      entry.merchantKey !== describe(entry) && (
+                        <span className="break-all">{entry.merchantKey}</span>
+                      )}
                   </p>
                 </div>
                 <p
                   className={`shrink-0 font-semibold tabular-nums ${
-                    income ? "text-green-700 dark:text-green-400" : "text-slate-900 dark:text-slate-100"
+                    income
+                      ? "text-green-700 dark:text-green-400"
+                      : "text-slate-900 dark:text-slate-100"
                   }`}
                 >
                   {amount}
@@ -206,24 +269,33 @@ export default function UncategorizedQueue({ entries, categories, total }: Props
                     className="input"
                     required
                     defaultValue=""
-                    aria-describedby={entry.merchantKey ? `${selectId}-hint` : undefined}
+                    aria-describedby={
+                      entry.merchantKey ? `${selectId}-hint` : undefined
+                    }
                   >
                     <option value="" disabled>
                       Choose a category…
                     </option>
-                    {filtered.map((c) => (
+                    {filtered.map(c => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
                     ))}
                   </select>
                 </div>
-                <SubmitButton className="btn-primary touch-target" pendingLabel="Saving…">
+                <SubmitButton
+                  className="btn-primary touch-target"
+                  pendingLabel="Saving…"
+                >
                   Save
                 </SubmitButton>
                 {entry.merchantKey && (
-                  <p id={`${selectId}-hint`} className="hint mt-0 sm:basis-full">
-                    Also applies to other {typeLabel(entry.type, true)} from {entry.merchantKey} and future imports.
+                  <p
+                    id={`${selectId}-hint`}
+                    className="hint mt-0 sm:basis-full"
+                  >
+                    Also applies to other {typeLabel(entry.type, true)} from{" "}
+                    {entry.merchantKey} and future imports.
                   </p>
                 )}
               </ActionForm>

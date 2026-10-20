@@ -16,7 +16,7 @@ export async function ensurePrinciplesSeeded(userId: string): Promise<void> {
   if (count > 0) return;
 
   await prisma.principle.createMany({
-    data: DEFAULT_PRINCIPLES.map((p) => ({
+    data: DEFAULT_PRINCIPLES.map(p => ({
       userId,
       text: p.text,
       category: p.category,
@@ -26,7 +26,9 @@ export async function ensurePrinciplesSeeded(userId: string): Promise<void> {
   revalidateUserCache(userId, "principles");
 }
 
-export async function getActivePrinciples(userId: string): Promise<PrincipleItem[]> {
+export async function getActivePrinciples(
+  userId: string
+): Promise<PrincipleItem[]> {
   await ensurePrinciplesSeeded(userId);
 
   return cachedQuery(

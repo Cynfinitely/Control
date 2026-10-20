@@ -16,7 +16,10 @@ export async function incrementLinkedGoals(
   // Nothing to count (e.g. a learning entry logged with 0 hours).
   if (!(amount > 0)) return;
   const periods: GoalPeriod[] = ["weekly", "monthly", "yearly"];
-  const periodKeys = periods.map((p) => ({ period: p, periodKey: getPeriodKey(p, refDate) }));
+  const periodKeys = periods.map(p => ({
+    period: p,
+    periodKey: getPeriodKey(p, refDate),
+  }));
   let updated = false;
 
   for (const { period, periodKey } of periodKeys) {
@@ -96,7 +99,9 @@ export async function decrementLinkedGoals(
         data: {
           currentValue: next,
           // Undo an auto-complete when the goal drops back below its target.
-          ...(goal.status === "completed" && next < (goal.targetValue ?? 1) ? { status: "active" } : {}),
+          ...(goal.status === "completed" && next < (goal.targetValue ?? 1)
+            ? { status: "active" }
+            : {}),
         },
       });
     }

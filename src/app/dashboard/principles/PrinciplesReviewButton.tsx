@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useFormState } from "react-dom";
 import SubmitButton from "@/components/SubmitButton";
 import { useToast } from "@/components/Toast";
 import { markPrinciplesReviewedForm } from "./actions";
@@ -10,7 +9,7 @@ import { markPrinciplesReviewedForm } from "./actions";
 export default function PrinciplesReviewButton() {
   const router = useRouter();
   const { success, error } = useToast();
-  const [state, formAction] = useFormState(markPrinciplesReviewedForm, null);
+  const [state, formAction] = useActionState(markPrinciplesReviewedForm, null);
 
   useEffect(() => {
     if (!state) return;

@@ -13,13 +13,20 @@ function isRealDeployment(): boolean {
 }
 
 async function main() {
-  const adminEmail = (process.env.SEED_ADMIN_EMAIL ?? "admin@control.local").toLowerCase();
+  const adminEmail = (
+    process.env.SEED_ADMIN_EMAIL ?? "admin@control.local"
+  ).toLowerCase();
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? DEV_PASSWORD;
 
   // The development password is public (it is in the README), so it must never
   // reach a real deployment.
-  if (isRealDeployment() && (adminPassword === DEV_PASSWORD || adminPassword.length < 12)) {
-    throw new Error("Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD (12+ characters) before seeding a production database.");
+  if (
+    isRealDeployment() &&
+    (adminPassword === DEV_PASSWORD || adminPassword.length < 12)
+  ) {
+    throw new Error(
+      "Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD (12+ characters) before seeding a production database."
+    );
   }
 
   const passwordHash = await bcrypt.hash(adminPassword, 10);
@@ -47,13 +54,17 @@ async function main() {
   console.log("Seed complete.");
   console.log("------------------------------------------");
   console.log(`Admin login: ${adminEmail}`);
-  console.log(adminPassword === DEV_PASSWORD ? `Password:    ${DEV_PASSWORD} (development only)` : "Password:    from SEED_ADMIN_PASSWORD");
+  console.log(
+    adminPassword === DEV_PASSWORD
+      ? `Password:    ${DEV_PASSWORD} (development only)`
+      : "Password:    from SEED_ADMIN_PASSWORD"
+  );
   console.log("Invite people from Admin > Invite a person.");
   console.log("------------------------------------------");
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error(e);
     process.exit(1);
   })

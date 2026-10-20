@@ -10,7 +10,11 @@ type Props = {
   remaining: number;
 };
 
-export default function ReviewCompleteButton({ weekKey, completed, remaining }: Props) {
+export default function ReviewCompleteButton({
+  weekKey,
+  completed,
+  remaining,
+}: Props) {
   if (completed) {
     return (
       <ActionForm action={reopenReview} successMessage="Review reopened">
@@ -28,7 +32,8 @@ export default function ReviewCompleteButton({ weekKey, completed, remaining }: 
         remaining > 0
           ? {
               title: `Complete with ${remaining} step${remaining === 1 ? "" : "s"} open?`,
-              message: "You can still tick them off afterwards, or reopen the review.",
+              message:
+                "You can still tick them off afterwards, or reopen the review.",
               confirmLabel: "Complete anyway",
               variant: "default",
             }

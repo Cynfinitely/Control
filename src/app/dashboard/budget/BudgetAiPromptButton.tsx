@@ -6,7 +6,11 @@ type Props = {
   uncategorizedCount: number;
 };
 
-export default function BudgetAiPromptButton({ monthLabel, prompt, uncategorizedCount }: Props) {
+export default function BudgetAiPromptButton({
+  monthLabel,
+  prompt,
+  uncategorizedCount,
+}: Props) {
   return (
     <AiPromptDialog
       subject={monthLabel}

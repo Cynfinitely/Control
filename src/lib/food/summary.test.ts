@@ -42,9 +42,11 @@ describe("summarizeFoodRange", () => {
     expect(summary.totals.waterGlasses).toBe(5);
     expect(summary.days[0]?.underProtein).toBe(true);
     expect(summary.days[0]?.overCalories).toBe(false);
-    expect(summary.days.some((day) => day.entries.some((entry) => entry.name === "Outside meal"))).toBe(
-      false
-    );
-    expect(summary.days.filter((day) => !day.logged)).toHaveLength(6);
+    expect(
+      summary.days.some(day =>
+        day.entries.some(entry => entry.name === "Outside meal")
+      )
+    ).toBe(false);
+    expect(summary.days.filter(day => !day.logged)).toHaveLength(6);
   });
 });

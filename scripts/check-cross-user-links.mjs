@@ -44,13 +44,22 @@ function report(label, rows) {
 
 for (const [model, relation] of RELATIONS) {
   const rows = await prisma[model].findMany({
-    select: { id: true, userId: true, [relation]: { select: { id: true, userId: true } } },
+    select: {
+      id: true,
+      userId: true,
+      [relation]: { select: { id: true, userId: true } },
+    },
   });
   report(
     `${model}.${relation}`,
     rows
-      .filter((row) => row[relation] && row[relation].userId !== row.userId)
-      .map((row) => ({ id: row.id, userId: row.userId, linkedId: row[relation].id, linkedUserId: row[relation].userId }))
+      .filter(row => row[relation] && row[relation].userId !== row.userId)
+      .map(row => ({
+        id: row.id,
+        userId: row.userId,
+        linkedId: row[relation].id,
+        linkedUserId: row[relation].userId,
+      }))
   );
 }
 
@@ -61,15 +70,22 @@ for (const [model, linkType, target] of LINKS) {
   });
   if (rows.length === 0) continue;
   const targets = await prisma[target].findMany({
-    where: { id: { in: rows.map((row) => row.linkId) } },
+    where: { id: { in: rows.map(row => row.linkId) } },
     select: { id: true, userId: true },
   });
-  const owner = new Map(targets.map((t) => [t.id, t.userId]));
+  const owner = new Map(targets.map(t => [t.id, t.userId]));
   report(
     `${model} -> ${target} (${linkType})`,
     rows
-      .filter((row) => owner.has(row.linkId) && owner.get(row.linkId) !== row.userId)
-      .map((row) => ({ id: row.id, userId: row.userId, linkedId: row.linkId, linkedUserId: owner.get(row.linkId) }))
+      .filter(
+        row => owner.has(row.linkId) && owner.get(row.linkId) !== row.userId
+      )
+      .map(row => ({
+        id: row.id,
+        userId: row.userId,
+        linkedId: row.linkId,
+        linkedUserId: owner.get(row.linkId),
+      }))
   );
 }
 

@@ -24,7 +24,12 @@ const MEAL_TIMES: Record<string, { start: string; end: string }> = {
   "meal 2": { start: "18:30", end: "19:15" },
 };
 
-const PRAYER_SLOTS: { prayer: string; title: string; start: string; end: string }[] = [
+const PRAYER_SLOTS: {
+  prayer: string;
+  title: string;
+  start: string;
+  end: string;
+}[] = [
   { prayer: "fajr", title: "Fajr", start: "05:30", end: "06:00" },
   { prayer: "dhuhr", title: "Dhuhr", start: "13:00", end: "13:30" },
   { prayer: "asr", title: "Asr", start: "16:30", end: "17:00" },
@@ -43,7 +48,7 @@ function slotFits(
   startTime: string,
   endTime: string
 ): boolean {
-  return !existing.some((b) => blocksOverlap(b, { startTime, endTime }));
+  return !existing.some(b => blocksOverlap(b, { startTime, endTime }));
 }
 
 function nextFreeSlot(
@@ -63,7 +68,9 @@ function nextFreeSlot(
     start += 15;
   }
   const fallbackStart = formatMinutesToTime(Math.min(start, 22 * 60));
-  const fallbackEnd = formatMinutesToTime(Math.min(start + durationMinutes, 23 * 60 + 45));
+  const fallbackEnd = formatMinutesToTime(
+    Math.min(start + durationMinutes, 23 * 60 + 45)
+  );
   return { startTime: fallbackStart, endTime: fallbackEnd };
 }
 
@@ -72,7 +79,7 @@ function alreadyLinked(
   linkType: string,
   linkId: string
 ): boolean {
-  return existing.some((b) => b.linkType === linkType && b.linkId === linkId);
+  return existing.some(b => b.linkType === linkType && b.linkId === linkId);
 }
 
 export async function getPlanSuggestions(
@@ -103,23 +110,40 @@ export async function getPlanSuggestions(
       select: { id: true, name: true, meal: true },
     }),
     prisma.workout.count({
-      where: { userId, deletedAt: null, date: { gte: weekStart, lte: weekEnd } },
+      where: {
+        userId,
+        deletedAt: null,
+        date: { gte: weekStart, lte: weekEnd },
+      },
     }),
     prisma.planBlock.findMany({
       where: { userId, deletedAt: null, planDate: { gte: from, lte: to } },
-      select: { startTime: true, endTime: true, linkType: true, linkId: true, kind: true, title: true },
+      select: {
+        startTime: true,
+        endTime: true,
+        linkType: true,
+        linkId: true,
+        kind: true,
+        title: true,
+      },
     }),
   ]);
 
   const suggestions: PlanSuggestion[] = [];
-  const occupied: { startTime: string; endTime: string }[] = existingBlocks.map((b) => ({
-    startTime: b.startTime,
-    endTime: b.endTime,
-  }));
+  const occupied: { startTime: string; endTime: string }[] = existingBlocks.map(
+    b => ({
+      startTime: b.startTime,
+      endTime: b.endTime,
+    })
+  );
 
   for (const todo of todos) {
     const key = `todo:${todo.id}`;
-    if (dismissedKeys.includes(key) || alreadyLinked(existingBlocks, "todo", todo.id)) continue;
+    if (
+      dismissedKeys.includes(key) ||
+      alreadyLinked(existingBlocks, "todo", todo.id)
+    )
+      continue;
     const offset = PRIORITY_OFFSET[todo.priority] ?? 30;
     const slot = nextFreeSlot(occupied, formatMinutesToTime(540 + offset), 45);
     suggestions.push({
@@ -137,8 +161,13 @@ export async function getPlanSuggestions(
 
   for (const meal of meals) {
     const key = `meal:${meal.id}`;
-    if (dismissedKeys.includes(key) || alreadyLinked(existingBlocks, "meal", meal.id)) continue;
-    const mealSlot = MEAL_TIMES[(meal.meal ?? "").toLowerCase()] ?? MEAL_TIMES.lunch;
+    if (
+      dismissedKeys.includes(key) ||
+      alreadyLinked(existingBlocks, "meal", meal.id)
+    )
+      continue;
+    const mealSlot =
+      MEAL_TIMES[(meal.meal ?? "").toLowerCase()] ?? MEAL_TIMES.lunch;
     const slot = slotFits(occupied, mealSlot.start, mealSlot.end)
       ? { startTime: mealSlot.start, endTime: mealSlot.end }
       : nextFreeSlot(occupied, mealSlot.start, 45);
@@ -150,7 +179,9 @@ export async function getPlanSuggestions(
       kind: "meal",
       linkType: "meal",
       linkId: meal.id,
-      reason: meal.meal ? `Meal plan: ${displayMealLabel(meal.meal)}` : "Meal plan",
+      reason: meal.meal
+        ? `Meal plan: ${displayMealLabel(meal.meal)}`
+        : "Meal plan",
     });
     occupied.push(slot);
   }
@@ -158,7 +189,14 @@ export async function getPlanSuggestions(
   for (const prayer of PRAYER_SLOTS) {
     const key = `prayer:${prayer.prayer}`;
     if (dismissedKeys.includes(key)) continue;
-    if (existingBlocks.some((b) => b.kind === "prayer" && b.title.toLowerCase() === prayer.title.toLowerCase())) continue;
+    if (
+      existingBlocks.some(
+        b =>
+          b.kind === "prayer" &&
+          b.title.toLowerCase() === prayer.title.toLowerCase()
+      )
+    )
+      continue;
     const slot = slotFits(occupied, prayer.start, prayer.end)
       ? { startTime: prayer.start, endTime: prayer.end }
       : nextFreeSlot(occupied, prayer.start, 30);
@@ -174,7 +212,7 @@ export async function getPlanSuggestions(
   }
 
   if (workoutsThisWeek === 0 && !dismissedKeys.includes("workout:generic")) {
-    const hasWorkout = existingBlocks.some((b) => b.kind === "workout");
+    const hasWorkout = existingBlocks.some(b => b.kind === "workout");
     if (!hasWorkout) {
       const slot = nextFreeSlot(occupied, "07:00", 60);
       suggestions.push({

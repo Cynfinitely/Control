@@ -1,8 +1,8 @@
 export const QURAN_TOTAL_PAGES = 604;
 
 const JUZ_STARTS = [
-  1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302, 322, 342, 362, 382, 402,
-  422, 442, 462, 482, 502, 522, 542, 562, 582,
+  1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302, 322,
+  342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
 ] as const;
 
 export function clampPage(page: number): number {
@@ -44,7 +44,12 @@ export function advanceBookmark({
   const start = clampPage(currentPage);
   const khatms = Math.max(0, Math.floor(khatmsCompleted));
   if (!Number.isFinite(pagesRead) || pagesRead <= 0) {
-    return { currentPage: start, khatmsCompleted: khatms, fromPage: start, toPage: start };
+    return {
+      currentPage: start,
+      khatmsCompleted: khatms,
+      fromPage: start,
+      toPage: start,
+    };
   }
 
   let page = start;

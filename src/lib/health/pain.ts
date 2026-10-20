@@ -15,7 +15,8 @@ export const DURATION_PRESETS: DurationPreset[] = [
 
 const TONE_BY_BAND: Record<PainBand, string> = {
   mild: "bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100",
-  moderate: "bg-orange-300 text-orange-950 dark:bg-orange-800 dark:text-orange-100",
+  moderate:
+    "bg-orange-300 text-orange-950 dark:bg-orange-800 dark:text-orange-100",
   severe: "bg-rose-400 text-rose-950 dark:bg-rose-800 dark:text-rose-100",
 };
 
@@ -37,7 +38,7 @@ export function monthMigraineStats(logs: { pain: number }[]) {
     return { migraineDays: 0, averagePain: 0, severeDays: 0 };
   }
   const totalPain = logs.reduce((sum, log) => sum + log.pain, 0);
-  const severeDays = logs.filter((log) => log.pain >= 7).length;
+  const severeDays = logs.filter(log => log.pain >= 7).length;
   return {
     migraineDays,
     averagePain: totalPain / migraineDays,

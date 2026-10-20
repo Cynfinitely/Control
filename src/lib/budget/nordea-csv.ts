@@ -54,9 +54,22 @@ const COUNTERPARTY_ALIASES = [
 
 const SENDER_ALIASES = ["sender", "avsändare", "avsandare"];
 
-const MESSAGE_ALIASES = ["message", "viesti", "meddelande", "memo", "description", "text"];
+const MESSAGE_ALIASES = [
+  "message",
+  "viesti",
+  "meddelande",
+  "memo",
+  "description",
+  "text",
+];
 
-const EVENT_ALIASES = ["event type", "tapahtumatyyppi", "tapahtuma", "transaktion", "payment type"];
+const EVENT_ALIASES = [
+  "event type",
+  "tapahtumatyyppi",
+  "tapahtuma",
+  "transaktion",
+  "payment type",
+];
 
 function stripBom(text: string): string {
   return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
@@ -107,11 +120,11 @@ function normalizeHeader(h: string): string {
 
 function findColumn(headers: string[], aliases: string[]): number {
   for (const alias of aliases) {
-    const idx = headers.findIndex((h) => h === alias);
+    const idx = headers.findIndex(h => h === alias);
     if (idx >= 0) return idx;
   }
   for (const alias of aliases) {
-    const idx = headers.findIndex((h) => h.includes(alias));
+    const idx = headers.findIndex(h => h.includes(alias));
     if (idx >= 0) return idx;
   }
   return -1;
@@ -119,8 +132,8 @@ function findColumn(headers: string[], aliases: string[]): number {
 
 function looksLikeHeader(cells: string[]): boolean {
   const joined = cells.map(normalizeHeader).join("|");
-  const hasDate = DATE_ALIASES.some((a) => joined.includes(a));
-  const hasAmount = AMOUNT_ALIASES.some((a) => joined.includes(a));
+  const hasDate = DATE_ALIASES.some(a => joined.includes(a));
+  const hasAmount = AMOUNT_ALIASES.some(a => joined.includes(a));
   return hasDate && hasAmount;
 }
 
@@ -154,7 +167,11 @@ export function resolveNordeaLabel(parts: {
 }
 
 export function parseNordeaAmount(raw: string): number | null {
-  const cleaned = raw.trim().replace(/\s/g, "").replace(/€/g, "").replace(/EUR/gi, "");
+  const cleaned = raw
+    .trim()
+    .replace(/\s/g, "")
+    .replace(/€/g, "")
+    .replace(/EUR/gi, "");
   if (!cleaned || cleaned === "-" || cleaned === "+") return null;
 
   // Finnish: 1.234,56 or -12,50 ; also 1234.56
@@ -232,7 +249,9 @@ export function parseNordeaCsv(content: string): NordeaParseResult {
   const eventIdx = findColumn(headers, EVENT_ALIASES);
 
   if (dateIdx < 0 || amountIdx < 0) {
-    throw new NordeaParseError("Nordea file is missing required date or amount columns.");
+    throw new NordeaParseError(
+      "Nordea file is missing required date or amount columns."
+    );
   }
 
   const transactions: ParsedNordeaTx[] = [];
@@ -247,14 +266,21 @@ export function parseNordeaCsv(content: string): NordeaParseResult {
     const cells = splitLine(line, delimiter);
     const dateRaw = cells[dateIdx] ?? "";
     const amountRaw = cells[amountIdx] ?? "";
-    const name = nameIdx >= 0 ? cells[nameIdx] ?? "" : "";
-    const title = titleIdx >= 0 ? cells[titleIdx] ?? "" : "";
-    const recipient = recipientIdx >= 0 ? cells[recipientIdx] ?? "" : "";
-    const sender = senderIdx >= 0 ? cells[senderIdx] ?? "" : "";
-    const message = messageIdx >= 0 ? cells[messageIdx] ?? "" : "";
-    const eventType = eventIdx >= 0 ? cells[eventIdx] ?? "" : "";
+    const name = nameIdx >= 0 ? (cells[nameIdx] ?? "") : "";
+    const title = titleIdx >= 0 ? (cells[titleIdx] ?? "") : "";
+    const recipient = recipientIdx >= 0 ? (cells[recipientIdx] ?? "") : "";
+    const sender = senderIdx >= 0 ? (cells[senderIdx] ?? "") : "";
+    const message = messageIdx >= 0 ? (cells[messageIdx] ?? "") : "";
+    const eventType = eventIdx >= 0 ? (cells[eventIdx] ?? "") : "";
 
-    const label = resolveNordeaLabel({ name, title, recipient, sender, message, eventType });
+    const label = resolveNordeaLabel({
+      name,
+      title,
+      recipient,
+      sender,
+      message,
+      eventType,
+    });
 
     // Skip reserved/pending style rows
     const joined = `${label} ${message} ${eventType}`.toLowerCase();
@@ -274,7 +300,11 @@ export function parseNordeaCsv(content: string): NordeaParseResult {
     const amountCents = Math.abs(signedCents);
     const rawDescription = label || "Nordea transaction";
     const merchantKey = merchantKeyFromParts(rawDescription);
-    const baseFingerprint = importFingerprint(date, signedCents, rawDescription);
+    const baseFingerprint = importFingerprint(
+      date,
+      signedCents,
+      rawDescription
+    );
     const occurrence = seenFingerprints.get(baseFingerprint) ?? 0;
     seenFingerprints.set(baseFingerprint, occurrence + 1);
     const fingerprint =

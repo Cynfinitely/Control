@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import EmptyState from "@/components/EmptyState";
@@ -10,22 +10,52 @@ type Props = {
   items: InspirationItem[];
 };
 
-function pickRandom(items: InspirationItem[], excludeId?: string): InspirationItem {
-  const pool = excludeId && items.length > 1 ? items.filter((i) => i.id !== excludeId) : items;
+function pickRandom(
+  items: InspirationItem[],
+  excludeId?: string
+): InspirationItem {
+  const pool =
+    excludeId && items.length > 1
+      ? items.filter(i => i.id !== excludeId)
+      : items;
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// The pick lives outside React so render stays pure: one random pick per
+// `items` array (a fresh array arrives on each visit), replaced on shuffle.
+const picks = new WeakMap<InspirationItem[], InspirationItem>();
+const pickListeners = new Set<() => void>();
+
+function subscribePicks(listener: () => void) {
+  pickListeners.add(listener);
+  return () => {
+    pickListeners.delete(listener);
+  };
+}
+
+function currentPick(items: InspirationItem[]): InspirationItem | null {
+  if (items.length === 0) return null;
+  let pick = picks.get(items);
+  if (!pick) {
+    pick = pickRandom(items);
+    picks.set(items, pick);
+  }
+  return pick;
 }
 
 /** A random saved inspiration. The card reserves its height so the quote doesn't shift the page in. */
 export default function InspirationSpotlight({ items }: Props) {
-  const [current, setCurrent] = useState<InspirationItem | null>(null);
-
-  useEffect(() => {
-    setCurrent(items.length > 0 ? pickRandom(items) : null);
-  }, [items]);
+  // Null on the server so the random pick never causes a hydration mismatch.
+  const current = useSyncExternalStore(
+    subscribePicks,
+    () => currentPick(items),
+    () => null
+  );
 
   const shuffle = useCallback(() => {
     if (items.length === 0) return;
-    setCurrent((prev) => pickRandom(items, prev?.id));
+    picks.set(items, pickRandom(items, picks.get(items)?.id));
+    pickListeners.forEach(listener => listener());
   }, [items]);
 
   if (items.length === 0) {
@@ -45,15 +75,25 @@ export default function InspirationSpotlight({ items }: Props) {
   }
 
   return (
-    <section className="card flex min-h-[9.5rem] items-start gap-3" aria-label="Inspiration">
-      <Icon name="sparkles" className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
+    <section
+      className="card flex min-h-[9.5rem] items-start gap-3"
+      aria-label="Inspiration"
+    >
+      <Icon
+        name="sparkles"
+        className="mt-0.5 h-5 w-5 shrink-0 text-brand-500"
+      />
       <div className="flex min-w-0 flex-1 flex-col self-stretch">
         {current ? (
           <figure aria-live="polite">
             <blockquote className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
               &ldquo;{current.text}&rdquo;
             </blockquote>
-            {current.author && <figcaption className="mt-1 text-xs text-muted">— {current.author}</figcaption>}
+            {current.author && (
+              <figcaption className="mt-1 text-xs text-muted">
+                — {current.author}
+              </figcaption>
+            )}
           </figure>
         ) : (
           <div aria-hidden="true" className="space-y-2">
@@ -64,11 +104,18 @@ export default function InspirationSpotlight({ items }: Props) {
         )}
         <div className="mt-auto flex flex-wrap gap-2 pt-3">
           {items.length > 1 && (
-            <button type="button" onClick={shuffle} className="btn-ghost btn-sm min-h-[40px]">
+            <button
+              type="button"
+              onClick={shuffle}
+              className="btn-ghost btn-sm min-h-[40px]"
+            >
               Another
             </button>
           )}
-          <Link href="/dashboard/inspirations" className="btn-ghost btn-sm min-h-[40px]">
+          <Link
+            href="/dashboard/inspirations"
+            className="btn-ghost btn-sm min-h-[40px]"
+          >
             Manage
           </Link>
         </div>

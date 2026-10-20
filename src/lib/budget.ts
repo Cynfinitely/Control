@@ -26,7 +26,9 @@ export function eurosToCents(euros: number): number {
   return Math.round(euros * 100);
 }
 
-export function parseAmountToCents(value: FormDataEntryValue | null): number | null {
+export function parseAmountToCents(
+  value: FormDataEntryValue | null
+): number | null {
   if (value === null || String(value).trim() === "") return null;
   const normalized = String(value).trim().replace(",", ".");
   const euros = Number(normalized);
@@ -92,7 +94,10 @@ export function computePeriodTotals(
   };
 }
 
-export function computeSavingsRate(incomeCents: number, expenseCents: number): number | null {
+export function computeSavingsRate(
+  incomeCents: number,
+  expenseCents: number
+): number | null {
   if (incomeCents <= 0) return null;
   return Math.round(((incomeCents - expenseCents) / incomeCents) * 100);
 }
@@ -102,29 +107,3 @@ export type CategoryBreakdown = {
   name: string;
   totalCents: number;
 };
-
-export function expenseBreakdownByCategory(
-  transactions: BudgetTxRow[],
-  categories: { id: string; name: string }[],
-  from: Date,
-  to: Date
-): CategoryBreakdown[] {
-  const totals = new Map<string, number>();
-  for (const tx of transactions) {
-    if (tx.deletedAt || tx.type !== "expense") continue;
-    const day = startOfDay(tx.date).getTime();
-    if (day < startOfDay(from).getTime() || day > startOfDay(to).getTime()) continue;
-    const catId = tx.categoryId;
-    if (!catId) continue;
-    totals.set(catId, (totals.get(catId) ?? 0) + tx.amountCents);
-  }
-
-  return categories
-    .map((cat) => ({
-      categoryId: cat.id,
-      name: cat.name,
-      totalCents: totals.get(cat.id) ?? 0,
-    }))
-    .filter((row) => row.totalCents > 0)
-    .sort((a, b) => b.totalCents - a.totalCents);
-}

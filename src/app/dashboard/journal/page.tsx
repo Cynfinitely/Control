@@ -9,18 +9,19 @@ import JournalForm from "./JournalForm";
 
 export const metadata = { title: "Journal" };
 
-export default async function JournalPage({
-  searchParams,
-}: {
-  searchParams: { day?: string; focus?: string };
+export default async function JournalPage(props: {
+  searchParams: Promise<{ day?: string; focus?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("journal");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
 
   const entry = await prisma.journalEntry.findUnique({
-    where: { userId_date: { userId: user.id, date: new Date(dayValue + "T00:00:00") } },
+    where: {
+      userId_date: { userId: user.id, date: new Date(dayValue + "T00:00:00") },
+    },
   });
 
   const initial = {
@@ -32,18 +33,37 @@ export default async function JournalPage({
 
   return (
     <div>
-      <PageHeader help="journal"
+      <PageHeader
+        help="journal"
         title="Journal"
         description="Daily reflection — mood, wins, blockers, and notes."
       />
 
       <div className="mb-6">
-        <DayNavigator basePath="/dashboard/journal" dayValue={dayValue} dayLabel={dayLabel} />
+        <DayNavigator
+          basePath="/dashboard/journal"
+          dayValue={dayValue}
+          dayLabel={dayLabel}
+        />
       </div>
 
-      <Suspense fallback={<JournalForm key={dayValue} dayValue={dayValue} dayLabel={dayLabel} initial={initial} />}>
+      <Suspense
+        fallback={
+          <JournalForm
+            key={dayValue}
+            dayValue={dayValue}
+            dayLabel={dayLabel}
+            initial={initial}
+          />
+        }
+      >
         <FocusTarget>
-          <JournalForm key={dayValue} dayValue={dayValue} dayLabel={dayLabel} initial={initial} />
+          <JournalForm
+            key={dayValue}
+            dayValue={dayValue}
+            dayLabel={dayLabel}
+            initial={initial}
+          />
         </FocusTarget>
       </Suspense>
     </div>

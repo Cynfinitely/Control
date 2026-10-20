@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
+import { useIsMac } from "@/lib/use-client-store";
 import clsx from "clsx";
 import { visibleNavSections, type NavItem } from "@/lib/nav";
 import type { ModuleId } from "@/lib/modules";
@@ -13,7 +14,8 @@ import NotificationBell from "@/components/NotificationBell";
 import { openCommandPalette } from "@/components/CommandPalette";
 import { ThemeQuickToggle } from "@/components/ThemeProvider";
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export default function Sidebar({
   name,
@@ -30,20 +32,19 @@ export default function Sidebar({
   const [open, setOpen] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const [isMac, setIsMac] = useState(true);
-
-  useEffect(() => {
-    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
-  }, []);
+  const isMac = useIsMac();
 
   // Close the drawer whenever the route changes.
-  useEffect(() => {
+  const [drawerPathname, setDrawerPathname] = useState(pathname);
+  if (drawerPathname !== pathname) {
+    setDrawerPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (!open) return;
     const drawer = drawerRef.current;
+    const menuButton = menuButtonRef.current;
     drawer?.querySelector<HTMLElement>("[data-drawer-close]")?.focus();
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -55,9 +56,9 @@ export default function Sidebar({
       }
       // Keep Tab focus inside the open drawer.
       if (e.key === "Tab" && drawer) {
-        const nodes = Array.from(drawer.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-          (el) => el.offsetParent !== null
-        );
+        const nodes = Array.from(
+          drawer.querySelectorAll<HTMLElement>(FOCUSABLE)
+        ).filter(el => el.offsetParent !== null);
         if (nodes.length === 0) return;
         const first = nodes[0];
         const last = nodes[nodes.length - 1];
@@ -74,12 +75,14 @@ export default function Sidebar({
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
-      menuButtonRef.current?.focus();
+      menuButton?.focus();
     };
   }, [open]);
 
   function isActive(href: string) {
-    return href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+    return href === "/dashboard"
+      ? pathname === "/dashboard"
+      : pathname.startsWith(href);
   }
 
   function renderNavLink(item: NavItem) {
@@ -105,7 +108,13 @@ export default function Sidebar({
 
   const navSections = visibleNavSections(disabledModules);
   const sections = isAdmin
-    ? [...navSections, { title: "Admin", items: [{ href: "/dashboard/admin", label: "Admin", icon: "users" }] }]
+    ? [
+        ...navSections,
+        {
+          title: "Admin",
+          items: [{ href: "/dashboard/admin", label: "Admin", icon: "users" }],
+        },
+      ]
     : navSections;
 
   return (
@@ -124,7 +133,12 @@ export default function Sidebar({
         </button>
         <Logo href="/dashboard" variant="mark" className="h-9 w-9" />
         <div className="ml-auto flex items-center">
-          <button type="button" onClick={openCommandPalette} className="btn-icon" aria-label="Search">
+          <button
+            type="button"
+            onClick={openCommandPalette}
+            className="btn-icon"
+            aria-label="Search"
+          >
             <Icon name="search" className="h-5 w-5" />
           </button>
           <NotificationBell align="right" />
@@ -132,7 +146,11 @@ export default function Sidebar({
       </header>
 
       {open && (
-        <div className="fixed inset-0 z-40 bg-slate-900/40 md:hidden" aria-hidden="true" onClick={() => setOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/40 md:hidden"
+          aria-hidden="true"
+          onClick={() => setOpen(false)}
+        />
       )}
 
       <aside
@@ -145,7 +163,9 @@ export default function Sidebar({
           "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-slate-200 bg-white duration-200 dark:border-slate-700 dark:bg-slate-900",
           "md:sticky md:top-0 md:z-auto md:h-screen md:w-60 md:translate-x-0 md:visible",
           // Visible immediately on open (so focus can move in); hidden only after the slide-out.
-          open ? "visible translate-x-0 transition-transform" : "invisible -translate-x-full transition-[transform,visibility]"
+          open
+            ? "visible translate-x-0 transition-transform"
+            : "invisible -translate-x-full transition-[transform,visibility]"
         )}
       >
         <div className="flex items-center justify-between gap-2 px-4 pb-3 pt-4">
@@ -181,12 +201,15 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-3" aria-label="Main navigation">
-          {sections.map((section) => (
+        <nav
+          className="flex-1 overflow-y-auto px-3 pb-3"
+          aria-label="Main navigation"
+        >
+          {sections.map(section => (
             <div key={section.title} className="mt-3 first:mt-1">
               <h2 className="eyebrow mb-1 px-3">{section.title}</h2>
               <div className="space-y-0.5">
-                {section.items.map((item) => renderNavLink(item))}
+                {section.items.map(item => renderNavLink(item))}
               </div>
             </div>
           ))}
@@ -195,8 +218,12 @@ export default function Sidebar({
         <div className="border-t border-slate-200 p-3 dark:border-slate-700">
           <div className="mb-2 flex items-center gap-2 px-1">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">{name}</p>
-              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{email}</p>
+              <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
+                {name}
+              </p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                {email}
+              </p>
             </div>
             <ThemeQuickToggle />
           </div>
@@ -204,7 +231,9 @@ export default function Sidebar({
             <Link
               href="/dashboard/settings"
               prefetch={false}
-              aria-current={pathname.startsWith("/dashboard/settings") ? "page" : undefined}
+              aria-current={
+                pathname.startsWith("/dashboard/settings") ? "page" : undefined
+              }
               className={clsx(
                 "btn-ghost btn-sm min-h-[40px]",
                 pathname.startsWith("/dashboard/settings") &&

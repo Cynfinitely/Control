@@ -12,9 +12,16 @@ import {
 
 describe("review steps", () => {
   it("has unique, stable ids", () => {
-    const ids = REVIEW_STEPS.map((s) => s.id);
+    const ids = REVIEW_STEPS.map(s => s.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toEqual(["inbox", "goals", "prayers", "spending", "people", "plan-ahead"]);
+    expect(ids).toEqual([
+      "inbox",
+      "goals",
+      "prayers",
+      "spending",
+      "people",
+      "plan-ahead",
+    ]);
   });
 
   it("recognises step ids", () => {
@@ -32,13 +39,18 @@ describe("parseCompletedSteps", () => {
   });
 
   it("drops unknown ids, blanks and whitespace", () => {
-    expect([...parseCompletedSteps(" goals, ,bogus,inbox,goals ")]).toEqual(["goals", "inbox"]);
+    expect([...parseCompletedSteps(" goals, ,bogus,inbox,goals ")]).toEqual([
+      "goals",
+      "inbox",
+    ]);
   });
 });
 
 describe("serializeCompletedSteps", () => {
   it("orders by step order and de-duplicates", () => {
-    expect(serializeCompletedSteps(["people", "inbox", "people", "x"])).toBe("inbox,people");
+    expect(serializeCompletedSteps(["people", "inbox", "people", "x"])).toBe(
+      "inbox,people"
+    );
     expect(serializeCompletedSteps([])).toBe("");
   });
 
@@ -63,11 +75,14 @@ describe("toggleCompletedStep", () => {
 
 describe("progress and completion", () => {
   it("counts known steps only", () => {
-    expect(reviewProgress(["inbox", "x"])).toEqual({ done: 1, total: REVIEW_STEPS.length });
+    expect(reviewProgress(["inbox", "x"])).toEqual({
+      done: 1,
+      total: REVIEW_STEPS.length,
+    });
   });
 
   it("is complete only when every step is done", () => {
-    const all = REVIEW_STEPS.map((s) => s.id);
+    const all = REVIEW_STEPS.map(s => s.id);
     expect(isReviewComplete(all)).toBe(true);
     expect(isReviewComplete(all.join(","))).toBe(true);
     expect(isReviewComplete(all.slice(1))).toBe(false);

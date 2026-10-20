@@ -5,8 +5,16 @@ import { prisma } from "@/lib/db";
 import { getUserId, str } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay } from "@/lib/date";
-import { PRINCIPLE_CATEGORY_ORDER, type PrincipleCategory } from "@/lib/principles/seed";
-import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import {
+  PRINCIPLE_CATEGORY_ORDER,
+  type PrincipleCategory,
+} from "@/lib/principles/seed";
+import {
+  success,
+  failure,
+  wrapFormAction,
+  type ActionResult,
+} from "@/lib/action-result";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "principles", "dashboard");
@@ -21,7 +29,9 @@ function parseCategory(raw: string | null): PrincipleCategory | null {
     : null;
 }
 
-export async function createPrinciple(formData: FormData): Promise<ActionResult> {
+export async function createPrinciple(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const text = str(formData.get("text"));
   const category = parseCategory(str(formData.get("category")));
@@ -41,7 +51,9 @@ export async function createPrinciple(formData: FormData): Promise<ActionResult>
   return success("Principle added");
 }
 
-export async function updatePrinciple(formData: FormData): Promise<ActionResult> {
+export async function updatePrinciple(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const text = str(formData.get("text"));
@@ -59,7 +71,9 @@ export async function updatePrinciple(formData: FormData): Promise<ActionResult>
   return success("Principle updated");
 }
 
-export async function archivePrinciple(formData: FormData): Promise<ActionResult> {
+export async function archivePrinciple(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid principle");
@@ -73,7 +87,9 @@ export async function archivePrinciple(formData: FormData): Promise<ActionResult
   return success("Principle archived");
 }
 
-export async function markPrinciplesReviewed(_formData: FormData): Promise<ActionResult> {
+export async function markPrinciplesReviewed(
+  _formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const date = startOfDay(new Date());
 
@@ -86,9 +102,14 @@ export async function markPrinciplesReviewed(_formData: FormData): Promise<Actio
   return success("Marked as reviewed");
 }
 
-export const createPrincipleForm = wrapFormAction(createPrinciple, "Principle added");
-export const updatePrincipleForm = wrapFormAction(updatePrinciple, "Principle updated");
-export const archivePrincipleForm = wrapFormAction(archivePrinciple, "Principle archived");
+export const createPrincipleForm = wrapFormAction(
+  createPrinciple,
+  "Principle added"
+);
+export const updatePrincipleForm = wrapFormAction(
+  updatePrinciple,
+  "Principle updated"
+);
 export const markPrinciplesReviewedForm = wrapFormAction(
   markPrinciplesReviewed,
   "Marked as reviewed"

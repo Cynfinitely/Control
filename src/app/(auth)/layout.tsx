@@ -8,7 +8,10 @@ export default function AuthLayout({
 }) {
   return (
     <Providers>
-      <main id="main-content" className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10 dark:bg-slate-900">
+      <main
+        id="main-content"
+        className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10 dark:bg-slate-900"
+      >
         <div className="w-full max-w-md">
           <div className="mb-6 flex flex-col items-center text-center">
             <div className="rounded-xl bg-white px-6 py-4 shadow-sm dark:bg-slate-800">

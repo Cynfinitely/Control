@@ -42,7 +42,7 @@ export default function CollapsibleSection({
       id={id}
       className={clsx("group", isCard && "card p-0", className)}
       open={open}
-      onToggle={(event) => {
+      onToggle={event => {
         const next = event.currentTarget.open;
         if (next !== open) setOpen(next);
       }}
@@ -58,28 +58,50 @@ export default function CollapsibleSection({
         {isCard ? (
           <Icon
             name={icon ?? "plus"}
-            className={clsx("h-4 w-4 shrink-0 transition-transform", !icon && open && "rotate-45")}
+            className={clsx(
+              "h-4 w-4 shrink-0 transition-transform",
+              !icon && open && "rotate-45"
+            )}
           />
         ) : (
           <Icon
             name="chevronDown"
-            className={clsx("h-4 w-4 shrink-0 text-slate-500 transition-transform", open && "rotate-180")}
+            className={clsx(
+              "h-4 w-4 shrink-0 text-slate-500 transition-transform",
+              open && "rotate-180"
+            )}
           />
         )}
-        <Heading className={clsx(as ? "text-base font-semibold" : "font-medium")}>{title}</Heading>
+        <Heading
+          className={clsx(as ? "text-base font-semibold" : "font-medium")}
+        >
+          {title}
+        </Heading>
         {count !== undefined && (
-          <span className="badge-muted tabular-nums" aria-label={`${count} items`}>
+          <span
+            className="badge-muted tabular-nums"
+            aria-label={`${count} items`}
+          >
             {count}
           </span>
         )}
         {isCard && (
           <Icon
             name="chevronDown"
-            className={clsx("ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform", open && "rotate-180")}
+            className={clsx(
+              "ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform",
+              open && "rotate-180"
+            )}
           />
         )}
       </summary>
-      <div className={clsx(isCard ? "border-t border-slate-100 px-5 pb-5 pt-4 dark:border-slate-700" : "mt-3")}>
+      <div
+        className={clsx(
+          isCard
+            ? "border-t border-slate-100 px-5 pb-5 pt-4 dark:border-slate-700"
+            : "mt-3"
+        )}
+      >
         {children}
       </div>
     </details>

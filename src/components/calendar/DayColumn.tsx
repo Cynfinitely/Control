@@ -1,7 +1,11 @@
 "use client";
 
 import type { EventOccurrence } from "@/lib/calendar/types";
-import { dayKey, formatOccurrenceTime, occurrenceDayKey } from "@/lib/calendar/format";
+import {
+  dayKey,
+  formatOccurrenceTime,
+  occurrenceDayKey,
+} from "@/lib/calendar/format";
 import EmptyState from "@/components/EmptyState";
 import Icon from "@/components/Icon";
 
@@ -27,8 +31,12 @@ export default function DayColumn({
   onCreate,
 }: Props) {
   const key = dayKey(day);
-  const dayOccs = occurrences.filter((o) => occurrenceDayKey(o.startsAt, timezone) === key);
-  const dayRems = reminders.filter((r) => occurrenceDayKey(r.remindAt, timezone) === key);
+  const dayOccs = occurrences.filter(
+    o => occurrenceDayKey(o.startsAt, timezone) === key
+  );
+  const dayRems = reminders.filter(
+    r => occurrenceDayKey(r.remindAt, timezone) === key
+  );
 
   if (dayOccs.length === 0 && dayRems.length === 0) {
     return (
@@ -44,7 +52,7 @@ export default function DayColumn({
 
   return (
     <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
-      {dayOccs.map((occ) => (
+      {dayOccs.map(occ => (
         <li key={`${occ.eventId}-${occ.originalStartsAt.toISOString()}`}>
           <button
             type="button"
@@ -52,17 +60,30 @@ export default function DayColumn({
             className="flex w-full items-start gap-4 px-4 py-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-700/40"
           >
             <span className="w-24 shrink-0 pt-0.5 text-sm font-medium tabular-nums text-brand-700 dark:text-brand-300">
-              {formatOccurrenceTime(occ.startsAt, occ.endsAt, occ.allDay, timezone)}
+              {formatOccurrenceTime(
+                occ.startsAt,
+                occ.endsAt,
+                occ.allDay,
+                timezone
+              )}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-medium text-slate-900 dark:text-slate-100">{occ.title}</span>
-              {occ.location && <span className="block text-sm text-slate-600 dark:text-slate-400">{occ.location}</span>}
+              <span className="block font-medium text-slate-900 dark:text-slate-100">
+                {occ.title}
+              </span>
+              {occ.location && (
+                <span className="block text-sm text-slate-600 dark:text-slate-400">
+                  {occ.location}
+                </span>
+              )}
             </span>
-            {occ.isRecurring && <span className="badge-muted shrink-0">Repeats</span>}
+            {occ.isRecurring && (
+              <span className="badge-muted shrink-0">Repeats</span>
+            )}
           </button>
         </li>
       ))}
-      {dayRems.map((r) => (
+      {dayRems.map(r => (
         <li key={`${r.id}-${r.remindAt.toISOString()}`}>
           <button
             type="button"
@@ -71,9 +92,15 @@ export default function DayColumn({
           >
             <span className="flex w-24 shrink-0 items-center gap-1.5 pt-0.5 text-sm font-medium tabular-nums text-amber-700 dark:text-amber-300">
               <Icon name="bell" className="h-4 w-4" />
-              {r.remindAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: timezone })}
+              {r.remindAt.toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: timezone,
+              })}
             </span>
-            <span className="min-w-0 flex-1 font-medium text-slate-900 dark:text-slate-100">{r.title}</span>
+            <span className="min-w-0 flex-1 font-medium text-slate-900 dark:text-slate-100">
+              {r.title}
+            </span>
             <span className="badge-warning shrink-0">Reminder</span>
           </button>
         </li>

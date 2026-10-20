@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
-import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import {
+  success,
+  failure,
+  wrapFormAction,
+  type ActionResult,
+} from "@/lib/action-result";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "inspirations", "dashboard");
@@ -12,7 +17,9 @@ function invalidate(userId: string) {
   revalidatePath("/dashboard");
 }
 
-export async function createInspiration(formData: FormData): Promise<ActionResult> {
+export async function createInspiration(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const text = str(formData.get("text"));
   if (!text) return failure("Text is required");
@@ -23,7 +30,9 @@ export async function createInspiration(formData: FormData): Promise<ActionResul
   return success("Inspiration added");
 }
 
-export async function updateInspiration(formData: FormData): Promise<ActionResult> {
+export async function updateInspiration(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const text = str(formData.get("text"));
@@ -38,7 +47,9 @@ export async function updateInspiration(formData: FormData): Promise<ActionResul
   return success("Inspiration updated");
 }
 
-export async function deleteInspiration(formData: FormData): Promise<ActionResult> {
+export async function deleteInspiration(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid inspiration");
@@ -48,6 +59,7 @@ export async function deleteInspiration(formData: FormData): Promise<ActionResul
   return success("Inspiration deleted");
 }
 
-export const createInspirationForm = wrapFormAction(createInspiration, "Inspiration added");
-export const updateInspirationForm = wrapFormAction(updateInspiration, "Inspiration updated");
-export const deleteInspirationForm = wrapFormAction(deleteInspiration, "Inspiration deleted");
+export const createInspirationForm = wrapFormAction(
+  createInspiration,
+  "Inspiration added"
+);

@@ -5,22 +5,38 @@ import clsx from "clsx";
 import FormAction from "@/components/FormAction";
 import SubmitButton from "@/components/SubmitButton";
 import Icon from "@/components/Icon";
-import { FOOD_MODES, FOOD_MODE_INFO, MEAL_LABEL_PRESETS, type FoodMode } from "@/lib/food/meals";
+import {
+  FOOD_MODES,
+  FOOD_MODE_INFO,
+  MEAL_LABEL_PRESETS,
+  type FoodMode,
+} from "@/lib/food/meals";
 import { saveFoodPreferencesForm } from "../actions";
 
-export default function FoodPreferencesForm({ mode, mealLabels }: { mode: FoodMode; mealLabels: string[] }) {
+export default function FoodPreferencesForm({
+  mode,
+  mealLabels,
+}: {
+  mode: FoodMode;
+  mealLabels: string[];
+}) {
   const [selectedMode, setSelectedMode] = useState<FoodMode>(mode);
   const [labels, setLabels] = useState(mealLabels.join("\n"));
 
   return (
-    <FormAction action={saveFoodPreferencesForm} successMessage="Preferences saved" className="card space-y-6">
+    <FormAction
+      action={saveFoodPreferencesForm}
+      successMessage="Preferences saved"
+      className="card space-y-6"
+    >
       <fieldset>
         <legend className="section-title mb-1">Mode</legend>
         <p className="mb-3 text-sm text-muted">
-          Modes only change what the diary emphasizes. Everything you log is kept either way.
+          Modes only change what the diary emphasizes. Everything you log is
+          kept either way.
         </p>
         <div className="grid gap-2 sm:grid-cols-3">
-          {FOOD_MODES.map((m) => (
+          {FOOD_MODES.map(m => (
             <label
               key={m}
               className={clsx(
@@ -40,7 +56,9 @@ export default function FoodPreferencesForm({ mode, mealLabels }: { mode: FoodMo
                     : "border-slate-300 dark:border-slate-500"
                 )}
               >
-                {selectedMode === m && <Icon name="check" className="h-3 w-3" />}
+                {selectedMode === m && (
+                  <Icon name="check" className="h-3 w-3" />
+                )}
               </span>
               <input
                 type="radio"
@@ -50,11 +68,17 @@ export default function FoodPreferencesForm({ mode, mealLabels }: { mode: FoodMo
                 onChange={() => setSelectedMode(m)}
                 className="sr-only"
               />
-              <span className="block font-medium text-slate-800 dark:text-slate-100">{FOOD_MODE_INFO[m].label}</span>
+              <span className="block font-medium text-slate-800 dark:text-slate-100">
+                {FOOD_MODE_INFO[m].label}
+              </span>
               <span className="mt-1 block text-xs text-slate-600 dark:text-slate-400">
                 {FOOD_MODE_INFO[m].description}
               </span>
-              {selectedMode === m && <span className="mt-2 block text-xs font-semibold text-brand-700 dark:text-brand-300">Selected</span>}
+              {selectedMode === m && (
+                <span className="mt-2 block text-xs font-semibold text-brand-700 dark:text-brand-300">
+                  Selected
+                </span>
+              )}
             </label>
           ))}
         </div>
@@ -65,11 +89,12 @@ export default function FoodPreferencesForm({ mode, mealLabels }: { mode: FoodMo
           Meal labels
         </label>
         <p id="meal-labels-hint" className="mb-3 text-sm text-muted">
-          One per line. Use whatever matches how you actually eat. Past entries keep their label.
+          One per line. Use whatever matches how you actually eat. Past entries
+          keep their label.
         </p>
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted">Fill with a preset:</span>
-          {MEAL_LABEL_PRESETS.map((preset) => (
+          {MEAL_LABEL_PRESETS.map(preset => (
             <button
               key={preset.id}
               type="button"
@@ -87,11 +112,13 @@ export default function FoodPreferencesForm({ mode, mealLabels }: { mode: FoodMo
           rows={4}
           className="input"
           value={labels}
-          onChange={(e) => setLabels(e.target.value)}
+          onChange={e => setLabels(e.target.value)}
         />
       </div>
 
-      <SubmitButton className="btn-primary touch-target">Save preferences</SubmitButton>
+      <SubmitButton className="btn-primary touch-target">
+        Save preferences
+      </SubmitButton>
     </FormAction>
   );
 }

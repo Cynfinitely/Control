@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getUserId, str, optStr, num, parseDate, parseOptionalDate } from "@/lib/actions";
+import {
+  getUserId,
+  str,
+  optStr,
+  num,
+  parseDate,
+  parseOptionalDate,
+} from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { decrementLinkedGoals, incrementLinkedGoals } from "@/lib/goal-links";
 import { ownedContactId, ownedSkill } from "@/lib/ownership";
@@ -13,7 +20,9 @@ function invalidateCareer(userId: string) {
   revalidatePath("/dashboard/career");
 }
 
-export async function createCareerGoal(formData: FormData): Promise<ActionResult> {
+export async function createCareerGoal(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const title = str(formData.get("title"));
   if (!title) return failure("Title is required");
@@ -29,10 +38,13 @@ export async function createCareerGoal(formData: FormData): Promise<ActionResult
   return success("Goal added");
 }
 
-export async function setCareerGoalStatus(formData: FormData): Promise<ActionResult> {
+export async function setCareerGoalStatus(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const status = str(formData.get("status"));
-  if (status !== "active" && status !== "completed") return failure("Invalid status");
+  if (status !== "active" && status !== "completed")
+    return failure("Invalid status");
   await prisma.careerGoal.updateMany({
     where: { id: str(formData.get("id")), userId },
     data: { status },
@@ -41,7 +53,9 @@ export async function setCareerGoalStatus(formData: FormData): Promise<ActionRes
   return success(status === "completed" ? "Goal completed" : "Goal reopened");
 }
 
-export async function deleteCareerGoal(formData: FormData): Promise<ActionResult> {
+export async function deleteCareerGoal(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   await prisma.careerGoal.updateMany({
     where: { id: str(formData.get("id")), userId },
@@ -67,7 +81,9 @@ export async function createSkill(formData: FormData): Promise<ActionResult> {
   return success("Skill added");
 }
 
-export async function updateSkillLevel(formData: FormData): Promise<ActionResult> {
+export async function updateSkillLevel(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   await prisma.skill.updateMany({
     where: { id: str(formData.get("id")), userId },
@@ -87,7 +103,9 @@ export async function deleteSkill(formData: FormData): Promise<ActionResult> {
   return success("Skill deleted");
 }
 
-export async function createCertification(formData: FormData): Promise<ActionResult> {
+export async function createCertification(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const name = str(formData.get("name"));
   if (!name) return failure("Certification name is required");
@@ -105,7 +123,9 @@ export async function createCertification(formData: FormData): Promise<ActionRes
   return success("Certification added");
 }
 
-export async function deleteCertification(formData: FormData): Promise<ActionResult> {
+export async function deleteCertification(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   await prisma.certification.updateMany({
     where: { id: str(formData.get("id")), userId },
@@ -115,7 +135,9 @@ export async function deleteCertification(formData: FormData): Promise<ActionRes
   return success("Certification deleted");
 }
 
-export async function createWorkExperience(formData: FormData): Promise<ActionResult> {
+export async function createWorkExperience(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const company = str(formData.get("company"));
   const role = str(formData.get("role"));
@@ -135,7 +157,9 @@ export async function createWorkExperience(formData: FormData): Promise<ActionRe
   return success("Experience added");
 }
 
-export async function deleteWorkExperience(formData: FormData): Promise<ActionResult> {
+export async function deleteWorkExperience(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   await prisma.workExperience.updateMany({
     where: { id: str(formData.get("id")), userId },
@@ -145,7 +169,9 @@ export async function deleteWorkExperience(formData: FormData): Promise<ActionRe
   return success("Experience deleted");
 }
 
-export async function createLearning(formData: FormData): Promise<ActionResult> {
+export async function createLearning(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const title = str(formData.get("title"));
   if (!title) return failure("Title is required");
@@ -169,12 +195,19 @@ export async function createLearning(formData: FormData): Promise<ActionResult> 
   });
 
   // Learning goals count hours, so an entry without hours adds nothing.
-  await incrementLinkedGoals(userId, "learning", date, num(formData.get("hours")));
+  await incrementLinkedGoals(
+    userId,
+    "learning",
+    date,
+    num(formData.get("hours"))
+  );
   invalidateCareer(userId);
   return success("Learning entry added");
 }
 
-export async function deleteLearning(formData: FormData): Promise<ActionResult> {
+export async function deleteLearning(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const entry = await prisma.learningEntry.findFirst({
@@ -187,12 +220,15 @@ export async function deleteLearning(formData: FormData): Promise<ActionResult> 
     data: { deletedAt: new Date() },
   });
   // Take the hours back off any goal that counted them.
-  if (result.count > 0) await decrementLinkedGoals(userId, "learning", entry.date, entry.hours);
+  if (result.count > 0)
+    await decrementLinkedGoals(userId, "learning", entry.date, entry.hours);
   invalidateCareer(userId);
   return success("Learning entry deleted");
 }
 
-export async function createJobApplication(formData: FormData): Promise<ActionResult> {
+export async function createJobApplication(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const company = str(formData.get("company"));
   const role = str(formData.get("role"));
@@ -203,7 +239,10 @@ export async function createJobApplication(formData: FormData): Promise<ActionRe
       company,
       role,
       stage: str(formData.get("stage")) || "applied",
-      contactId: await ownedContactId(userId, optStr(formData.get("contactId"))),
+      contactId: await ownedContactId(
+        userId,
+        optStr(formData.get("contactId"))
+      ),
       dueDate: parseOptionalDate(formData.get("dueDate")),
       notes: optStr(formData.get("notes")),
     },
@@ -212,7 +251,9 @@ export async function createJobApplication(formData: FormData): Promise<ActionRe
   return success("Application added");
 }
 
-export async function updateJobStage(formData: FormData): Promise<ActionResult> {
+export async function updateJobStage(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   if (!str(formData.get("stage"))) return failure("Choose a stage");
   await prisma.jobApplication.updateMany({
@@ -223,7 +264,9 @@ export async function updateJobStage(formData: FormData): Promise<ActionResult> 
   return success("Stage updated");
 }
 
-export async function deleteJobApplication(formData: FormData): Promise<ActionResult> {
+export async function deleteJobApplication(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   await prisma.jobApplication.updateMany({
     where: { id: str(formData.get("id")), userId },

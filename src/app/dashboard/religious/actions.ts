@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getUserId, str, optStr, num, parseDate, parseOptionalDate } from "@/lib/actions";
+import {
+  getUserId,
+  str,
+  optStr,
+  num,
+  parseDate,
+  parseOptionalDate,
+} from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { endOfDay, startOfDay } from "@/lib/date";
 import { incrementLinkedGoals } from "@/lib/goal-links";
@@ -43,7 +50,8 @@ export async function setPrayer(formData: FormData): Promise<ActionResult> {
   const date = prayerLogDate(formData.get("date"));
   if (!prayer || !status) return failure("Choose a prayer and a status.");
   if (!isPrayer(prayer)) return failure("Unknown prayer.");
-  if (status !== "ontime" && status !== "missed") return failure("Unknown status.");
+  if (status !== "ontime" && status !== "missed")
+    return failure("Unknown status.");
   if (isFutureDay(date)) return failure(FUTURE_DAY);
 
   const existing = await prisma.prayerLog.findUnique({
@@ -84,7 +92,9 @@ export async function setPrayer(formData: FormData): Promise<ActionResult> {
   }
 
   invalidate(userId);
-  return success(`${prayerLabel(prayer)} marked ${status === "ontime" ? "on time" : "missed"}${qazaNote}`);
+  return success(
+    `${prayerLabel(prayer)} marked ${status === "ontime" ? "on time" : "missed"}${qazaNote}`
+  );
 }
 
 /**
@@ -98,7 +108,7 @@ export async function clearPrayer(formData: FormData): Promise<ActionResult> {
   const date = prayerLogDate(formData.get("date"));
   if (!isPrayer(prayer)) return failure("Unknown prayer.");
 
-  const removedQaza = await prisma.$transaction(async (tx) => {
+  const removedQaza = await prisma.$transaction(async tx => {
     const existing = await tx.prayerLog.findUnique({
       where: { userId_date_prayer: { userId, date, prayer } },
     });
@@ -115,31 +125,38 @@ export async function clearPrayer(formData: FormData): Promise<ActionResult> {
   });
 
   invalidate(userId);
-  if (removedQaza === null) return success(`${prayerLabel(prayer)} has no status to clear`);
-  return success(`${prayerLabel(prayer)} cleared${removedQaza ? " · removed from qaza" : ""}`);
+  if (removedQaza === null)
+    return success(`${prayerLabel(prayer)} has no status to clear`);
+  return success(
+    `${prayerLabel(prayer)} cleared${removedQaza ? " · removed from qaza" : ""}`
+  );
 }
 
 /**
  * Mark every prayer that has no status yet as on time for the given day.
  * Existing statuses (including "missed") are never overwritten.
  */
-export async function markAllPrayersOnTime(formData: FormData): Promise<ActionResult> {
+export async function markAllPrayersOnTime(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const date = prayerLogDate(formData.get("date"));
   if (isFutureDay(date)) return failure(FUTURE_DAY);
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async tx => {
     // Range match (like getDayPrayers) so logs stored at another time of day still count.
     const existing = await tx.prayerLog.findMany({
       where: { userId, date: { gte: date, lte: endOfDay(date) } },
       select: { prayer: true, status: true },
     });
-    const logged = new Set(existing.map((l) => l.prayer));
-    const toCreate = PRAYERS.filter((p) => !logged.has(p));
+    const logged = new Set(existing.map(l => l.prayer));
+    const toCreate = PRAYERS.filter(p => !logged.has(p));
     for (const prayer of toCreate) {
-      await tx.prayerLog.create({ data: { userId, date, prayer, status: "ontime" } });
+      await tx.prayerLog.create({
+        data: { userId, date, prayer, status: "ontime" },
+      });
     }
-    const missed = existing.filter((l) => l.status === "missed").length;
+    const missed = existing.filter(l => l.status === "missed").length;
     return { created: toCreate.length, missed };
   });
 
@@ -166,7 +183,9 @@ export async function fulfillQaza(formData: FormData): Promise<ActionResult> {
 }
 
 /** Fulfil the oldest N pending daily qaza for one prayer. */
-export async function fulfillQazaForPrayer(formData: FormData): Promise<ActionResult> {
+export async function fulfillQazaForPrayer(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const prayer = str(formData.get("prayer"));
   if (!isPrayer(prayer)) return failure("Unknown prayer.");
@@ -179,10 +198,11 @@ export async function fulfillQazaForPrayer(formData: FormData): Promise<ActionRe
     take: amount,
     select: { id: true },
   });
-  if (pending.length === 0) return failure(`No pending ${prayerLabel(prayer)} qaza.`);
+  if (pending.length === 0)
+    return failure(`No pending ${prayerLabel(prayer)} qaza.`);
 
   await prisma.qazaPrayer.updateMany({
-    where: { id: { in: pending.map((q) => q.id) }, userId, fulfilledAt: null },
+    where: { id: { in: pending.map(q => q.id) }, userId, fulfilledAt: null },
     data: { fulfilledAt: new Date() },
   });
   invalidate(userId);
@@ -191,7 +211,9 @@ export async function fulfillQazaForPrayer(formData: FormData): Promise<ActionRe
   );
 }
 
-export async function savePrayerDebt(formData: FormData): Promise<ActionResult> {
+export async function savePrayerDebt(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const periodStart = parseOptionalDate(formData.get("periodStart"));
   const periodEnd = parseOptionalDate(formData.get("periodEnd"));
@@ -232,7 +254,9 @@ export async function savePrayerDebt(formData: FormData): Promise<ActionResult> 
   return success("Historical debt saved");
 }
 
-export async function fulfillPrayerDebt(formData: FormData): Promise<ActionResult> {
+export async function fulfillPrayerDebt(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const prayer = str(formData.get("prayer"));
   const amount = Math.max(1, num(formData.get("amount"), 1));
@@ -244,7 +268,8 @@ export async function fulfillPrayerDebt(formData: FormData): Promise<ActionResul
   if (!debt) return failure("No historical debt for that prayer.");
 
   const remaining = debt.owed - debt.fulfilled;
-  if (remaining <= 0) return failure(`${prayerLabel(prayer)} debt is already complete.`);
+  if (remaining <= 0)
+    return failure(`${prayerLabel(prayer)} debt is already complete.`);
 
   const fulfilled = Math.min(debt.owed, debt.fulfilled + amount);
   await prisma.prayerDebt.update({
@@ -253,10 +278,14 @@ export async function fulfillPrayerDebt(formData: FormData): Promise<ActionResul
   });
 
   invalidate(userId);
-  return success(`${fulfilled - debt.fulfilled} ${prayerLabel(prayer)} fulfilled · ${debt.owed - fulfilled} left`);
+  return success(
+    `${fulfilled - debt.fulfilled} ${prayerLabel(prayer)} fulfilled · ${debt.owed - fulfilled} left`
+  );
 }
 
-export async function clearPrayerDebt(formData: FormData): Promise<ActionResult> {
+export async function clearPrayerDebt(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const prayer = optStr(formData.get("prayer"));
   if (prayer) {
@@ -265,7 +294,9 @@ export async function clearPrayerDebt(formData: FormData): Promise<ActionResult>
     await prisma.prayerDebt.deleteMany({ where: { userId } });
   }
   invalidate(userId);
-  return success(prayer ? `${prayerLabel(prayer)} debt cleared` : "Historical debt cleared");
+  return success(
+    prayer ? `${prayerLabel(prayer)} debt cleared` : "Historical debt cleared"
+  );
 }
 
 export async function logDhikr(formData: FormData): Promise<ActionResult> {
@@ -294,7 +325,7 @@ async function applyQuranReading(
 ) {
   if (pagesRead <= 0) return;
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async tx => {
     const state = await tx.quranState.findUnique({ where: { userId } });
     const next = advanceBookmark({
       currentPage: state?.currentPage ?? 1,
@@ -330,7 +361,11 @@ async function applyQuranReading(
   await incrementLinkedGoals(userId, "quran", date, pagesRead);
 }
 
-async function addLinkedQuranDailyEntry(userId: string, pagesRead: number, date: Date) {
+async function addLinkedQuranDailyEntry(
+  userId: string,
+  pagesRead: number,
+  date: Date
+) {
   if (pagesRead <= 0) return;
   const quranItem = await prisma.dailyReadingItem.findFirst({
     where: { userId, linkKind: "quran" },
@@ -347,20 +382,27 @@ export async function logQuran(formData: FormData): Promise<ActionResult> {
   const date = startOfDay(parseDate(formData.get("date")));
   const pagesRead = Math.max(0, num(formData.get("pagesRead")));
   if (pagesRead <= 0) return failure("Enter how many pages you read.");
-  await applyQuranReading(userId, pagesRead, date, optStr(formData.get("note")));
+  await applyQuranReading(
+    userId,
+    pagesRead,
+    date,
+    optStr(formData.get("note"))
+  );
   await addLinkedQuranDailyEntry(userId, pagesRead, date);
   invalidate(userId);
   return success(`${pagesRead} ${pagesRead === 1 ? "page" : "pages"} logged`);
 }
 
-export async function setQuranPosition(formData: FormData): Promise<ActionResult> {
+export async function setQuranPosition(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const currentPage = clampPage(num(formData.get("currentPage"), 1));
   const existing = await prisma.quranState.findUnique({ where: { userId } });
   const khatmsInput = optStr(formData.get("khatmsCompleted"));
   const khatmsCompleted =
     khatmsInput === null
-      ? existing?.khatmsCompleted ?? 0
+      ? (existing?.khatmsCompleted ?? 0)
       : Math.max(0, Math.floor(num(formData.get("khatmsCompleted"), 0)));
 
   await prisma.quranState.upsert({
@@ -372,7 +414,9 @@ export async function setQuranPosition(formData: FormData): Promise<ActionResult
   return success(`Bookmark set to page ${currentPage}`);
 }
 
-export async function logDailyReading(formData: FormData): Promise<ActionResult> {
+export async function logDailyReading(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const itemId = str(formData.get("itemId"));
   const amount = Math.max(0, num(formData.get("amount")));
@@ -394,16 +438,28 @@ export async function logDailyReading(formData: FormData): Promise<ActionResult>
     data: { userId, itemId, amount, date },
   });
   invalidate(userId);
-  const unit = item.unit === "times" ? (amount === 1 ? "time" : "times") : amount === 1 ? "page" : "pages";
+  const unit =
+    item.unit === "times"
+      ? amount === 1
+        ? "time"
+        : "times"
+      : amount === 1
+        ? "page"
+        : "pages";
   return success(`${item.name}: +${amount} ${unit}`);
 }
 
-export async function saveDailyReadingItem(formData: FormData): Promise<ActionResult> {
+export async function saveDailyReadingItem(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = optStr(formData.get("id"));
   const name = str(formData.get("name"));
   const unit = str(formData.get("unit")) === "times" ? "times" : "pages";
-  const dailyTarget = Math.max(1, Math.floor(num(formData.get("dailyTarget"), 1)));
+  const dailyTarget = Math.max(
+    1,
+    Math.floor(num(formData.get("dailyTarget"), 1))
+  );
   if (!name) return failure("Enter a name for the reading.");
 
   if (id) {
@@ -438,17 +494,23 @@ export async function saveDailyReadingItem(formData: FormData): Promise<ActionRe
   return success(id ? "Reading saved" : "Reading added");
 }
 
-export async function deleteDailyReadingItem(formData: FormData): Promise<ActionResult> {
+export async function deleteDailyReadingItem(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Reading not found.");
-  const result = await prisma.dailyReadingItem.deleteMany({ where: { id, userId } });
+  const result = await prisma.dailyReadingItem.deleteMany({
+    where: { id, userId },
+  });
   if (result.count === 0) return failure("Reading not found.");
   invalidate(userId);
   return success("Reading removed");
 }
 
-export async function seedSuggestedReadings(_formData?: FormData): Promise<ActionResult> {
+export async function seedSuggestedReadings(
+  _formData?: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const count = await prisma.dailyReadingItem.count({ where: { userId } });
   if (count > 0) return failure("You already have readings set up.");
@@ -471,7 +533,10 @@ export async function logFasting(formData: FormData): Promise<ActionResult> {
   const date = startOfDay(parseDate(formData.get("date")));
   await prisma.fastingLog.upsert({
     where: { userId_date: { userId, date } },
-    update: { kind: str(formData.get("kind")) || "ramadan", note: optStr(formData.get("note")) },
+    update: {
+      kind: str(formData.get("kind")) || "ramadan",
+      note: optStr(formData.get("note")),
+    },
     create: {
       userId,
       date,
@@ -483,7 +548,9 @@ export async function logFasting(formData: FormData): Promise<ActionResult> {
   return success("Fast logged");
 }
 
-export async function saveDhikrTarget(formData: FormData): Promise<ActionResult> {
+export async function saveDhikrTarget(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const name = str(formData.get("name"));
   const dailyTarget = num(formData.get("dailyTarget"), 33);
@@ -498,7 +565,9 @@ export async function saveDhikrTarget(formData: FormData): Promise<ActionResult>
   return success("Target saved");
 }
 
-export async function deleteDhikrTarget(formData: FormData): Promise<ActionResult> {
+export async function deleteDhikrTarget(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const result = await prisma.dhikrTarget.deleteMany({ where: { id, userId } });

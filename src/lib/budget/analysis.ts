@@ -49,16 +49,19 @@ export function expenseBreakdownWithUncategorized(
       uncategorized += tx.amountCents;
       continue;
     }
-    totals.set(tx.categoryId, (totals.get(tx.categoryId) ?? 0) + tx.amountCents);
+    totals.set(
+      tx.categoryId,
+      (totals.get(tx.categoryId) ?? 0) + tx.amountCents
+    );
   }
 
   const rows: CategoryBreakdown[] = categories
-    .map((cat) => ({
+    .map(cat => ({
       categoryId: cat.id,
       name: cat.name,
       totalCents: totals.get(cat.id) ?? 0,
     }))
-    .filter((row) => row.totalCents > 0);
+    .filter(row => row.totalCents > 0);
 
   if (uncategorized > 0) {
     rows.push({
@@ -72,7 +75,13 @@ export function expenseBreakdownWithUncategorized(
 }
 
 export function topMerchantsBySpend(
-  transactions: Array<BudgetTxRow & { merchantKey?: string | null; rawDescription?: string | null; note?: string | null }>,
+  transactions: Array<
+    BudgetTxRow & {
+      merchantKey?: string | null;
+      rawDescription?: string | null;
+      note?: string | null;
+    }
+  >,
   from: Date,
   to: Date,
   limit = 8
@@ -92,18 +101,25 @@ export function topMerchantsBySpend(
       existing.totalCents += tx.amountCents;
       existing.count += 1;
     } else {
-      map.set(key, { merchantKey: key, label, totalCents: tx.amountCents, count: 1 });
+      map.set(key, {
+        merchantKey: key,
+        label,
+        totalCents: tx.amountCents,
+        count: 1,
+      });
     }
   }
 
-  return [...map.values()].sort((a, b) => b.totalCents - a.totalCents).slice(0, limit);
+  return [...map.values()]
+    .sort((a, b) => b.totalCents - a.totalCents)
+    .slice(0, limit);
 }
 
 export function savingsSeriesByMonth(
   transactions: BudgetTxRow[],
   monthKeys: string[]
 ): MonthSavingsPoint[] {
-  return monthKeys.map((monthKey) => {
+  return monthKeys.map(monthKey => {
     const [y, m] = monthKey.split("-").map(Number);
     const from = new Date(y, m - 1, 1);
     const to = new Date(y, m, 0);
@@ -117,8 +133,18 @@ export function savingsSeriesByMonth(
 }
 
 export function computeMonthOverMonth(
-  current: { incomeCents: number; expenseCents: number; netCents: number; savingsRate: number | null },
-  previous: { incomeCents: number; expenseCents: number; netCents: number; savingsRate: number | null } | null
+  current: {
+    incomeCents: number;
+    expenseCents: number;
+    netCents: number;
+    savingsRate: number | null;
+  },
+  previous: {
+    incomeCents: number;
+    expenseCents: number;
+    netCents: number;
+    savingsRate: number | null;
+  } | null
 ): MonthOverMonth | null {
   if (!previous) return null;
   const savingsRateDelta =
@@ -133,8 +159,11 @@ export function computeMonthOverMonth(
   };
 }
 
-export function monthKeysSpanning(transactions: BudgetTxRow[], maxMonths = 12): string[] {
-  const active = transactions.filter((tx) => !tx.deletedAt);
+export function monthKeysSpanning(
+  transactions: BudgetTxRow[],
+  maxMonths = 12
+): string[] {
+  const active = transactions.filter(tx => !tx.deletedAt);
   if (active.length === 0) return [];
 
   let min = Infinity;

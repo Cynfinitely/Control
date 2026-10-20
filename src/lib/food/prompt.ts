@@ -40,7 +40,9 @@ function grams(value: number): string {
   return `${Math.round(value)}g`;
 }
 
-export function buildFoodRangePrompt(snapshot: FoodRangePromptSnapshot): string {
+export function buildFoodRangePrompt(
+  snapshot: FoodRangePromptSnapshot
+): string {
   const lines: string[] = [
     "You are a nutrition coach. Analyze this food log and suggest concrete improvements.",
     "",

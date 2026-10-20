@@ -1,6 +1,10 @@
 import { formatEuro, formatEuroSigned } from "@/lib/budget";
 import { periodLabel } from "@/lib/period";
-import type { MerchantSpend, MonthOverMonth, MonthSavingsPoint } from "@/lib/budget/analysis";
+import type {
+  MerchantSpend,
+  MonthOverMonth,
+  MonthSavingsPoint,
+} from "@/lib/budget/analysis";
 import EmptyState from "@/components/EmptyState";
 
 type Props = {
@@ -34,9 +38,15 @@ function monthName(key: string | undefined) {
   return key ? periodLabel("monthly", key) : "—";
 }
 
-export default function BudgetAnalysisExtras({ mom, merchants, savingsSeries }: Props) {
+export default function BudgetAnalysisExtras({
+  mom,
+  merchants,
+  savingsSeries,
+}: Props) {
   const maxMerchant = merchants[0]?.totalCents ?? 1;
-  const rates = savingsSeries.map((p) => p.savingsRate).filter((r): r is number => r !== null);
+  const rates = savingsSeries
+    .map(p => p.savingsRate)
+    .filter((r): r is number => r !== null);
   const minRate = rates.length ? Math.min(...rates, 0) : 0;
   const maxRate = rates.length ? Math.max(...rates, 0) : 1;
   const span = Math.max(1, maxRate - minRate);
@@ -86,23 +96,36 @@ export default function BudgetAnalysisExtras({ mom, merchants, savingsSeries }: 
       <div className="card">
         <h2 className="section-title mb-3">Top merchants</h2>
         {merchants.length === 0 ? (
-          <EmptyState variant="inline" headingLevel="h3" icon="wallet" title="No expenses this month" />
+          <EmptyState
+            variant="inline"
+            headingLevel="h3"
+            icon="wallet"
+            title="No expenses this month"
+          />
         ) : (
           <div className="space-y-3">
-            {merchants.map((m) => (
+            {merchants.map(m => (
               <div key={m.merchantKey}>
                 <div className="mb-1 flex justify-between gap-2 text-sm">
-                  <span className="truncate font-medium text-slate-700 dark:text-slate-100" title={m.label}>
+                  <span
+                    className="truncate font-medium text-slate-700 dark:text-slate-100"
+                    title={m.label}
+                  >
                     {m.label}
                   </span>
                   <span className="shrink-0 tabular-nums text-slate-600 dark:text-slate-400">
                     {formatEuro(m.totalCents)}
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full progress-track" aria-hidden="true">
+                <div
+                  className="h-2 w-full overflow-hidden rounded-full progress-track"
+                  aria-hidden="true"
+                >
                   <div
                     className="h-full bg-slate-500"
-                    style={{ width: `${Math.round((m.totalCents / maxMerchant) * 100)}%` }}
+                    style={{
+                      width: `${Math.round((m.totalCents / maxMerchant) * 100)}%`,
+                    }}
                   />
                 </div>
               </div>
@@ -123,14 +146,21 @@ export default function BudgetAnalysisExtras({ mom, merchants, savingsSeries }: 
           />
         ) : (
           <>
-            <svg viewBox="0 0 240 80" className="h-20 w-full text-brand-600 dark:text-brand-400" aria-hidden="true">
+            <svg
+              viewBox="0 0 240 80"
+              className="h-20 w-full text-brand-600 dark:text-brand-400"
+              aria-hidden="true"
+            >
               <polyline
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 points={savingsSeries
                   .map((p, i) => {
-                    const x = savingsSeries.length === 1 ? 120 : (i / (savingsSeries.length - 1)) * 220 + 10;
+                    const x =
+                      savingsSeries.length === 1
+                        ? 120
+                        : (i / (savingsSeries.length - 1)) * 220 + 10;
                     const rate = p.savingsRate ?? 0;
                     const y = 70 - ((rate - minRate) / span) * 55;
                     return `${x},${y}`;
@@ -147,17 +177,26 @@ export default function BudgetAnalysisExtras({ mom, merchants, savingsSeries }: 
                 </tr>
               </thead>
               <tbody>
-                {savingsSeries.map((p) => (
+                {savingsSeries.map(p => (
                   <tr key={p.monthKey}>
                     <th scope="row">{monthName(p.monthKey)}</th>
-                    <td>{p.savingsRate === null ? "No income" : `${p.savingsRate}%`}</td>
+                    <td>
+                      {p.savingsRate === null
+                        ? "No income"
+                        : `${p.savingsRate}%`}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="mt-1 flex justify-between gap-2 text-xs text-muted" aria-hidden="true">
+            <div
+              className="mt-1 flex justify-between gap-2 text-xs text-muted"
+              aria-hidden="true"
+            >
               <span>{monthName(first?.monthKey)}</span>
-              <span>{last?.savingsRate === null ? "—" : `${last?.savingsRate}%`}</span>
+              <span>
+                {last?.savingsRate === null ? "—" : `${last?.savingsRate}%`}
+              </span>
               <span>{monthName(last?.monthKey)}</span>
             </div>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">

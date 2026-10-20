@@ -36,7 +36,10 @@ export default function DeleteConfirmButton({
         type="button"
         disabled={disabled}
         onClick={() => setOpen(true)}
-        className={className ?? (appearance === "icon" ? "btn-icon-danger" : "btn-danger btn-sm")}
+        className={
+          className ??
+          (appearance === "icon" ? "btn-icon-danger" : "btn-danger btn-sm")
+        }
         aria-label={appearance === "icon" ? label : undefined}
         title={appearance === "icon" ? label : undefined}
       >

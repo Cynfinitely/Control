@@ -25,7 +25,9 @@ function isFutureDay(date: Date): boolean {
   return date.getTime() > startOfDay(new Date()).getTime();
 }
 
-export async function saveMigraineLog(formData: FormData): Promise<ActionResult> {
+export async function saveMigraineLog(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const date = parseLogDate(formData.get("date"));
   if (!date) return failure("Pick a valid day.");
@@ -96,7 +98,9 @@ export async function saveMigraineLog(formData: FormData): Promise<ActionResult>
   return success("Migraine day saved");
 }
 
-export async function clearMigraineLog(formData: FormData): Promise<ActionResult> {
+export async function clearMigraineLog(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const date = parseLogDate(formData.get("date"));
   if (!date) return failure("Pick a valid day.");

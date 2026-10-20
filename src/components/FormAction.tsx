@@ -1,7 +1,7 @@
 "use client";
 
 import ActionForm, { type ConfirmOptions } from "@/components/ActionForm";
-import type { FormAction as FormActionFn, ActionResult } from "@/lib/action-result";
+import type { FormAction as FormActionFn } from "@/lib/action-result";
 
 type Props = {
   action: FormActionFn;
@@ -23,7 +23,7 @@ export default function FormAction({
 }: Props) {
   return (
     <ActionForm
-      action={(fd) => action(null, fd)}
+      action={fd => action(null, fd)}
       successMessage={successMessage}
       resetOnSuccess={resetOnSuccess}
       confirm={confirm}
@@ -31,17 +31,5 @@ export default function FormAction({
     >
       {children}
     </ActionForm>
-  );
-}
-
-export function FormErrorBanner({ state }: { state: ActionResult | null }) {
-  if (!state || state.ok) return null;
-  return (
-    <p
-      role="alert"
-      className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
-    >
-      {state.error}
-    </p>
   );
 }

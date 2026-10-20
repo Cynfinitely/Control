@@ -2,17 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getUserId, str, optStr, num, parseDate } from "@/lib/actions";
+import { getUserId, optStr, num, parseDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay } from "@/lib/date";
-import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import { success, type ActionResult } from "@/lib/action-result";
 
 function invalidateJournal(userId: string) {
   revalidateUserCache(userId, "journal", "dashboard");
   revalidatePath("/dashboard/journal");
 }
 
-export async function saveJournalEntry(formData: FormData): Promise<ActionResult> {
+export async function saveJournalEntry(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const date = startOfDay(parseDate(formData.get("date")));
   const moodRaw = formData.get("mood");
@@ -38,5 +40,3 @@ export async function saveJournalEntry(formData: FormData): Promise<ActionResult
   invalidateJournal(userId);
   return success("Journal saved");
 }
-
-export const saveJournalEntryForm = wrapFormAction(saveJournalEntry, "Journal saved");

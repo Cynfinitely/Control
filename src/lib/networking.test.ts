@@ -27,7 +27,10 @@ describe("parseTopics / serializeTopics", () => {
   it("serializes chips to comma-separated text and round-trips", () => {
     expect(serializeTopics([])).toBeNull();
     expect(serializeTopics(["health", "kids"])).toBe("health, kids");
-    expect(parseTopics(serializeTopics(["health", "kids"]))).toEqual(["health", "kids"]);
+    expect(parseTopics(serializeTopics(["health", "kids"]))).toEqual([
+      "health",
+      "kids",
+    ]);
   });
 });
 
@@ -83,42 +86,105 @@ describe("rangeForNetworkingPeriod", () => {
 
 describe("buildNetworkingInsights", () => {
   const contacts = [
-    { id: "mom", name: "Mother", relationship: "family", touchCadenceDays: 7, lastTouch: new Date("2026-08-20") },
-    { id: "boss", name: "Boss", relationship: "professional", touchCadenceDays: 30, lastTouch: new Date("2026-07-01") },
-    { id: "pal", name: "Friend", relationship: "friend", touchCadenceDays: null, lastTouch: new Date("2026-08-24") },
-    { id: "new", name: "New", relationship: "other", touchCadenceDays: null, lastTouch: null },
+    {
+      id: "mom",
+      name: "Mother",
+      relationship: "family",
+      touchCadenceDays: 7,
+      lastTouch: new Date("2026-08-20"),
+    },
+    {
+      id: "boss",
+      name: "Boss",
+      relationship: "professional",
+      touchCadenceDays: 30,
+      lastTouch: new Date("2026-07-01"),
+    },
+    {
+      id: "pal",
+      name: "Friend",
+      relationship: "friend",
+      touchCadenceDays: null,
+      lastTouch: new Date("2026-08-24"),
+    },
+    {
+      id: "new",
+      name: "New",
+      relationship: "other",
+      touchCadenceDays: null,
+      lastTouch: null,
+    },
   ];
 
   const interactions = [
-    { id: "1", contactId: "mom", type: "call", topics: "health, kids", summary: "checkup", date: new Date("2026-08-20") },
-    { id: "2", contactId: "mom", type: "call", topics: "health", summary: null, date: new Date("2026-08-10") },
-    { id: "3", contactId: "pal", type: "message", topics: "travel", summary: null, date: new Date("2026-08-24") },
-    { id: "4", contactId: "boss", type: "meeting", topics: "work", summary: null, date: new Date("2026-07-01") },
+    {
+      id: "1",
+      contactId: "mom",
+      type: "call",
+      topics: "health, kids",
+      summary: "checkup",
+      date: new Date("2026-08-20"),
+    },
+    {
+      id: "2",
+      contactId: "mom",
+      type: "call",
+      topics: "health",
+      summary: null,
+      date: new Date("2026-08-10"),
+    },
+    {
+      id: "3",
+      contactId: "pal",
+      type: "message",
+      topics: "travel",
+      summary: null,
+      date: new Date("2026-08-24"),
+    },
+    {
+      id: "4",
+      contactId: "boss",
+      type: "meeting",
+      topics: "work",
+      summary: null,
+      date: new Date("2026-07-01"),
+    },
   ];
 
   it("rolls up period stats, mix, overdue people, and topic trends", () => {
     const range = rangeForNetworkingPeriod("monthly", now);
-    const insights = buildNetworkingInsights(contacts, interactions, range, now);
+    const insights = buildNetworkingInsights(
+      contacts,
+      interactions,
+      range,
+      now
+    );
 
     expect(insights.touches).toBe(3);
     expect(insights.calls).toBe(2);
     expect(insights.uniquePeople).toBe(2);
 
-    expect(insights.typeMix.find((t) => t.type === "call")?.count).toBe(2);
-    expect(insights.typeMix.find((t) => t.type === "message")?.count).toBe(1);
-    expect(insights.typeMix.find((t) => t.type === "meeting")?.count).toBe(0);
+    expect(insights.typeMix.find(t => t.type === "call")?.count).toBe(2);
+    expect(insights.typeMix.find(t => t.type === "message")?.count).toBe(1);
+    expect(insights.typeMix.find(t => t.type === "meeting")?.count).toBe(0);
 
-    expect(insights.relationshipMix.find((r) => r.relationship === "family")?.count).toBe(2);
-    expect(insights.relationshipMix.find((r) => r.relationship === "friend")?.count).toBe(1);
+    expect(
+      insights.relationshipMix.find(r => r.relationship === "family")?.count
+    ).toBe(2);
+    expect(
+      insights.relationshipMix.find(r => r.relationship === "friend")?.count
+    ).toBe(1);
 
-    expect(insights.overdue.map((c) => c.id).sort()).toEqual(["boss", "new"]);
+    expect(insights.overdue.map(c => c.id).sort()).toEqual(["boss", "new"]);
 
-    const health = insights.topics.find((t) => t.topic === "health");
+    const health = insights.topics.find(t => t.topic === "health");
     expect(health?.count).toBe(2);
     expect(health?.people).toEqual([{ id: "mom", name: "Mother", count: 2 }]);
-    expect(insights.topics.find((t) => t.topic === "work")).toBeUndefined();
+    expect(insights.topics.find(t => t.topic === "work")).toBeUndefined();
 
-    const weekOfAug17 = insights.frequency.find((p) => p.weekStart === "2026-08-17");
+    const weekOfAug17 = insights.frequency.find(
+      p => p.weekStart === "2026-08-17"
+    );
     expect(weekOfAug17?.count).toBe(1);
   });
 });

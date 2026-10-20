@@ -12,7 +12,14 @@ type Props = {
   className?: string;
 };
 
-export default function MonthNavigator({ basePath, monthKey, monthLabel, dayValue, extraParams, className }: Props) {
+export default function MonthNavigator({
+  basePath,
+  monthKey,
+  monthLabel,
+  dayValue,
+  extraParams,
+  className,
+}: Props) {
   const [year, month] = monthKey.split("-").map(Number);
   const ref = new Date(year, month - 1, 1);
   const todayKey = toMonthKey(new Date());
@@ -35,7 +42,15 @@ export default function MonthNavigator({ basePath, monthKey, monthLabel, dayValu
       label={monthLabel}
       prev={{ href: buildUrl(prevKey), label: "Previous month" }}
       next={{ href: buildUrl(nextKey), label: "Next month" }}
-      reset={isCurrentMonth ? undefined : { href: buildUrl(todayKey), label: "Go to this month", text: "This month" }}
+      reset={
+        isCurrentMonth
+          ? undefined
+          : {
+              href: buildUrl(todayKey),
+              label: "Go to this month",
+              text: "This month",
+            }
+      }
     />
   );
 }

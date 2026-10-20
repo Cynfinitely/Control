@@ -17,7 +17,10 @@ type Props = {
 
 export default function DefaultMealForm({ meal, mealLabels, onDone }: Props) {
   const prefix = meal ? `dm-${meal.id}` : "dm-new";
-  const labelOptions = meal?.meal && !mealLabels.includes(meal.meal) ? [...mealLabels, meal.meal] : mealLabels;
+  const labelOptions =
+    meal?.meal && !mealLabels.includes(meal.meal)
+      ? [...mealLabels, meal.meal]
+      : mealLabels;
 
   return (
     <FormAction
@@ -33,7 +36,9 @@ export default function DefaultMealForm({ meal, mealLabels, onDone }: Props) {
       {meal && <input type="hidden" name="id" value={meal.id} />}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="sm:col-span-2">
-          <label htmlFor={`${prefix}-name`} className="label">Name</label>
+          <label htmlFor={`${prefix}-name`} className="label">
+            Name
+          </label>
           <input
             id={`${prefix}-name`}
             name="name"
@@ -44,10 +49,17 @@ export default function DefaultMealForm({ meal, mealLabels, onDone }: Props) {
           />
         </div>
         <div>
-          <label htmlFor={`${prefix}-meal`} className="label">Meal (optional)</label>
-          <select id={`${prefix}-meal`} name="meal" className="input" defaultValue={meal?.meal ?? ""}>
+          <label htmlFor={`${prefix}-meal`} className="label">
+            Meal (optional)
+          </label>
+          <select
+            id={`${prefix}-meal`}
+            name="meal"
+            className="input"
+            defaultValue={meal?.meal ?? ""}
+          >
             <option value="">—</option>
-            {labelOptions.map((label) => (
+            {labelOptions.map(label => (
               <option key={label} value={label}>
                 {displayMealLabel(label)}
               </option>
@@ -56,7 +68,9 @@ export default function DefaultMealForm({ meal, mealLabels, onDone }: Props) {
         </div>
       </div>
       <div>
-        <label htmlFor={`${prefix}-items`} className="label">Items</label>
+        <label htmlFor={`${prefix}-items`} className="label">
+          Items
+        </label>
         <textarea
           id={`${prefix}-items`}
           name="items"
@@ -64,14 +78,22 @@ export default function DefaultMealForm({ meal, mealLabels, onDone }: Props) {
           rows={2}
           className="input"
           placeholder="chicken, salad, skyr, fruit"
-          defaultValue={meal ? joinItems(meal.items.map((i) => i.name)) : ""}
+          defaultValue={meal ? joinItems(meal.items.map(i => i.name)) : ""}
         />
-        <p id={`${prefix}-items-hint`} className="hint">Separate with commas. Items go to the shopping list when you plan this meal.</p>
+        <p id={`${prefix}-items-hint`} className="hint">
+          Separate with commas. Items go to the shopping list when you plan this
+          meal.
+        </p>
       </div>
-      <CollapsibleSection title="Nutrition (optional)" defaultOpen={Boolean(meal && hasNutrition(meal))}>
+      <CollapsibleSection
+        title="Nutrition (optional)"
+        defaultOpen={Boolean(meal && hasNutrition(meal))}
+      >
         <NutritionInputs idPrefix={prefix} values={meal} />
       </CollapsibleSection>
-      <SubmitButton className="btn-primary touch-target">{meal ? "Save" : "Create Default Meal"}</SubmitButton>
+      <SubmitButton className="btn-primary touch-target">
+        {meal ? "Save" : "Create Default Meal"}
+      </SubmitButton>
     </FormAction>
   );
 }

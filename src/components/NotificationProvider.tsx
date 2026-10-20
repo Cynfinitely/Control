@@ -1,7 +1,17 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { notificationPollDecision, shouldPollNotifications } from "@/lib/network-error";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  notificationPollDecision,
+  shouldPollNotifications,
+} from "@/lib/network-error";
 
 export const NOTIFICATION_POLL_MS = 45_000;
 export const NOTIFICATION_POLL_TIMEOUT_MS = 8_000;
@@ -23,9 +33,14 @@ type NotificationFeedContextValue = {
   refresh: () => void;
 };
 
-const NotificationFeedContext = createContext<NotificationFeedContextValue | null>(null);
+const NotificationFeedContext =
+  createContext<NotificationFeedContextValue | null>(null);
 
-export function NotificationProvider({ children }: { children: React.ReactNode }) {
+export function NotificationProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pending, setPending] = useState(false);
@@ -49,17 +64,23 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setPending(true);
     const controller = new AbortController();
     abortRef.current = controller;
-    const timer = window.setTimeout(() => controller.abort(), NOTIFICATION_POLL_TIMEOUT_MS);
+    const timer = window.setTimeout(
+      () => controller.abort(),
+      NOTIFICATION_POLL_TIMEOUT_MS
+    );
 
     fetch("/api/notifications", { signal: controller.signal })
-      .then(async (res) => {
+      .then(async res => {
         const decision = notificationPollDecision({ status: res.status });
         if (decision === "stop") {
           stoppedRef.current = true;
           return;
         }
         if (decision !== "apply") return;
-        const feed = (await res.json()) as { items: NotificationItem[]; unreadCount: number };
+        const feed = (await res.json()) as {
+          items: NotificationItem[];
+          unreadCount: number;
+        };
         setItems(feed.items);
         setUnreadCount(feed.unreadCount);
       })
@@ -114,7 +135,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [refresh]);
 
   return (
-    <NotificationFeedContext.Provider value={{ items, unreadCount, pending, refresh }}>
+    <NotificationFeedContext.Provider
+      value={{ items, unreadCount, pending, refresh }}
+    >
       {children}
     </NotificationFeedContext.Provider>
   );
@@ -123,7 +146,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 export function useNotificationFeed() {
   const ctx = useContext(NotificationFeedContext);
   if (!ctx) {
-    throw new Error("useNotificationFeed must be used within NotificationProvider");
+    throw new Error(
+      "useNotificationFeed must be used within NotificationProvider"
+    );
   }
   return ctx;
 }

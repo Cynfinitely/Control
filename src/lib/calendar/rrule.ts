@@ -26,7 +26,7 @@ export function buildRruleString(input: RruleBuilderInput): string {
     interval: input.interval && input.interval > 0 ? input.interval : 1,
   };
   if (input.byweekday?.length) {
-    options.byweekday = input.byweekday.map((d) => ISO_TO_RRULE[d]!);
+    options.byweekday = input.byweekday.map(d => ISO_TO_RRULE[d]!);
   }
   if (input.bymonthday?.length) {
     options.bymonthday = input.bymonthday;
@@ -37,16 +37,17 @@ export function buildRruleString(input: RruleBuilderInput): string {
   if (input.until) {
     options.until = input.until;
   }
-  return new RRule(options as ConstructorParameters<typeof RRule>[0]).toString().replace(
-    /^RRULE:/,
-    ""
-  );
+  return new RRule(options as ConstructorParameters<typeof RRule>[0])
+    .toString()
+    .replace(/^RRULE:/, "");
 }
 
 export function parseRruleUntil(rrule: string | null | undefined): Date | null {
   if (!rrule) return null;
   try {
-    const rule = rrulestr(rrule.startsWith("RRULE:") ? rrule : `RRULE:${rrule}`);
+    const rule = rrulestr(
+      rrule.startsWith("RRULE:") ? rrule : `RRULE:${rrule}`
+    );
     return rule.options.until ?? null;
   } catch {
     return null;
@@ -70,20 +71,31 @@ const FREQ_FROM_RRULE: Partial<Record<Frequency, RruleBuilderInput["freq"]>> = {
 
 /** Decompose a stored RRULE back into the editor's fields (inverse of buildRruleString). */
 export function parseRruleParts(rrule: string | null | undefined): RruleParts {
-  const empty: RruleParts = { freq: "NONE", interval: 1, byweekday: [], until: null };
+  const empty: RruleParts = {
+    freq: "NONE",
+    interval: 1,
+    byweekday: [],
+    until: null,
+  };
   if (!rrule) return empty;
   try {
-    const rule = rrulestr(rrule.startsWith("RRULE:") ? rrule : `RRULE:${rrule}`);
+    const rule = rrulestr(
+      rrule.startsWith("RRULE:") ? rrule : `RRULE:${rrule}`
+    );
     const orig = rule.origOptions;
-    const freq = orig.freq !== undefined ? FREQ_FROM_RRULE[orig.freq] : undefined;
+    const freq =
+      orig.freq !== undefined ? FREQ_FROM_RRULE[orig.freq] : undefined;
     if (!freq) return empty;
-    const rawDays = orig.byweekday === undefined || orig.byweekday === null
-      ? []
-      : Array.isArray(orig.byweekday)
-        ? orig.byweekday
-        : [orig.byweekday];
+    const rawDays =
+      orig.byweekday === undefined || orig.byweekday === null
+        ? []
+        : Array.isArray(orig.byweekday)
+          ? orig.byweekday
+          : [orig.byweekday];
     const byweekday = rawDays
-      .map((d) => (typeof d === "number" ? d : typeof d === "string" ? null : d.weekday))
+      .map(d =>
+        typeof d === "number" ? d : typeof d === "string" ? null : d.weekday
+      )
       .filter((d): d is number => typeof d === "number" && d >= 0 && d <= 6)
       .sort((a, b) => a - b);
     return {
@@ -101,7 +113,9 @@ export function parseRruleParts(rrule: string | null | undefined): RruleParts {
 export function describeRrule(rrule: string | null | undefined): string {
   if (!rrule) return "";
   try {
-    return rrulestr(rrule.startsWith("RRULE:") ? rrule : `RRULE:${rrule}`).toText();
+    return rrulestr(
+      rrule.startsWith("RRULE:") ? rrule : `RRULE:${rrule}`
+    ).toText();
   } catch {
     return "";
   }
@@ -118,7 +132,9 @@ export function expandRruleStarts(
   rangeStart: Date,
   rangeEnd: Date
 ): Date[] {
-  const localStart = DateTime.fromJSDate(dtstart, { zone: "utc" }).setZone(timezone);
+  const localStart = DateTime.fromJSDate(dtstart, { zone: "utc" }).setZone(
+    timezone
+  );
   const floating = new Date(
     Date.UTC(
       localStart.year,
@@ -145,7 +161,7 @@ export function expandRruleStarts(
   const dates = rule.between(padStart, padEnd, true);
 
   return dates
-    .map((d) => {
+    .map(d => {
       const wall = DateTime.fromObject(
         {
           year: d.getUTCFullYear(),
@@ -159,7 +175,7 @@ export function expandRruleStarts(
       );
       return wall.toUTC().toJSDate();
     })
-    .filter((d) => d >= rangeStart && d <= rangeEnd);
+    .filter(d => d >= rangeStart && d <= rangeEnd);
 }
 
 export function durationMs(startsAt: Date, endsAt: Date): number {

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, num, optStr } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { getPeriodKey, type GoalPeriod } from "@/lib/period";
-import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import { success, failure, type ActionResult } from "@/lib/action-result";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "goals", "dashboard");
@@ -16,7 +16,8 @@ export async function createGoal(formData: FormData): Promise<ActionResult> {
   if (!title) return failure("Title is required");
   const period = (str(formData.get("period")) || "weekly") as GoalPeriod;
   const type = str(formData.get("type")) || "boolean";
-  const periodKey = str(formData.get("periodKey")) || getPeriodKey(period, new Date());
+  const periodKey =
+    str(formData.get("periodKey")) || getPeriodKey(period, new Date());
   const linkType = optStr(formData.get("linkType"));
   await prisma.goal.create({
     data: {
@@ -26,7 +27,8 @@ export async function createGoal(formData: FormData): Promise<ActionResult> {
       periodKey,
       type,
       linkType: type === "numeric" ? linkType : null,
-      targetValue: type === "numeric" ? num(formData.get("targetValue"), 1) : null,
+      targetValue:
+        type === "numeric" ? num(formData.get("targetValue"), 1) : null,
       currentValue: 0,
       status: "active",
     },
@@ -35,9 +37,9 @@ export async function createGoal(formData: FormData): Promise<ActionResult> {
   return success("Goal added");
 }
 
-export const createGoalForm = wrapFormAction(createGoal, "Goal added");
-
-export async function toggleGoalComplete(formData: FormData): Promise<ActionResult> {
+export async function toggleGoalComplete(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid goal");
@@ -87,7 +89,10 @@ export async function deleteGoal(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid goal");
-  await prisma.goal.updateMany({ where: { id, userId }, data: { deletedAt: new Date() } });
+  await prisma.goal.updateMany({
+    where: { id, userId },
+    data: { deletedAt: new Date() },
+  });
   invalidate(userId);
   return success("Goal deleted");
 }
@@ -96,7 +101,10 @@ export async function restoreGoal(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid goal");
-  await prisma.goal.updateMany({ where: { id, userId }, data: { deletedAt: null } });
+  await prisma.goal.updateMany({
+    where: { id, userId },
+    data: { deletedAt: null },
+  });
   invalidate(userId);
   return success("Goal restored");
 }
@@ -126,7 +134,9 @@ export async function decrementGoal(formData: FormData): Promise<ActionResult> {
     data: {
       currentValue: next,
       // Undo an auto-complete when the goal drops back below its target.
-      ...(goal.status === "completed" && next < (goal.targetValue ?? 1) ? { status: "active" } : {}),
+      ...(goal.status === "completed" && next < (goal.targetValue ?? 1)
+        ? { status: "active" }
+        : {}),
     },
   });
   invalidate(userId);
@@ -145,7 +155,9 @@ export async function addMilestone(formData: FormData): Promise<ActionResult> {
   return success("Milestone added");
 }
 
-export async function toggleMilestone(formData: FormData): Promise<ActionResult> {
+export async function toggleMilestone(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const goalId = str(formData.get("goalId"));
@@ -161,7 +173,9 @@ export async function toggleMilestone(formData: FormData): Promise<ActionResult>
   return success();
 }
 
-export async function deleteMilestone(formData: FormData): Promise<ActionResult> {
+export async function deleteMilestone(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const goalId = str(formData.get("goalId"));
@@ -179,7 +193,8 @@ export async function rolloverGoals(formData: FormData): Promise<ActionResult> {
   const period = (str(formData.get("period")) || "weekly") as GoalPeriod;
   const fromKey = str(formData.get("fromPeriodKey"));
   const toKey = str(formData.get("toPeriodKey"));
-  if (!fromKey || !toKey || fromKey === toKey) return failure("Nothing to carry over");
+  if (!fromKey || !toKey || fromKey === toKey)
+    return failure("Nothing to carry over");
 
   const incomplete = await prisma.goal.findMany({
     where: {
@@ -195,9 +210,10 @@ export async function rolloverGoals(formData: FormData): Promise<ActionResult> {
     where: { userId, deletedAt: null, period, periodKey: toKey },
     select: { title: true },
   });
-  const existingTitles = new Set(existing.map((g) => g.title));
-  const toCarry = incomplete.filter((g) => !existingTitles.has(g.title));
-  if (toCarry.length === 0) return failure("Those goals are already in this period");
+  const existingTitles = new Set(existing.map(g => g.title));
+  const toCarry = incomplete.filter(g => !existingTitles.has(g.title));
+  if (toCarry.length === 0)
+    return failure("Those goals are already in this period");
 
   for (const g of toCarry) {
     await prisma.goal.create({
@@ -215,5 +231,7 @@ export async function rolloverGoals(formData: FormData): Promise<ActionResult> {
     });
   }
   invalidate(userId);
-  return success(`Carried ${toCarry.length} goal${toCarry.length === 1 ? "" : "s"} over`);
+  return success(
+    `Carried ${toCarry.length} goal${toCarry.length === 1 ? "" : "s"} over`
+  );
 }

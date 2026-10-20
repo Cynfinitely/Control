@@ -14,11 +14,10 @@ import { createFocusItemForm } from "./actions";
 
 export const metadata = { title: "Work" };
 
-export default async function WorkPage({
-  searchParams,
-}: {
-  searchParams: { day?: string; focus?: string };
+export default async function WorkPage(props: {
+  searchParams: Promise<{ day?: string; focus?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("work");
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
@@ -31,19 +30,26 @@ export default async function WorkPage({
 
   // Career links are only offered while the Career module is on.
   const careerOn = !(await getDisabledModules(user.id)).includes("career");
-  const linkChoices = careerOn ? [...linkOptions.goals, ...linkOptions.skills] : [];
-  const doneCount = workDay.focusItems.filter((i) => i.status === "done").length;
+  const linkChoices = careerOn
+    ? [...linkOptions.goals, ...linkOptions.skills]
+    : [];
+  const doneCount = workDay.focusItems.filter(i => i.status === "done").length;
   const totalCount = workDay.focusItems.length;
 
   return (
     <div>
-      <PageHeader help="work"
+      <PageHeader
+        help="work"
         title="Work"
         description="Daily work focus — commit to a few outcomes, then log what actually happened."
       />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <DayNavigator basePath="/dashboard/work" dayValue={dayValue} dayLabel={dayLabel} />
+        <DayNavigator
+          basePath="/dashboard/work"
+          dayValue={dayValue}
+          dayLabel={dayLabel}
+        />
         {totalCount > 0 && (
           <p className="text-sm text-muted">
             {doneCount}/{totalCount} done
@@ -73,13 +79,20 @@ export default async function WorkPage({
                 autoComplete="off"
               />
             </div>
-            <div className={careerOn ? "sm:col-span-2 lg:col-span-3" : "hidden"}>
+            <div
+              className={careerOn ? "sm:col-span-2 lg:col-span-3" : "hidden"}
+            >
               <label htmlFor="work-focus-link" className="label">
                 Career link (optional)
               </label>
-              <select id="work-focus-link" name="link" className="input" defaultValue="">
+              <select
+                id="work-focus-link"
+                name="link"
+                className="input"
+                defaultValue=""
+              >
                 <option value="">None</option>
-                {linkChoices.map((opt) => (
+                {linkChoices.map(opt => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -87,7 +100,9 @@ export default async function WorkPage({
               </select>
             </div>
             <div className="flex items-end">
-              <SubmitButton className="btn-primary touch-target w-full">Add focus</SubmitButton>
+              <SubmitButton className="btn-primary touch-target w-full">
+                Add focus
+              </SubmitButton>
             </div>
           </FormAction>
         </FocusTarget>
@@ -95,7 +110,11 @@ export default async function WorkPage({
 
       <FocusList initialItems={workDay.focusItems} />
 
-      <WorkLogForm key={dayValue} dayValue={dayValue} initialNote={workDay.logNote ?? ""} />
+      <WorkLogForm
+        key={dayValue}
+        dayValue={dayValue}
+        initialNote={workDay.logNote ?? ""}
+      />
     </div>
   );
 }

@@ -10,9 +10,11 @@ export const CAREER_TABS = [
 
 export type CareerTabId = (typeof CAREER_TABS)[number]["id"];
 
-export function parseCareerTab(value: string | string[] | undefined): CareerTabId {
+export function parseCareerTab(
+  value: string | string[] | undefined
+): CareerTabId {
   const v = Array.isArray(value) ? value[0] : value;
-  return CAREER_TABS.find((t) => t.id === v)?.id ?? "goals";
+  return CAREER_TABS.find(t => t.id === v)?.id ?? "goals";
 }
 
 export function careerTabHref(tab: CareerTabId) {
@@ -29,7 +31,11 @@ export default function CareerTabs({ active }: { active: CareerTabId }) {
       aria-label="Career sections"
       active={active}
       className="mb-0"
-      items={CAREER_TABS.map((t) => ({ id: t.id, label: t.label, href: careerTabHref(t.id) }))}
+      items={CAREER_TABS.map(t => ({
+        id: t.id,
+        label: t.label,
+        href: careerTabHref(t.id),
+      }))}
     />
   );
 }

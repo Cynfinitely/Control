@@ -3,11 +3,7 @@ import { toDateInputValue } from "@/lib/date";
 
 /** Normalize merchant/payee text for category rules. */
 export function normalizeMerchantKey(raw: string): string {
-  return raw
-    .normalize("NFKC")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toUpperCase();
+  return raw.normalize("NFKC").replace(/\s+/g, " ").trim().toUpperCase();
 }
 
 /**

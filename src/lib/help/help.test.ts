@@ -23,15 +23,22 @@ function routeExists(href: string): boolean {
 }
 
 /** Every `help=` key passed to a PageHeader anywhere in the app. */
-function keysUsedByPages(dir = APP_DIR, found = new Set<string>()): Set<string> {
+function keysUsedByPages(
+  dir = APP_DIR,
+  found = new Set<string>()
+): Set<string> {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) keysUsedByPages(full, found);
     else if (entry.name.endsWith(".tsx")) {
       const source = fs.readFileSync(full, "utf8");
-      for (const match of source.matchAll(/<PageHeader\s+help="([^"]+)"/g)) found.add(match[1]);
-      for (const match of source.matchAll(/<PageHeader\s+help=\{`([a-z-]+):\$\{/g)) {
-        for (const key of Object.keys(HELP)) if (key.startsWith(`${match[1]}:`)) found.add(key);
+      for (const match of source.matchAll(/<PageHeader\s+help="([^"]+)"/g))
+        found.add(match[1]);
+      for (const match of source.matchAll(
+        /<PageHeader\s+help=\{`([a-z-]+):\$\{/g
+      )) {
+        for (const key of Object.keys(HELP))
+          if (key.startsWith(`${match[1]}:`)) found.add(key);
       }
     }
   }
@@ -44,7 +51,11 @@ describe("page guides", () => {
     expect(entry.purpose.length).toBeGreaterThan(60);
     expect(entry.steps.length).toBeGreaterThanOrEqual(3);
     expect(entry.capabilities.length).toBeGreaterThanOrEqual(3);
-    for (const text of [...entry.steps, ...entry.capabilities, ...(entry.tips ?? [])]) {
+    for (const text of [
+      ...entry.steps,
+      ...entry.capabilities,
+      ...(entry.tips ?? []),
+    ]) {
       expect(text.trim().length).toBeGreaterThan(10);
     }
   });
@@ -56,28 +67,38 @@ describe("page guides", () => {
 
   it("has at least one guide for every module", () => {
     const covered = new Set(
-      [...keysUsedByPages()].map((key) => key.split(":")[0])
+      [...keysUsedByPages()].map(key => key.split(":")[0])
     );
     // Guide keys start with the module id, except the migraine page's folder name.
-    for (const m of MODULES) expect(covered.has(m.id), `no guide for module ${m.id}`).toBe(true);
+    for (const m of MODULES)
+      expect(covered.has(m.id), `no guide for module ${m.id}`).toBe(true);
   });
 
   it("every guide is used by a page, and every page key has a guide", () => {
     const used = keysUsedByPages();
-    expect([...used].filter((key) => !(key in HELP))).toEqual([]);
-    expect(Object.keys(HELP).filter((key) => !used.has(key))).toEqual([]);
+    expect([...used].filter(key => !(key in HELP))).toEqual([]);
+    expect(Object.keys(HELP).filter(key => !used.has(key))).toEqual([]);
   });
 
   it("related links point at real pages, within the same module or Settings", () => {
     for (const [key, entry] of entries) {
       for (const link of entry.related ?? []) {
-        expect(routeExists(link.href), `${key}: ${link.href} is not a page`).toBe(true);
+        expect(
+          routeExists(link.href),
+          `${key}: ${link.href} is not a page`
+        ).toBe(true);
         const target = moduleForPath(link.href);
         if (target === null) {
-          expect(link.href.split("?")[0], `${key}: ${link.href}`).toBe("/dashboard/settings");
+          expect(link.href.split("?")[0], `${key}: ${link.href}`).toBe(
+            "/dashboard/settings"
+          );
         } else {
-          const own = [...keysUsedByPages()].includes(key) ? key.split(":")[0] : null;
-          expect(target, `${key} links to another module: ${link.href}`).toBe(own);
+          const own = [...keysUsedByPages()].includes(key)
+            ? key.split(":")[0]
+            : null;
+          expect(target, `${key} links to another module: ${link.href}`).toBe(
+            own
+          );
         }
       }
     }

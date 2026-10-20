@@ -5,7 +5,12 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, optStr } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { MAX_LIFE_PRIORITIES, neighborForMove } from "@/lib/priorities/rank";
-import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import {
+  success,
+  failure,
+  wrapFormAction,
+  type ActionResult,
+} from "@/lib/action-result";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "priorities", "dashboard");
@@ -13,7 +18,9 @@ function invalidate(userId: string) {
   revalidatePath("/dashboard");
 }
 
-export async function createPriority(formData: FormData): Promise<ActionResult> {
+export async function createPriority(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const title = str(formData.get("title"));
   const note = optStr(formData.get("note"));
@@ -37,7 +44,9 @@ export async function createPriority(formData: FormData): Promise<ActionResult> 
   return success("Priority added");
 }
 
-export async function updatePriority(formData: FormData): Promise<ActionResult> {
+export async function updatePriority(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const title = str(formData.get("title"));
@@ -54,7 +63,9 @@ export async function updatePriority(formData: FormData): Promise<ActionResult> 
   return success("Priority updated");
 }
 
-export async function deletePriority(formData: FormData): Promise<ActionResult> {
+export async function deletePriority(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid priority");
@@ -72,13 +83,14 @@ export async function movePriority(formData: FormData): Promise<ActionResult> {
   const id = str(formData.get("id"));
   const direction = str(formData.get("direction"));
   if (!id) return failure("Invalid priority");
-  if (direction !== "up" && direction !== "down") return failure("Invalid direction");
+  if (direction !== "up" && direction !== "down")
+    return failure("Invalid direction");
 
   const items = await prisma.lifePriority.findMany({
     where: { userId },
     select: { id: true, sortOrder: true },
   });
-  const current = items.find((item) => item.id === id);
+  const current = items.find(item => item.id === id);
   if (!current) return failure("Priority not found");
 
   const neighbor = neighborForMove(items, id, direction);
@@ -98,7 +110,11 @@ export async function movePriority(formData: FormData): Promise<ActionResult> {
   return success();
 }
 
-export const createPriorityForm = wrapFormAction(createPriority, "Priority added");
-export const updatePriorityForm = wrapFormAction(updatePriority, "Priority updated");
-export const deletePriorityForm = wrapFormAction(deletePriority, "Priority removed");
-export const movePriorityForm = wrapFormAction(movePriority);
+export const createPriorityForm = wrapFormAction(
+  createPriority,
+  "Priority added"
+);
+export const updatePriorityForm = wrapFormAction(
+  updatePriority,
+  "Priority updated"
+);

@@ -26,9 +26,18 @@ function reviveException(e: {
   };
 }
 
-export async function getEventsInRange(userId: string, rangeStart: Date, rangeEnd: Date) {
+export async function getEventsInRange(
+  userId: string,
+  rangeStart: Date,
+  rangeEnd: Date
+) {
   const events = await cachedQuery(
-    ["calendar-events", userId, rangeStart.toISOString(), rangeEnd.toISOString()],
+    [
+      "calendar-events",
+      userId,
+      rangeStart.toISOString(),
+      rangeEnd.toISOString(),
+    ],
     [cacheTag("calendar", userId)],
     async () =>
       prisma.calendarEvent.findMany({
@@ -67,7 +76,7 @@ export async function getEventsInRange(userId: string, rangeStart: Date, rangeEn
   );
 
   // Revive dates *after* the cache read: cache hits come back JSON-serialized.
-  return events.map((e) => ({
+  return events.map(e => ({
     ...e,
     startsAt: coerceDate(e.startsAt),
     endsAt: coerceDate(e.endsAt),
@@ -85,7 +94,7 @@ export async function getOccurrencesInRange(
   const occs: EventOccurrence[] = [];
   for (const event of events) {
     const reminderOffsets = event.reminders
-      .map((r) => r.offsetMinutes)
+      .map(r => r.offsetMinutes)
       .filter((n): n is number => typeof n === "number")
       .sort((a, b) => a - b);
     const expanded = expandEventOccurrences(
@@ -106,7 +115,7 @@ export async function getOccurrencesInRange(
       rangeStart,
       rangeEnd
     );
-    occs.push(...expanded.map((occ) => ({ ...occ, reminderOffsets })));
+    occs.push(...expanded.map(occ => ({ ...occ, reminderOffsets })));
   }
   occs.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
   return occs;
@@ -117,7 +126,10 @@ export async function getCalendarEvent(userId: string, eventId: string) {
     where: { id: eventId, userId, deletedAt: null },
     include: {
       exceptions: true,
-      reminders: { where: { userId, deletedAt: null }, orderBy: { createdAt: "asc" } },
+      reminders: {
+        where: { userId, deletedAt: null },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   if (!event) return null;
@@ -127,16 +139,25 @@ export async function getCalendarEvent(userId: string, eventId: string) {
     endsAt: coerceDate(event.endsAt),
     rruleUntil: event.rruleUntil ? coerceDate(event.rruleUntil) : null,
     exceptions: event.exceptions.map(reviveException),
-    reminders: event.reminders.map((r) => ({
+    reminders: event.reminders.map(r => ({
       ...r,
       remindAt: r.remindAt ? coerceDate(r.remindAt) : null,
     })),
   };
 }
 
-export async function getStandaloneReminders(userId: string, rangeStart: Date, rangeEnd: Date) {
+export async function getStandaloneReminders(
+  userId: string,
+  rangeStart: Date,
+  rangeEnd: Date
+) {
   const reminders = await cachedQuery(
-    ["calendar-reminders", userId, rangeStart.toISOString(), rangeEnd.toISOString()],
+    [
+      "calendar-reminders",
+      userId,
+      rangeStart.toISOString(),
+      rangeEnd.toISOString(),
+    ],
     [cacheTag("calendar", userId)],
     async () =>
       prisma.reminder.findMany({
@@ -153,7 +174,7 @@ export async function getStandaloneReminders(userId: string, rangeStart: Date, r
         orderBy: { remindAt: "asc" },
       })
   );
-  return reminders.map((r) => ({
+  return reminders.map(r => ({
     ...r,
     remindAt: r.remindAt ? coerceDate(r.remindAt) : null,
   }));
@@ -173,7 +194,7 @@ export async function getNotifications(userId: string, limit = 30) {
     orderBy: [{ readAt: "asc" }, { dueAt: "desc" }],
     take: limit,
   });
-  return rows.map((n) => ({
+  return rows.map(n => ({
     ...n,
     dueAt: coerceDate(n.dueAt),
     readAt: n.readAt ? coerceDate(n.readAt) : null,

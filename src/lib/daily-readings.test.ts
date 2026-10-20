@@ -7,7 +7,9 @@ import {
 
 describe("SUGGESTED_DAILY_READINGS", () => {
   it("includes a Quran item linked to khatm logging", () => {
-    const quran = SUGGESTED_DAILY_READINGS.find((item) => item.linkKind === "quran");
+    const quran = SUGGESTED_DAILY_READINGS.find(
+      item => item.linkKind === "quran"
+    );
     expect(quran).toMatchObject({
       name: "Quran",
       unit: "pages",
@@ -16,7 +18,7 @@ describe("SUGGESTED_DAILY_READINGS", () => {
   });
 
   it("includes Jawshan, Risale-i Nur, and Gülen as customizable items", () => {
-    expect(SUGGESTED_DAILY_READINGS.map((item) => item.name)).toEqual([
+    expect(SUGGESTED_DAILY_READINGS.map(item => item.name)).toEqual([
       "Quran",
       "Jawshan",
       "Risale-i Nur",

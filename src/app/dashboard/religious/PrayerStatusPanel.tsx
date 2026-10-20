@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import clsx from "clsx";
 import Icon from "@/components/Icon";
 import IconButton from "@/components/IconButton";
@@ -8,7 +8,11 @@ import SegmentedControl from "@/components/SegmentedControl";
 import Spinner from "@/components/Spinner";
 import { useToast } from "@/components/Toast";
 import { PRAYERS } from "@/lib/prayer-debt";
-import { prayerLabel, prayersToMarkOnTime, type PrayerStatusValue } from "@/lib/religious/day-prayers";
+import {
+  prayerLabel,
+  prayersToMarkOnTime,
+  type PrayerStatusValue,
+} from "@/lib/religious/day-prayers";
 import type { ActionResult } from "@/lib/action-result";
 import { clearPrayer, markAllPrayersOnTime, setPrayer } from "./actions";
 
@@ -31,7 +35,13 @@ const STATUS_OPTIONS: { value: PrayerStatusValue; label: string }[] = [
 /** `null` override = cleared locally, waiting for the server. */
 type Overrides = Record<string, PrayerStatusValue | null>;
 
-function StatusText({ status, madeUp }: { status: string | undefined; madeUp: boolean }) {
+function StatusText({
+  status,
+  madeUp,
+}: {
+  status: string | undefined;
+  madeUp: boolean;
+}) {
   if (status === "ontime") {
     return (
       <span className="badge-success">
@@ -63,40 +73,51 @@ function StatusText({ status, madeUp }: { status: string | undefined; madeUp: bo
  * Per-prayer status rows. Each row updates optimistically and only that row
  * waits for the server, so all five can be marked in quick succession.
  */
-export default function PrayerStatusPanel({ dayValue, dayName, initialStatuses, madeUp = [] }: Props) {
+export default function PrayerStatusPanel({
+  dayValue,
+  dayName,
+  initialStatuses,
+  madeUp = [],
+}: Props) {
   const toast = useToast();
   const [overrides, setOverrides] = useState<Overrides>({});
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [bulkPending, setBulkPending] = useState(false);
 
   // Drop local overrides once the server-rendered statuses catch up.
-  useEffect(() => {
-    setOverrides((current) => {
-      let changed = false;
-      const next: Overrides = {};
-      for (const [prayer, value] of Object.entries(current)) {
-        if ((initialStatuses[prayer] ?? null) === value) changed = true;
-        else next[prayer] = value;
-      }
-      return changed ? next : current;
-    });
-  }, [initialStatuses]);
+  const [seenStatuses, setSeenStatuses] = useState(initialStatuses);
+  if (seenStatuses !== initialStatuses) {
+    setSeenStatuses(initialStatuses);
+    const next: Overrides = {};
+    let changed = false;
+    for (const [prayer, value] of Object.entries(overrides)) {
+      if ((initialStatuses[prayer] ?? null) === value) changed = true;
+      else next[prayer] = value;
+    }
+    if (changed) setOverrides(next);
+  }
 
   const statuses: PrayerStatus = Object.fromEntries(
-    PRAYERS.map((p) => [p, p in overrides ? overrides[p] ?? undefined : initialStatuses[p]])
+    PRAYERS.map(p => [
+      p,
+      p in overrides ? (overrides[p] ?? undefined) : initialStatuses[p],
+    ])
   );
   const unlogged = prayersToMarkOnTime(statuses);
-  const missedCount = PRAYERS.filter((p) => statuses[p] === "missed").length;
+  const missedCount = PRAYERS.filter(p => statuses[p] === "missed").length;
 
   function revert(prayers: readonly string[]) {
-    setOverrides((current) => {
+    setOverrides(current => {
       const next = { ...current };
       for (const p of prayers) delete next[p];
       return next;
     });
   }
 
-  async function run(prayers: readonly string[], call: () => Promise<ActionResult>) {
+  async function run(
+    prayers: readonly string[],
+    call: () => Promise<ActionResult>
+  ) {
     try {
       const result = await call();
       if (!result.ok) {
@@ -113,32 +134,32 @@ export default function PrayerStatusPanel({ dayValue, dayName, initialStatuses, 
 
   async function handleSet(prayer: string, status: PrayerStatusValue) {
     if (statuses[prayer] === status || pending[prayer]) return;
-    setOverrides((o) => ({ ...o, [prayer]: status }));
-    setPending((p) => ({ ...p, [prayer]: true }));
+    setOverrides(o => ({ ...o, [prayer]: status }));
+    setPending(p => ({ ...p, [prayer]: true }));
     const fd = new FormData();
     fd.set("prayer", prayer);
     fd.set("status", status);
     fd.set("date", dayValue);
     await run([prayer], () => setPrayer(fd));
-    setPending((p) => ({ ...p, [prayer]: false }));
+    setPending(p => ({ ...p, [prayer]: false }));
   }
 
   async function handleClear(prayer: string) {
     if (!statuses[prayer] || pending[prayer]) return;
-    setOverrides((o) => ({ ...o, [prayer]: null }));
-    setPending((p) => ({ ...p, [prayer]: true }));
+    setOverrides(o => ({ ...o, [prayer]: null }));
+    setPending(p => ({ ...p, [prayer]: true }));
     const fd = new FormData();
     fd.set("prayer", prayer);
     fd.set("date", dayValue);
     await run([prayer], () => clearPrayer(fd));
-    setPending((p) => ({ ...p, [prayer]: false }));
+    setPending(p => ({ ...p, [prayer]: false }));
   }
 
   async function handleMarkAll() {
-    const targets = unlogged.filter((p) => !pending[p]);
+    const targets = unlogged.filter(p => !pending[p]);
     if (targets.length === 0) return;
     setBulkPending(true);
-    setOverrides((o) => {
+    setOverrides(o => {
       const next = { ...o };
       for (const p of targets) next[p] = "ontime";
       return next;
@@ -152,14 +173,21 @@ export default function PrayerStatusPanel({ dayValue, dayName, initialStatuses, 
   return (
     <div>
       <ul className="divide-y divide-slate-100 dark:divide-slate-700">
-        {PRAYERS.map((p) => {
+        {PRAYERS.map(p => {
           const current = statuses[p];
           const label = prayerLabel(p);
-          const rowPending = Boolean(pending[p]) || (bulkPending && unlogged.includes(p));
+          const rowPending =
+            Boolean(pending[p]) || (bulkPending && unlogged.includes(p));
           return (
-            <li key={p} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2 first:pt-0 last:pb-0">
+            <li
+              key={p}
+              className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2 first:pt-0 last:pb-0"
+            >
               <div className="flex min-w-[9rem] flex-1 items-center gap-2">
-                <span id={`prayer-${p}-label`} className="w-16 font-medium text-slate-800 dark:text-slate-100">
+                <span
+                  id={`prayer-${p}-label`}
+                  className="w-16 font-medium text-slate-800 dark:text-slate-100"
+                >
                   {label}
                 </span>
                 <StatusText status={current} madeUp={madeUp.includes(p)} />
@@ -173,14 +201,16 @@ export default function PrayerStatusPanel({ dayValue, dayName, initialStatuses, 
                 <SegmentedControl
                   options={STATUS_OPTIONS}
                   value={(current as PrayerStatusValue | undefined) ?? null}
-                  onChange={(status) => handleSet(p, status)}
+                  onChange={status => handleSet(p, status)}
                   disabled={rowPending}
                   aria-label={`${label} status`}
                 />
                 <IconButton
                   icon="x"
                   aria-label={`Clear ${label} status`}
-                  title={current ? `Clear ${label} status` : `${label} has no status`}
+                  title={
+                    current ? `Clear ${label} status` : `${label} has no status`
+                  }
                   disabled={!current || rowPending}
                   onClick={() => handleClear(p)}
                   className={clsx("btn-icon", !current && "invisible")}
@@ -195,8 +225,8 @@ export default function PrayerStatusPanel({ dayValue, dayName, initialStatuses, 
         <p className="hint mt-0 flex items-start gap-1.5">
           <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
-            Missed prayers are added to your qaza list automatically. Clearing a status (×) removes the qaza
-            entry it created.
+            Missed prayers are added to your qaza list automatically. Clearing a
+            status (×) removes the qaza entry it created.
           </span>
         </p>
         <button
@@ -212,7 +242,11 @@ export default function PrayerStatusPanel({ dayValue, dayName, initialStatuses, 
                 : undefined
           }
         >
-          {bulkPending ? <Spinner /> : <Icon name="check" className="h-4 w-4" />}
+          {bulkPending ? (
+            <Spinner />
+          ) : (
+            <Icon name="check" className="h-4 w-4" />
+          )}
           {unlogged.length === 0 || unlogged.length === PRAYERS.length
             ? "Mark all on time"
             : `Mark remaining ${unlogged.length} on time`}

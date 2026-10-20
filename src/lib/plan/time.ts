@@ -23,7 +23,10 @@ export function normalizeTimeInput(value: string): string | null {
 }
 
 /** Duration in minutes; treats end <= start as crossing midnight. */
-export function blockDurationMinutes(startTime: string, endTime: string): number | null {
+export function blockDurationMinutes(
+  startTime: string,
+  endTime: string
+): number | null {
   const start = parseTimeToMinutes(startTime);
   const end = parseTimeToMinutes(endTime);
   if (start === null || end === null) return null;
@@ -53,14 +56,21 @@ export function getCurrentTimeMinutes(now = new Date()): number {
   return now.getHours() * 60 + now.getMinutes();
 }
 
-function endMinutesOnTimeline(startTime: string, endTime: string): number | null {
+function endMinutesOnTimeline(
+  startTime: string,
+  endTime: string
+): number | null {
   const start = parseTimeToMinutes(startTime);
   const duration = blockDurationMinutes(startTime, endTime);
   if (start === null || duration === null) return null;
   return start + duration;
 }
 
-export function isBlockActive(startTime: string, endTime: string, now = new Date()): boolean {
+export function isBlockActive(
+  startTime: string,
+  endTime: string,
+  now = new Date()
+): boolean {
   const current = getCurrentTimeMinutes(now);
   const start = parseTimeToMinutes(startTime);
   const endOnTimeline = endMinutesOnTimeline(startTime, endTime);
@@ -72,7 +82,12 @@ export function isBlockActive(startTime: string, endTime: string, now = new Date
   return current >= start && current < endOnTimeline;
 }
 
-export function isBlockOverdue(startTime: string, endTime: string, status: string, now = new Date()): boolean {
+export function isBlockOverdue(
+  startTime: string,
+  endTime: string,
+  status: string,
+  now = new Date()
+): boolean {
   if (status !== "planned") return false;
   const current = getCurrentTimeMinutes(now);
   const endOnTimeline = endMinutesOnTimeline(startTime, endTime);
@@ -94,13 +109,20 @@ export function isBlockUpcoming(startTime: string, now = new Date()): boolean {
   return start > getCurrentTimeMinutes(now);
 }
 
-export function timelineStartMinutes(startTime: string, dayOffset = 0): number | null {
+export function timelineStartMinutes(
+  startTime: string,
+  dayOffset = 0
+): number | null {
   const start = parseTimeToMinutes(startTime);
   if (start === null) return null;
   return dayOffset * 24 * 60 + start;
 }
 
-export function timelineEndMinutes(startTime: string, endTime: string, dayOffset = 0): number | null {
+export function timelineEndMinutes(
+  startTime: string,
+  endTime: string,
+  dayOffset = 0
+): number | null {
   const start = timelineStartMinutes(startTime, dayOffset);
   const duration = blockDurationMinutes(startTime, endTime);
   if (start === null || duration === null) return null;

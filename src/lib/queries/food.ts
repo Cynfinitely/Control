@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { addDays, coerceDate, startOfDay, endOfDay, toDateInputValue } from "@/lib/date";
+import {
+  addDays,
+  coerceDate,
+  startOfDay,
+  endOfDay,
+  toDateInputValue,
+} from "@/lib/date";
 import { resolveFoodSettings, type FoodSettings } from "@/lib/food/meals";
 import type { FoodInsightEntry } from "@/lib/food/insights";
 import { normalizeFood } from "@/lib/food/items";
@@ -45,28 +51,42 @@ export type NutritionTargetView = {
   fat: number;
 };
 
-export const DEFAULT_NUTRITION_TARGET: NutritionTargetView = { calories: 2000, protein: 120, carbs: 220, fat: 70 };
+export const DEFAULT_NUTRITION_TARGET: NutritionTargetView = {
+  calories: 2000,
+  protein: 120,
+  carbs: 220,
+  fat: 70,
+};
 
 function toIso(d: Date | string | null): string | null {
   return d ? coerceDate(d).toISOString() : null;
 }
 
 export async function getFoodSettings(userId: string): Promise<FoodSettings> {
-  return cachedQuery(["food-settings", userId], [cacheTag("food", userId)], async () => {
-    const row = await prisma.foodPreference.findUnique({
-      where: { userId },
-      select: { mode: true, mealLabels: true },
-    });
-    return resolveFoodSettings(row);
-  });
+  return cachedQuery(
+    ["food-settings", userId],
+    [cacheTag("food", userId)],
+    async () => {
+      const row = await prisma.foodPreference.findUnique({
+        where: { userId },
+        select: { mode: true, mealLabels: true },
+      });
+      return resolveFoodSettings(row);
+    }
+  );
 }
 
 export async function getUserTimezone(userId: string): Promise<string> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { timezone: true } });
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { timezone: true },
+  });
   return user?.timezone ?? "Europe/Istanbul";
 }
 
-export async function getNutritionTarget(userId: string): Promise<NutritionTargetView> {
+export async function getNutritionTarget(
+  userId: string
+): Promise<NutritionTargetView> {
   const target = await prisma.nutritionTarget.findUnique({
     where: { userId },
     select: { calories: true, protein: true, carbs: true, fat: true },
@@ -98,7 +118,7 @@ export async function getDayFoodEntries(userId: string, dayKey: string) {
           _sum: { glasses: true },
         }),
       ]);
-      const entries: FoodEntryView[] = rows.map((r) => ({
+      const entries: FoodEntryView[] = rows.map(r => ({
         id: r.id,
         name: r.name,
         meal: r.meal,
@@ -122,50 +142,76 @@ export async function getDayFoodEntries(userId: string, dayKey: string) {
   );
 }
 
-export async function getDefaultMeals(userId: string): Promise<DefaultMealView[]> {
-  return cachedQuery(["food-defaults", userId], [cacheTag("food", userId)], async () => {
-    const rows = await prisma.defaultMeal.findMany({
-      where: { userId, deletedAt: null },
-      orderBy: { name: "asc" },
-      include: { items: { orderBy: { sortOrder: "asc" } } },
-    });
-    return rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      meal: r.meal,
-      items: r.items.map((i) => ({ id: i.id, name: i.name, quantity: i.quantity })),
-      calories: r.calories,
-      protein: r.protein,
-      carbs: r.carbs,
-      fat: r.fat,
-    }));
-  });
+export async function getDefaultMeals(
+  userId: string
+): Promise<DefaultMealView[]> {
+  return cachedQuery(
+    ["food-defaults", userId],
+    [cacheTag("food", userId)],
+    async () => {
+      const rows = await prisma.defaultMeal.findMany({
+        where: { userId, deletedAt: null },
+        orderBy: { name: "asc" },
+        include: { items: { orderBy: { sortOrder: "asc" } } },
+      });
+      return rows.map(r => ({
+        id: r.id,
+        name: r.name,
+        meal: r.meal,
+        items: r.items.map(i => ({
+          id: i.id,
+          name: i.name,
+          quantity: i.quantity,
+        })),
+        calories: r.calories,
+        protein: r.protein,
+        carbs: r.carbs,
+        fat: r.fat,
+      }));
+    }
+  );
 }
 
 /** Distinct recently logged meals (most recent first), excluding ones logged via a Default Meal. */
-export async function getRecentFoods(userId: string, limit = 8): Promise<RecentFood[]> {
+export async function getRecentFoods(
+  userId: string,
+  limit = 8
+): Promise<RecentFood[]> {
   const since = addDays(startOfDay(new Date()), -30);
-  return cachedQuery(["food-recent", userId, String(limit)], [cacheTag("food", userId)], async () => {
-    const rows = await prisma.foodLogEntry.findMany({
-      where: { userId, deletedAt: null, defaultMealId: null, date: { gte: since } },
-      orderBy: { createdAt: "desc" },
-      select: { name: true, meal: true, items: true },
-      take: 200,
-    });
-    const seen = new Set<string>();
-    const recent: RecentFood[] = [];
-    for (const r of rows) {
-      const key = normalizeFood(r.name);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      recent.push(r);
-      if (recent.length === limit) break;
+  return cachedQuery(
+    ["food-recent", userId, String(limit)],
+    [cacheTag("food", userId)],
+    async () => {
+      const rows = await prisma.foodLogEntry.findMany({
+        where: {
+          userId,
+          deletedAt: null,
+          defaultMealId: null,
+          date: { gte: since },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { name: true, meal: true, items: true },
+        take: 200,
+      });
+      const seen = new Set<string>();
+      const recent: RecentFood[] = [];
+      for (const r of rows) {
+        const key = normalizeFood(r.name);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        recent.push(r);
+        if (recent.length === limit) break;
+      }
+      return recent;
     }
-    return recent;
-  });
+  );
 }
 
-export async function getFoodRange(userId: string, from: Date, to: Date): Promise<FoodInsightEntry[]> {
+export async function getFoodRange(
+  userId: string,
+  from: Date,
+  to: Date
+): Promise<FoodInsightEntry[]> {
   return cachedQuery(
     ["food-range", userId, from.toISOString(), to.toISOString()],
     [cacheTag("food", userId)],
@@ -217,12 +263,15 @@ export async function getFoodReportRange(userId: string, from: Date, to: Date) {
   );
 
   return {
-    entries: data.entries.map((entry) => ({
+    entries: data.entries.map(entry => ({
       ...entry,
       date: coerceDate(entry.date),
       meal: entry.meal ?? "",
     })),
     target: data.target,
-    waterLogs: data.waterLogs.map((log) => ({ ...log, date: coerceDate(log.date) })),
+    waterLogs: data.waterLogs.map(log => ({
+      ...log,
+      date: coerceDate(log.date),
+    })),
   };
 }

@@ -1,5 +1,10 @@
 import { requireModule } from "@/lib/session";
-import { getPeriodKey, periodLabel, shiftPeriodDate, type GoalPeriod } from "@/lib/period";
+import {
+  getPeriodKey,
+  periodLabel,
+  shiftPeriodDate,
+  type GoalPeriod,
+} from "@/lib/period";
 import { getGoalsForPeriod } from "@/lib/queries/goals";
 import PageHeader from "@/components/PageHeader";
 import TabNav from "@/components/TabNav";
@@ -20,13 +25,13 @@ const PERIODS: { value: GoalPeriod; label: string; unit: string }[] = [
   { value: "yearly", label: "Yearly", unit: "year" },
 ];
 
-export default async function GoalsPage({
-  searchParams,
-}: {
-  searchParams: { period?: string; offset?: string };
+export default async function GoalsPage(props: {
+  searchParams: Promise<{ period?: string; offset?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const user = await requireModule("goals");
-  const periodDef = PERIODS.find((p) => p.value === searchParams.period) ?? PERIODS[0];
+  const periodDef =
+    PERIODS.find(p => p.value === searchParams.period) ?? PERIODS[0];
   const period = periodDef.value;
   const offset = parseInt(searchParams.offset ?? "0", 10) || 0;
   const refDate = shiftPeriodDate(period, offset);
@@ -43,15 +48,19 @@ export default async function GoalsPage({
   let carryCount = 0;
   if (offset === -1) {
     const currentGoals = await getGoalsForPeriod(user.id, period, currentKey);
-    const carried = new Set(currentGoals.map((g) => g.title));
+    const carried = new Set(currentGoals.map(g => g.title));
     carryFromKey = periodKey;
-    carryCount = goals.filter((g) => g.status === "active" && !carried.has(g.title)).length;
+    carryCount = goals.filter(
+      g => g.status === "active" && !carried.has(g.title)
+    ).length;
   } else if (isCurrent) {
     const prevKey = getPeriodKey(period, shiftPeriodDate(period, -1));
     const prevGoals = await getGoalsForPeriod(user.id, period, prevKey);
-    const carried = new Set(goals.map((g) => g.title));
+    const carried = new Set(goals.map(g => g.title));
     carryFromKey = prevKey;
-    carryCount = prevGoals.filter((g) => g.status === "active" && !carried.has(g.title)).length;
+    carryCount = prevGoals.filter(
+      g => g.status === "active" && !carried.has(g.title)
+    ).length;
   }
 
   const base = `/dashboard/goals?period=${period}`;
@@ -60,13 +69,21 @@ export default async function GoalsPage({
 
   return (
     <div>
-      <PageHeader help="goals" title="Goals" description={`${label} — checkboxes, counters, and milestones.`}>
+      <PageHeader
+        help="goals"
+        title="Goals"
+        description={`${label} — checkboxes, counters, and milestones.`}
+      >
         <TabNav
           aria-label="Goal period"
           variant="pills"
           className="mb-0"
           active={period}
-          items={PERIODS.map((p) => ({ id: p.value, href: `/dashboard/goals?period=${p.value}`, label: p.label }))}
+          items={PERIODS.map(p => ({
+            id: p.value,
+            href: `/dashboard/goals?period=${p.value}`,
+            label: p.label,
+          }))}
         />
       </PageHeader>
 
@@ -74,12 +91,30 @@ export default async function GoalsPage({
         <StepNavigator
           label={label}
           sublabel={isCurrent ? `This ${periodDef.unit}` : undefined}
-          prev={{ href: hrefFor(offset - 1), label: `Previous ${periodDef.unit}` }}
-          next={{ href: hrefFor(offset + 1), label: `Next ${periodDef.unit}`, disabled: offset >= 0 }}
-          reset={!isCurrent ? { href: base, label: `This ${periodDef.unit}`, text: `This ${periodDef.unit}` } : undefined}
+          prev={{
+            href: hrefFor(offset - 1),
+            label: `Previous ${periodDef.unit}`,
+          }}
+          next={{
+            href: hrefFor(offset + 1),
+            label: `Next ${periodDef.unit}`,
+            disabled: offset >= 0,
+          }}
+          reset={
+            !isCurrent
+              ? {
+                  href: base,
+                  label: `This ${periodDef.unit}`,
+                  text: `This ${periodDef.unit}`,
+                }
+              : undefined
+          }
         />
         {carryFromKey && carryCount > 0 && (
-          <ActionForm action={rolloverGoals} className="flex flex-wrap items-center gap-2">
+          <ActionForm
+            action={rolloverGoals}
+            className="flex flex-wrap items-center gap-2"
+          >
             <input type="hidden" name="period" value={period} />
             <input type="hidden" name="fromPeriodKey" value={carryFromKey} />
             <input type="hidden" name="toPeriodKey" value={currentKey} />

@@ -9,7 +9,12 @@ type LogoProps = {
   variant?: "full" | "mark";
 };
 
-export default function Logo({ className, href, onClick, variant = "full" }: LogoProps) {
+export default function Logo({
+  className,
+  href,
+  onClick,
+  variant = "full",
+}: LogoProps) {
   const isMark = variant === "mark";
   const image = (
     <Image
@@ -24,7 +29,12 @@ export default function Logo({ className, href, onClick, variant = "full" }: Log
 
   if (href) {
     return (
-      <Link href={href} onClick={onClick} className="inline-flex rounded-md" aria-label="Control home">
+      <Link
+        href={href}
+        onClick={onClick}
+        className="inline-flex rounded-md"
+        aria-label="Control home"
+      >
         {image}
       </Link>
     );
