@@ -34,7 +34,9 @@ type RawEntry = {
   sortMinutes: number;
 };
 
-function assignSortMinutes(entries: { startTime: string; sortMinutes: number }[]): void {
+function assignSortMinutes(
+  entries: { startTime: string; sortMinutes: number }[]
+): void {
   let dayOffset = 0;
   let prevMinutes: number | null = null;
 
@@ -74,7 +76,9 @@ export function parsePlanText(
   text: string,
   options?: { defaultLastBlockDurationMinutes?: number }
 ): ParsePlanTextResult {
-  const defaultDuration = options?.defaultLastBlockDurationMinutes ?? DEFAULT_LAST_BLOCK_DURATION_MINUTES;
+  const defaultDuration =
+    options?.defaultLastBlockDurationMinutes ??
+    DEFAULT_LAST_BLOCK_DURATION_MINUTES;
   const warnings: string[] = [];
   const raw: RawEntry[] = [];
 
@@ -137,8 +141,4 @@ export function parsePlanText(
   }
 
   return { entries, warnings };
-}
-
-export function countParseableLines(text: string): number {
-  return parsePlanText(text).entries.length;
 }

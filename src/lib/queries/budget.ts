@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { coerceDate, startOfDay, endOfDay, rangeFor, toDateInputValue } from "@/lib/date";
+import {
+  coerceDate,
+  startOfDay,
+  endOfDay,
+  rangeFor,
+  toDateInputValue,
+} from "@/lib/date";
 import type { LedgerTypeFilter } from "@/lib/budget-range";
 import { ensureBudgetCategories } from "@/lib/budget-categories";
-import type { BudgetCategory } from "@prisma/client";
 import {
   computePeriodTotals,
   computeSavingsRate,
@@ -42,7 +47,7 @@ async function loadBudgetContext(userId: string) {
     prisma.budgetProfile.findUnique({ where: { userId } }),
   ]);
 
-  const txRows: TxWithMeta[] = transactions.map((tx) => ({
+  const txRows: TxWithMeta[] = transactions.map(tx => ({
     id: tx.id,
     type: tx.type,
     amountCents: tx.amountCents,
@@ -59,7 +64,9 @@ async function loadBudgetContext(userId: string) {
   return { categories, transactions: txRows, profile };
 }
 
-function reviveTxRow<T extends { date: Date | string; deletedAt?: Date | string | null }>(
+function reviveTxRow<
+  T extends { date: Date | string; deletedAt?: Date | string | null },
+>(
   tx: T
 ): Omit<T, "date" | "deletedAt"> & { date: Date; deletedAt: Date | null } {
   return {
@@ -69,7 +76,10 @@ function reviveTxRow<T extends { date: Date | string; deletedAt?: Date | string 
   };
 }
 
-export async function getBudgetCategories(userId: string, includeHidden = false) {
+export async function getBudgetCategories(
+  userId: string,
+  includeHidden = false
+) {
   return cachedQuery(
     ["budget-categories", userId, includeHidden ? "all" : "visible"],
     [cacheTag("budget", userId)],
@@ -90,17 +100,37 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
     [cacheTag("budget", userId), cacheTag("dashboard", userId)],
     async () => {
       const { from, to } = rangeFor("monthly", monthStart);
-      const { categories, transactions, profile } = await loadBudgetContext(userId);
-      const active = transactions.filter((tx) => !tx.deletedAt);
+      const { categories, transactions, profile } =
+        await loadBudgetContext(userId);
+      const active = transactions.filter(tx => !tx.deletedAt);
       const totals = computePeriodTotals(active, from, to);
-      const savingsRate = computeSavingsRate(totals.incomeCents, totals.expenseCents);
-      const expenseCategories = categories.filter((c) => c.kind === "expense");
-      const breakdown = expenseBreakdownWithUncategorized(active, expenseCategories, from, to);
+      const savingsRate = computeSavingsRate(
+        totals.incomeCents,
+        totals.expenseCents
+      );
+      const expenseCategories = categories.filter(c => c.kind === "expense");
+      const breakdown = expenseBreakdownWithUncategorized(
+        active,
+        expenseCategories,
+        from,
+        to
+      );
 
-      const prevStart = new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1);
+      const prevStart = new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth() - 1,
+        1
+      );
       const prevRange = rangeFor("monthly", prevStart);
-      const prevTotals = computePeriodTotals(active, prevRange.from, prevRange.to);
-      const prevSavings = computeSavingsRate(prevTotals.incomeCents, prevTotals.expenseCents);
+      const prevTotals = computePeriodTotals(
+        active,
+        prevRange.from,
+        prevRange.to
+      );
+      const prevSavings = computeSavingsRate(
+        prevTotals.incomeCents,
+        prevTotals.expenseCents
+      );
       const mom = computeMonthOverMonth(
         { ...totals, savingsRate },
         {
@@ -112,16 +142,16 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
       const merchants = topMerchantsBySpend(active, from, to);
       const monthKeys = monthKeysSpanning(active, 12);
       const savingsSeries = savingsSeriesByMonth(active, monthKeys);
-      const uncategorizedCount = active.filter((tx) => !tx.categoryId).length;
+      const uncategorizedCount = active.filter(tx => !tx.categoryId).length;
       const hasTransactions = active.length > 0;
       const fromT = startOfDay(from).getTime();
       const toT = startOfDay(to).getTime();
       const monthEntries = active
-        .filter((tx) => {
+        .filter(tx => {
           const day = startOfDay(tx.date).getTime();
           return day >= fromT && day <= toT;
         })
-        .map((tx) => ({
+        .map(tx => ({
           date: tx.date,
           type: tx.type,
           amountCents: tx.amountCents,
@@ -159,14 +189,14 @@ export async function getMonthBudget(userId: string, monthStart: Date) {
     ...data,
     from: coerceDate(data.from),
     to: coerceDate(data.to),
-    recentBatches: data.recentBatches.map((b) => ({
+    recentBatches: data.recentBatches.map(b => ({
       ...b,
       importedAt: coerceDate(b.importedAt),
       dateFrom: b.dateFrom ? coerceDate(b.dateFrom) : null,
       dateTo: b.dateTo ? coerceDate(b.dateTo) : null,
       deletedAt: b.deletedAt ? coerceDate(b.deletedAt) : null,
     })),
-    monthEntries: (data.monthEntries ?? []).map((entry) => ({
+    monthEntries: (data.monthEntries ?? []).map(entry => ({
       ...entry,
       date: coerceDate(entry.date),
     })),
@@ -183,7 +213,10 @@ export async function getUncategorizedTransactions(
   options: { monthKey?: string | null; limit?: number } = {}
 ) {
   const limit = options.limit ?? 100;
-  const monthKey = options.monthKey && /^\d{4}-\d{2}$/.test(options.monthKey) ? options.monthKey : null;
+  const monthKey =
+    options.monthKey && /^\d{4}-\d{2}$/.test(options.monthKey)
+      ? options.monthKey
+      : null;
   const data = await cachedQuery(
     ["budget-uncategorized", userId, monthKey ?? "all", String(limit)],
     [cacheTag("budget", userId)],
@@ -207,11 +240,13 @@ export async function getUncategorizedTransactions(
           orderBy: [{ kind: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
         }),
         prisma.budgetTransaction.count({ where }),
-        monthKey ? prisma.budgetTransaction.count({ where: base }) : Promise.resolve(-1),
+        monthKey
+          ? prisma.budgetTransaction.count({ where: base })
+          : Promise.resolve(-1),
       ]);
 
       return {
-        entries: entries.map((tx) => ({
+        entries: entries.map(tx => ({
           id: tx.id,
           type: tx.type,
           amountCents: tx.amountCents,
@@ -237,8 +272,13 @@ export async function getUncategorizedTransactions(
 
 /** Number of uncategorized transactions across all months (for the Budget tab badge). */
 export async function getUncategorizedCount(userId: string) {
-  return cachedQuery(["budget-uncategorized-count", userId], [cacheTag("budget", userId)], () =>
-    prisma.budgetTransaction.count({ where: { userId, deletedAt: null, categoryId: null } })
+  return cachedQuery(
+    ["budget-uncategorized-count", userId],
+    [cacheTag("budget", userId)],
+    () =>
+      prisma.budgetTransaction.count({
+        where: { userId, deletedAt: null, categoryId: null },
+      })
   );
 }
 
@@ -249,9 +289,13 @@ export async function getBudgetSummaryForDashboard(userId: string, ref: Date) {
     async () => {
       const { transactions, profile } = await loadBudgetContext(userId);
       const { from, to } = rangeFor("monthly", ref);
-      const active = transactions.filter((tx) => !tx.deletedAt);
-      const { netCents, incomeCents, expenseCents } = computePeriodTotals(active, from, to);
-      const uncategorizedCount = active.filter((tx) => !tx.categoryId).length;
+      const active = transactions.filter(tx => !tx.deletedAt);
+      const { netCents, incomeCents, expenseCents } = computePeriodTotals(
+        active,
+        from,
+        to
+      );
+      const uncategorizedCount = active.filter(tx => !tx.categoryId).length;
       const hasTransactions = active.length > 0;
 
       return {
@@ -266,9 +310,13 @@ export async function getBudgetSummaryForDashboard(userId: string, ref: Date) {
   );
 }
 
-export async function getWeekExpenseTotal(userId: string, weekStart: Date, weekEnd: Date) {
+export async function getWeekExpenseTotal(
+  userId: string,
+  weekStart: Date,
+  weekEnd: Date
+) {
   const { transactions } = await loadBudgetContext(userId);
-  const active = transactions.filter((tx) => !tx.deletedAt);
+  const active = transactions.filter(tx => !tx.deletedAt);
   const { expenseCents } = computePeriodTotals(active, weekStart, weekEnd);
   return expenseCents;
 }
@@ -306,7 +354,9 @@ export async function getRangeBudget(
         userId,
         deletedAt: null,
         date: { gte: startOfDay(from), lte: endOfDay(to) },
-        ...(filters?.type && filters.type !== "all" ? { type: filters.type } : {}),
+        ...(filters?.type && filters.type !== "all"
+          ? { type: filters.type }
+          : {}),
         ...(filters?.categoryId === "__uncategorized__"
           ? { categoryId: null }
           : filters?.categoryId
@@ -326,7 +376,7 @@ export async function getRangeBudget(
         }),
       ]);
 
-      const txRows: RangeBudgetEntry[] = entries.map((tx) => ({
+      const txRows: RangeBudgetEntry[] = entries.map(tx => ({
         id: tx.id,
         type: tx.type,
         amountCents: tx.amountCents,
@@ -339,7 +389,7 @@ export async function getRangeBudget(
       }));
 
       const totals = computePeriodTotals(
-        txRows.map((tx) => ({
+        txRows.map(tx => ({
           type: tx.type,
           amountCents: tx.amountCents,
           date: tx.date,
@@ -348,9 +398,9 @@ export async function getRangeBudget(
         from,
         to
       );
-      const expenseCategories = categories.filter((c) => c.kind === "expense");
+      const expenseCategories = categories.filter(c => c.kind === "expense");
       const breakdown = expenseBreakdownWithUncategorized(
-        txRows.map((tx) => ({
+        txRows.map(tx => ({
           type: tx.type,
           amountCents: tx.amountCents,
           date: tx.date,
@@ -379,5 +429,3 @@ export async function getRangeBudget(
     to: coerceDate(data.to),
   };
 }
-
-export type { BudgetCategory };

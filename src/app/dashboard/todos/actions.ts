@@ -5,7 +5,12 @@ import { prisma } from "@/lib/db";
 import { getUserId, str, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay, endOfDay, formatDate } from "@/lib/date";
-import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import {
+  success,
+  failure,
+  wrapFormAction,
+  type ActionResult,
+} from "@/lib/action-result";
 
 function invalidate(userId: string) {
   revalidateUserCache(userId, "todos", "dashboard", "plan");
@@ -61,7 +66,9 @@ export async function moveToBacklog(formData: FormData): Promise<ActionResult> {
   return success("Moved to backlog");
 }
 
-export async function pullFromBacklog(formData: FormData): Promise<ActionResult> {
+export async function pullFromBacklog(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid todo");
@@ -72,7 +79,9 @@ export async function pullFromBacklog(formData: FormData): Promise<ActionResult>
   });
   invalidate(userId);
   const isToday = dayDate.getTime() === startOfDay(new Date()).getTime();
-  return success(isToday ? "Added to today" : `Added to ${formatDate(dayDate)}`);
+  return success(
+    isToday ? "Added to today" : `Added to ${formatDate(dayDate)}`
+  );
 }
 
 export async function deleteTodo(formData: FormData): Promise<ActionResult> {
@@ -99,23 +108,6 @@ export async function restoreTodo(formData: FormData): Promise<ActionResult> {
   return success("Todo restored");
 }
 
-export async function moveUnfinishedToBacklog(formData: FormData): Promise<ActionResult> {
-  const userId = await getUserId();
-  const dayDate = startOfDay(parseDate(formData.get("dayDate")));
-  await prisma.todo.updateMany({
-    where: {
-      userId,
-      deletedAt: null,
-      inBacklog: false,
-      status: "open",
-      dayDate: { gte: dayDate, lte: endOfDay(dayDate) },
-    },
-    data: { inBacklog: true },
-  });
-  invalidate(userId);
-  return success("Open todos moved to backlog");
-}
-
 export async function moveAllStaleToBacklog(): Promise<ActionResult> {
   const userId = await getUserId();
   const today = startOfDay(new Date());
@@ -131,9 +123,7 @@ export async function moveAllStaleToBacklog(): Promise<ActionResult> {
   });
   invalidate(userId);
   if (result.count === 0) return success("No stale todos to move");
-  return success(`Moved ${result.count} todo${result.count === 1 ? "" : "s"} to backlog`);
+  return success(
+    `Moved ${result.count} todo${result.count === 1 ? "" : "s"} to backlog`
+  );
 }
-
-export const pullFromBacklogForm = wrapFormAction(pullFromBacklog, "Added to today");
-export const moveUnfinishedToBacklogForm = wrapFormAction(moveUnfinishedToBacklog, "Moved to backlog");
-export const moveAllStaleToBacklogForm = wrapFormAction(moveAllStaleToBacklog, "Moved to backlog");
