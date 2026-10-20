@@ -1,5 +1,11 @@
 import { requireModule } from "@/lib/session";
-import { toDateInputValue, parseDayParam, parseMonthParam, toMonthKey, formatDate } from "@/lib/date";
+import {
+  toDateInputValue,
+  parseDayParam,
+  parseMonthParam,
+  toMonthKey,
+  formatDate,
+} from "@/lib/date";
 import { periodLabel } from "@/lib/period";
 import {
   getMonthBudget,
@@ -40,15 +46,25 @@ type SearchParams = {
   focus?: string;
 };
 
-const HEADER_DESCRIPTION = "Import Nordea statements, categorize merchants, and review monthly spending.";
+const HEADER_DESCRIPTION =
+  "Import Nordea statements, categorize merchants, and review monthly spending.";
 
-export default async function BudgetPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function BudgetPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const user = await requireModule("budget");
   const day = parseDayParam(searchParams.day);
-  const monthParam = searchParams.month && /^\d{4}-\d{2}$/.test(searchParams.month) ? searchParams.month : undefined;
+  const monthParam =
+    searchParams.month && /^\d{4}-\d{2}$/.test(searchParams.month)
+      ? searchParams.month
+      : undefined;
 
   if (searchParams.view === "uncategorized") {
-    return <UncategorizedView userId={user.id} monthParam={monthParam} day={day} />;
+    return (
+      <UncategorizedView userId={user.id} monthParam={monthParam} day={day} />
+    );
   }
 
   const dayValue = toDateInputValue(day);
@@ -72,7 +88,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
   const empty = !monthData.hasTransactions;
   const monthHasEntries = monthData.monthEntries.length > 0;
   const monthUncategorizedCount = monthData.monthEntries.filter(
-    (entry) => entry.categoryName === "Uncategorized"
+    entry => entry.categoryName === "Uncategorized"
   ).length;
   const aiPrompt = monthHasEntries
     ? buildMonthBudgetPrompt({
@@ -92,8 +108,16 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
 
   return (
     <div>
-      <PageHeader help="budget:overview" title="Budget" description={HEADER_DESCRIPTION}>
-        <BudgetNav active="overview" uncategorizedCount={monthData.uncategorizedCount} monthParam={monthParam} />
+      <PageHeader
+        help="budget:overview"
+        title="Budget"
+        description={HEADER_DESCRIPTION}
+      >
+        <BudgetNav
+          active="overview"
+          uncategorizedCount={monthData.uncategorizedCount}
+          monthParam={monthParam}
+        />
       </PageHeader>
 
       {/* Same position in both states so the import summary survives the first import. */}
@@ -136,18 +160,36 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
             ) : (
               <>
                 <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                  <StatCard label="Income" value={formatEuro(monthData.incomeCents)} />
-                  <StatCard label="Expenses" value={formatEuro(monthData.expenseCents)} />
+                  <StatCard
+                    label="Income"
+                    value={formatEuro(monthData.incomeCents)}
+                  />
+                  <StatCard
+                    label="Expenses"
+                    value={formatEuro(monthData.expenseCents)}
+                  />
                   <StatCard
                     label="Net"
                     value={formatEuroSigned(monthData.netCents)}
                     tone={monthData.netCents < 0 ? "bad" : "default"}
-                    status={monthData.netCents < 0 ? "Spent more than earned" : undefined}
+                    status={
+                      monthData.netCents < 0
+                        ? "Spent more than earned"
+                        : undefined
+                    }
                   />
                   <StatCard
                     label="Savings rate"
-                    value={monthData.savingsRate === null ? "—" : `${monthData.savingsRate}%`}
-                    hint={monthData.savingsRate === null ? "No income this month" : "of income saved"}
+                    value={
+                      monthData.savingsRate === null
+                        ? "—"
+                        : `${monthData.savingsRate}%`
+                    }
+                    hint={
+                      monthData.savingsRate === null
+                        ? "No income this month"
+                        : "of income saved"
+                    }
                   />
                 </div>
 
@@ -161,7 +203,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
                   <div className="card mb-4">
                     <h2 className="section-title mb-3">Spending by category</h2>
                     <ul className="space-y-3">
-                      {monthData.breakdown.map((row) => (
+                      {monthData.breakdown.map(row => (
                         <li key={row.categoryId}>
                           <div className="mb-1 flex justify-between gap-2 text-sm">
                             <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-100">
@@ -171,10 +213,15 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
                               {formatEuro(row.totalCents)}
                             </span>
                           </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full progress-track" aria-hidden="true">
+                          <div
+                            className="h-2 w-full overflow-hidden rounded-full progress-track"
+                            aria-hidden="true"
+                          >
                             <div
                               className="h-full bg-brand-500"
-                              style={{ width: `${Math.round((row.totalCents / maxBreakdown) * 100)}%` }}
+                              style={{
+                                width: `${Math.round((row.totalCents / maxBreakdown) * 100)}%`,
+                              }}
                             />
                           </div>
                         </li>
@@ -203,7 +250,10 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
             />
           </section>
 
-          <section className="mt-10 space-y-4" aria-labelledby="budget-imports-heading">
+          <section
+            className="mt-10 space-y-4"
+            aria-labelledby="budget-imports-heading"
+          >
             <h2 id="budget-imports-heading" className="section-title">
               Imports &amp; data
             </h2>
@@ -213,13 +263,21 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
                   Recent imports
                 </h3>
                 <ul className="divide-y divide-slate-100 text-sm dark:divide-slate-700">
-                  {monthData.recentBatches.map((batch) => (
-                    <li key={batch.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3">
+                  {monthData.recentBatches.map(batch => (
+                    <li
+                      key={batch.id}
+                      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3"
+                    >
                       <div className="min-w-0">
-                        <p className="break-all font-medium text-slate-800 dark:text-slate-100">{batch.filename}</p>
+                        <p className="break-all font-medium text-slate-800 dark:text-slate-100">
+                          {batch.filename}
+                        </p>
                         <p className="text-xs text-muted">
-                          {batch.rowCount} rows · imported {formatDate(batch.importedAt)}
-                          {batch.skippedDuplicates > 0 ? ` · ${batch.skippedDuplicates} duplicates skipped` : ""}
+                          {batch.rowCount} rows · imported{" "}
+                          {formatDate(batch.importedAt)}
+                          {batch.skippedDuplicates > 0
+                            ? ` · ${batch.skippedDuplicates} duplicates skipped`
+                            : ""}
                         </p>
                       </div>
                       <FormAction
@@ -228,13 +286,18 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
                         confirm={{
                           title: `Undo import of “${batch.filename}”?`,
                           message: `This removes the ${batch.rowCount} ${
-                            batch.rowCount === 1 ? "transaction" : "transactions"
+                            batch.rowCount === 1
+                              ? "transaction"
+                              : "transactions"
                           } imported on ${formatDate(batch.importedAt)}. You can import the file again later.`,
                           confirmLabel: "Undo import",
                         }}
                       >
                         <input type="hidden" name="batchId" value={batch.id} />
-                        <SubmitButton className="btn-danger btn-sm min-h-[40px]" pendingLabel="Undoing…">
+                        <SubmitButton
+                          className="btn-danger btn-sm min-h-[40px]"
+                          pendingLabel="Undoing…"
+                        >
                           Undo import
                         </SubmitButton>
                       </FormAction>
@@ -260,15 +323,25 @@ async function UncategorizedView({
   monthParam: string | undefined;
   day: Date;
 }) {
-  const queue = await getUncategorizedTransactions(userId, { monthKey: monthParam });
+  const queue = await getUncategorizedTransactions(userId, {
+    monthKey: monthParam,
+  });
   const allTotal = queue.allTotal;
   const toggleMonth = monthParam ?? toMonthKey(day);
   const toggleLabel = periodLabel("monthly", toggleMonth);
 
   return (
     <div>
-      <PageHeader help="budget:uncategorized" title="Budget" description={HEADER_DESCRIPTION}>
-        <BudgetNav active="uncategorized" uncategorizedCount={allTotal} monthParam={monthParam} />
+      <PageHeader
+        help="budget:uncategorized"
+        title="Budget"
+        description={HEADER_DESCRIPTION}
+      >
+        <BudgetNav
+          active="uncategorized"
+          uncategorizedCount={allTotal}
+          monthParam={monthParam}
+        />
       </PageHeader>
 
       <section aria-labelledby="uncategorized-heading">
@@ -278,7 +351,8 @@ async function UncategorizedView({
               Uncategorized transactions
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Pick a category once per merchant. It applies to the merchant's other rows and to future imports.
+              Pick a category once per merchant. It applies to the
+              merchant&apos;s other rows and to future imports.
             </p>
           </div>
           {allTotal > 0 && (
@@ -292,7 +366,11 @@ async function UncategorizedView({
                   label: toggleLabel,
                   href: `/dashboard/budget?view=uncategorized&month=${toggleMonth}`,
                 },
-                { value: "all", label: `All months (${allTotal})`, href: "/dashboard/budget?view=uncategorized" },
+                {
+                  value: "all",
+                  label: `All months (${allTotal})`,
+                  href: "/dashboard/budget?view=uncategorized",
+                },
               ]}
             />
           )}
@@ -313,11 +391,19 @@ async function UncategorizedView({
               title="Everything is categorized"
               description="New imports show up here when a merchant has no category yet."
               actionLabel="Back to overview"
-              actionHref={monthParam ? `/dashboard/budget?month=${monthParam}` : "/dashboard/budget"}
+              actionHref={
+                monthParam
+                  ? `/dashboard/budget?month=${monthParam}`
+                  : "/dashboard/budget"
+              }
             />
           )
         ) : (
-          <UncategorizedQueue entries={queue.entries} categories={queue.categories} total={queue.total} />
+          <UncategorizedQueue
+            entries={queue.entries}
+            categories={queue.categories}
+            total={queue.total}
+          />
         )}
       </section>
     </div>

@@ -8,11 +8,7 @@ import SubmitButton from "@/components/SubmitButton";
 import PasswordInput from "@/components/PasswordInput";
 import { useToast } from "@/components/Toast";
 import { TIMEZONES, isValidTimezone } from "@/lib/timezones";
-import {
-  updateProfile,
-  changePassword,
-  type ActionState,
-} from "./actions";
+import { updateProfile, changePassword, type ActionState } from "./actions";
 
 const initialState: ActionState = {};
 
@@ -42,16 +38,21 @@ export function ProfileForm({
   const router = useRouter();
   const toast = useToast();
   const [state, formAction] = useFormState(updateProfile, initialState);
-  const timezoneOptions = isValidTimezone(timezone) ? TIMEZONES : [timezone, ...TIMEZONES];
+  const timezoneOptions = isValidTimezone(timezone)
+    ? TIMEZONES
+    : [timezone, ...TIMEZONES];
+  // useFormState returns a new object per submission; handle each result once.
+  const handledState = useRef(state);
 
   useEffect(() => {
+    if (handledState.current === state) return;
+    handledState.current = state;
     if (!state.ok) return;
     toast.success("Profile saved");
     if (state.name) {
       void update({ name: state.name }).then(() => router.refresh());
     }
-    // Runs once per submission result (useFormState returns a new object each time).
-  }, [state]);
+  }, [state, toast, update, router]);
 
   return (
     <form action={formAction} className="card flex flex-col gap-4">
@@ -75,22 +76,35 @@ export function ProfileForm({
         <label className="label" htmlFor="timezone">
           Timezone
         </label>
-        <select id="timezone" name="timezone" className="input" defaultValue={timezone} aria-describedby="timezone-hint">
-          {timezoneOptions.map((tz) => (
+        <select
+          id="timezone"
+          name="timezone"
+          className="input"
+          defaultValue={timezone}
+          aria-describedby="timezone-hint"
+        >
+          {timezoneOptions.map(tz => (
             <option key={tz} value={tz}>
               {tz}
             </option>
           ))}
         </select>
         <p id="timezone-hint" className="hint">
-          Used for your greeting, calendar events, reminders, and when notifications fire.
+          Used for your greeting, calendar events, reminders, and when
+          notifications fire.
         </p>
       </div>
       <div>
         <label className="label" htmlFor="email">
           Email
         </label>
-        <input id="email" className="input" value={email} disabled aria-describedby="email-hint" />
+        <input
+          id="email"
+          className="input"
+          value={email}
+          disabled
+          aria-describedby="email-hint"
+        />
         <p id="email-hint" className="hint">
           Email cannot be changed.
         </p>
@@ -107,12 +121,15 @@ export function PasswordForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const toast = useToast();
   const [mismatch, setMismatch] = useState(false);
+  const handledState = useRef(state);
 
   useEffect(() => {
+    if (handledState.current === state) return;
+    handledState.current = state;
     if (!state.ok) return;
     toast.success("Password changed");
     formRef.current?.reset();
-  }, [state]);
+  }, [state, toast]);
 
   function passwordsMatch(form: HTMLFormElement) {
     const fd = new FormData(form);
@@ -124,14 +141,16 @@ export function PasswordForm() {
       ref={formRef}
       action={formAction}
       className="card flex flex-col gap-4"
-      onSubmit={(e) => {
+      onSubmit={e => {
         if (!passwordsMatch(e.currentTarget)) {
           e.preventDefault();
           setMismatch(true);
-          e.currentTarget.querySelector<HTMLInputElement>("#confirmPassword")?.focus();
+          e.currentTarget
+            .querySelector<HTMLInputElement>("#confirmPassword")
+            ?.focus();
         }
       }}
-      onChange={(e) => {
+      onChange={e => {
         if (mismatch && passwordsMatch(e.currentTarget)) setMismatch(false);
       }}
     >
@@ -183,7 +202,10 @@ export function PasswordForm() {
           </p>
         )}
       </div>
-      <SubmitButton className="btn-primary touch-target" pendingLabel="Changing…">
+      <SubmitButton
+        className="btn-primary touch-target"
+        pendingLabel="Changing…"
+      >
         Change password
       </SubmitButton>
     </form>
