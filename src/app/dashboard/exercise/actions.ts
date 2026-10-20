@@ -36,7 +36,9 @@ export async function createGymWorkout(formData: FormData) {
  * Start a gym session from a saved program: copies the program's exercises
  * (with planned sets/reps) into a new workout dated today, then opens it.
  */
-export async function startWorkoutFromProgram(formData: FormData): Promise<ActionResult | void> {
+export async function startWorkoutFromProgram(
+  formData: FormData
+): Promise<ActionResult | void> {
   const userId = await getUserId();
   const programId = str(formData.get("programId"));
   if (!programId) return failure("Choose a program to start.");
@@ -76,13 +78,18 @@ export async function startWorkoutFromProgram(formData: FormData): Promise<Actio
 
 const CARDIO_TYPES = new Set(["run", "swim", "walk", "other"]);
 
-export async function createCardioWorkout(formData: FormData): Promise<ActionResult> {
+export async function createCardioWorkout(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const activityType = str(formData.get("activityType")) || "run";
   if (!CARDIO_TYPES.has(activityType)) return failure("Unknown activity type.");
   const date = parseDate(formData.get("date"));
-  const durationMin = formData.get("durationMin") ? num(formData.get("durationMin")) : null;
-  if (durationMin !== null && durationMin < 0) return failure("Duration can't be negative.");
+  const durationMin = formData.get("durationMin")
+    ? num(formData.get("durationMin"))
+    : null;
+  if (durationMin !== null && durationMin < 0)
+    return failure("Duration can't be negative.");
   const notes = optStr(formData.get("notes"));
 
   let name = str(formData.get("name"));
@@ -95,7 +102,8 @@ export async function createCardioWorkout(formData: FormData): Promise<ActionRes
     if (!name) name = km > 0 ? `Run ${km} km` : "Run";
   } else if (activityType === "swim") {
     distanceM = num(formData.get("distanceM")) || null;
-    if (distanceM !== null && distanceM < 0) return failure("Distance can't be negative.");
+    if (distanceM !== null && distanceM < 0)
+      return failure("Distance can't be negative.");
     if (!name) name = distanceM ? `Swim ${distanceM} m` : "Swim";
   } else if (activityType === "walk") {
     const km = num(formData.get("distanceKm"));
@@ -104,9 +112,13 @@ export async function createCardioWorkout(formData: FormData): Promise<ActionRes
     const walkKind = str(formData.get("walkKind")) || "outdoor";
     const kindLabel = walkKind === "indoor" ? "Indoor" : "Outdoor";
     if (!name) {
-      name = distanceM ? `${kindLabel} walk ${(distanceM / 1000).toFixed(1)} km` : `${kindLabel} walk`;
+      name = distanceM
+        ? `${kindLabel} walk ${(distanceM / 1000).toFixed(1)} km`
+        : `${kindLabel} walk`;
     }
-    const walkNotes = [notes, walkKind ? `(${walkKind})` : null].filter(Boolean).join(" ");
+    const walkNotes = [notes, walkKind ? `(${walkKind})` : null]
+      .filter(Boolean)
+      .join(" ");
     await prisma.workout.create({
       data: {
         userId,
@@ -135,12 +147,20 @@ export async function createCardioWorkout(formData: FormData): Promise<ActionRes
       date,
       durationMin,
       distanceM,
-      notes: notes ?? (activityType === "other" ? optStr(formData.get("description")) : null),
+      notes:
+        notes ??
+        (activityType === "other" ? optStr(formData.get("description")) : null),
     },
   });
   await incrementLinkedGoals(userId, "workout", date);
   invalidateExercise(userId);
-  return success(activityType === "run" ? "Run logged" : activityType === "swim" ? "Swim logged" : "Activity logged");
+  return success(
+    activityType === "run"
+      ? "Run logged"
+      : activityType === "swim"
+        ? "Swim logged"
+        : "Activity logged"
+  );
 }
 
 export async function deleteWorkout(formData: FormData): Promise<ActionResult> {
@@ -168,15 +188,21 @@ export async function addExercise(formData: FormData): Promise<ActionResult> {
   const workoutId = str(formData.get("workoutId"));
   const name = str(formData.get("name"));
   if (!name) return failure("Enter an exercise name.");
-  const owns = await prisma.workout.findFirst({ where: { id: workoutId, userId } });
+  const owns = await prisma.workout.findFirst({
+    where: { id: workoutId, userId },
+  });
   if (!owns) return failure("Workout not found.");
   const count = await prisma.workoutExercise.count({ where: { workoutId } });
-  await prisma.workoutExercise.create({ data: { workoutId, name, order: count } });
+  await prisma.workoutExercise.create({
+    data: { workoutId, name, order: count },
+  });
   invalidateExercise(userId, workoutId);
   return success("Exercise added");
 }
 
-export async function deleteExercise(formData: FormData): Promise<ActionResult> {
+export async function deleteExercise(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const workoutId = str(formData.get("workoutId"));
@@ -198,15 +224,21 @@ export async function addSet(formData: FormData): Promise<ActionResult> {
   });
   if (!ex) return failure("Exercise not found.");
   const reps = formData.get("reps") ? num(formData.get("reps")) : null;
-  const weightKg = formData.get("weightKg") ? num(formData.get("weightKg")) : null;
-  const durationSec = formData.get("durationSec") ? num(formData.get("durationSec")) : null;
+  const weightKg = formData.get("weightKg")
+    ? num(formData.get("weightKg"))
+    : null;
+  const durationSec = formData.get("durationSec")
+    ? num(formData.get("durationSec"))
+    : null;
   if (reps === null && weightKg === null && durationSec === null) {
     return failure("Enter reps, weight or duration for the set.");
   }
   if ((reps ?? 0) < 0 || (weightKg ?? 0) < 0 || (durationSec ?? 0) < 0) {
     return failure("Set values can't be negative.");
   }
-  const count = await prisma.exerciseSet.count({ where: { workoutExerciseId } });
+  const count = await prisma.exerciseSet.count({
+    where: { workoutExerciseId },
+  });
   await prisma.exerciseSet.create({
     data: { workoutExerciseId, reps, weightKg, durationSec, order: count },
   });
@@ -238,7 +270,9 @@ export async function logWeight(formData: FormData): Promise<ActionResult> {
   return success("Weight logged");
 }
 
-export async function logMeasurement(formData: FormData): Promise<ActionResult> {
+export async function logMeasurement(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const label = str(formData.get("label"));
   const valueCm = num(formData.get("valueCm"));
@@ -254,16 +288,22 @@ export async function logMeasurement(formData: FormData): Promise<ActionResult> 
 export async function deleteWeight(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  const result = await prisma.bodyWeightLog.deleteMany({ where: { id, userId } });
+  const result = await prisma.bodyWeightLog.deleteMany({
+    where: { id, userId },
+  });
   if (result.count === 0) return failure("Entry not found.");
   invalidateExercise(userId);
   return success("Weight entry deleted");
 }
 
-export async function deleteMeasurement(formData: FormData): Promise<ActionResult> {
+export async function deleteMeasurement(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
-  const result = await prisma.bodyMeasurement.deleteMany({ where: { id, userId } });
+  const result = await prisma.bodyMeasurement.deleteMany({
+    where: { id, userId },
+  });
   if (result.count === 0) return failure("Entry not found.");
   invalidateExercise(userId);
   return success("Measurement deleted");

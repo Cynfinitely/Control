@@ -78,11 +78,11 @@ export default function Modal({
       role={role}
       aria-labelledby={titleId}
       aria-describedby={description ? descId : undefined}
-      onCancel={(e) => {
+      onCancel={e => {
         e.preventDefault();
         onCloseRef.current();
       }}
-      onClick={(e) => {
+      onClick={e => {
         // Click on the backdrop (the dialog element itself, outside the panel) closes.
         if (e.target === ref.current) onCloseRef.current();
       }}
@@ -105,7 +105,10 @@ export default function Modal({
               {title}
             </h2>
             {description && (
-              <div id={descId} className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              <div
+                id={descId}
+                className="mt-1 text-sm text-slate-600 dark:text-slate-300"
+              >
                 {description}
               </div>
             )}
@@ -122,7 +125,11 @@ export default function Modal({
             </button>
           )}
         </div>
-        {children && <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-4">{children}</div>}
+        {children && (
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-4">
+            {children}
+          </div>
+        )}
         {footer && (
           <div className="flex flex-col-reverse gap-2 border-t border-slate-100 px-5 py-4 dark:border-slate-700 sm:flex-row sm:justify-end">
             {footer}

@@ -58,11 +58,25 @@ export default function DayNavigator({
       label={dayLabel}
       sublabel={isToday && dayLabel !== "Today" ? "Today" : undefined}
       prev={{ href: buildUrl(prevDayValue), label: "Previous day" }}
-      next={{ href: buildUrl(nextDayValue), label: "Next day", disabled: !canGoNext }}
-      reset={isToday ? undefined : { href: buildUrl(todayValue), label: "Go to today", text: "Today" }}
+      next={{
+        href: buildUrl(nextDayValue),
+        label: "Next day",
+        disabled: !canGoNext,
+      }}
+      reset={
+        isToday
+          ? undefined
+          : { href: buildUrl(todayValue), label: "Go to today", text: "Today" }
+      }
     >
       <span className="relative">
-        <button type="button" onClick={openPicker} className="btn-icon" aria-label="Jump to a date" title="Jump to a date">
+        <button
+          type="button"
+          onClick={openPicker}
+          className="btn-icon"
+          aria-label="Jump to a date"
+          title="Jump to a date"
+        >
           <Icon name="calendar" className="h-5 w-5" />
         </button>
         <input
@@ -72,8 +86,9 @@ export default function DayNavigator({
           aria-hidden="true"
           value={dayValue}
           max={maxDay}
-          onChange={(e) => {
-            if (e.target.value) router.push(buildUrl(e.target.value), { scroll: false });
+          onChange={e => {
+            if (e.target.value)
+              router.push(buildUrl(e.target.value), { scroll: false });
           }}
           className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
         />

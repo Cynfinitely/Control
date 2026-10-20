@@ -48,25 +48,45 @@ describe("greeting helpers", () => {
 describe("shouldNudgeWeeklyReview", () => {
   it("never nudges once this week's review is complete", () => {
     expect(
-      shouldNudgeWeeklyReview({ isoWeekday: 6, thisWeekCompleted: true, lastWeekStartedNotCompleted: true })
+      shouldNudgeWeeklyReview({
+        isoWeekday: 6,
+        thisWeekCompleted: true,
+        lastWeekStartedNotCompleted: true,
+      })
     ).toBe(false);
   });
 
   it("nudges Friday to Sunday", () => {
     expect(
-      shouldNudgeWeeklyReview({ isoWeekday: 4, thisWeekCompleted: false, lastWeekStartedNotCompleted: false })
+      shouldNudgeWeeklyReview({
+        isoWeekday: 4,
+        thisWeekCompleted: false,
+        lastWeekStartedNotCompleted: false,
+      })
     ).toBe(false);
     expect(
-      shouldNudgeWeeklyReview({ isoWeekday: 5, thisWeekCompleted: false, lastWeekStartedNotCompleted: false })
+      shouldNudgeWeeklyReview({
+        isoWeekday: 5,
+        thisWeekCompleted: false,
+        lastWeekStartedNotCompleted: false,
+      })
     ).toBe(true);
     expect(
-      shouldNudgeWeeklyReview({ isoWeekday: 7, thisWeekCompleted: false, lastWeekStartedNotCompleted: false })
+      shouldNudgeWeeklyReview({
+        isoWeekday: 7,
+        thisWeekCompleted: false,
+        lastWeekStartedNotCompleted: false,
+      })
     ).toBe(true);
   });
 
   it("nudges early in the week when last week's review was left unfinished", () => {
     expect(
-      shouldNudgeWeeklyReview({ isoWeekday: 1, thisWeekCompleted: false, lastWeekStartedNotCompleted: true })
+      shouldNudgeWeeklyReview({
+        isoWeekday: 1,
+        thisWeekCompleted: false,
+        lastWeekStartedNotCompleted: true,
+      })
     ).toBe(true);
   });
 });

@@ -75,10 +75,15 @@ export default function PlanTextImport({ dayValue, blockCount }: Props) {
   }
 
   return (
-    <CollapsibleSection title="Import from text" variant="card" icon="upload" as="h2">
+    <CollapsibleSection
+      title="Import from text"
+      variant="card"
+      icon="upload"
+      as="h2"
+    >
       <p className="hint mt-0">
-        Paste one line per block: <code className="font-mono">HH:MM  Title</code>. End times are inferred from the next
-        line.
+        Paste one line per block: <code className="font-mono">HH:MM Title</code>
+        . End times are inferred from the next line.
       </p>
 
       <label htmlFor="plan-import-text" className="label mt-3">
@@ -87,7 +92,7 @@ export default function PlanTextImport({ dayValue, blockCount }: Props) {
       <textarea
         id="plan-import-text"
         value={text}
-        onChange={(e) => {
+        onChange={e => {
           setText(e.target.value);
           setPreview(null);
         }}
@@ -97,7 +102,12 @@ export default function PlanTextImport({ dayValue, blockCount }: Props) {
       />
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={handlePreview} className="btn-ghost" disabled={!text.trim()}>
+        <button
+          type="button"
+          onClick={handlePreview}
+          className="btn-ghost"
+          disabled={!text.trim()}
+        >
           Preview
         </button>
       </div>
@@ -106,14 +116,17 @@ export default function PlanTextImport({ dayValue, blockCount }: Props) {
         <div className="mt-4">
           {preview.warnings.length > 0 && (
             <ul className="mb-3 space-y-1 text-xs text-amber-800 dark:text-amber-300">
-              {preview.warnings.map((w) => (
+              {preview.warnings.map(w => (
                 <li key={w}>· {w}</li>
               ))}
             </ul>
           )}
 
           {preview.entries.length === 0 ? (
-            <p className="text-sm text-muted">No valid blocks found. Each line should start with a time like 07:30.</p>
+            <p className="text-sm text-muted">
+              No valid blocks found. Each line should start with a time like
+              07:30.
+            </p>
           ) : (
             <>
               <div className="table-wrap max-h-64 overflow-auto rounded-lg border border-slate-100 dark:border-slate-700">
@@ -121,21 +134,35 @@ export default function PlanTextImport({ dayValue, blockCount }: Props) {
                   <caption className="sr-only">Blocks to import</caption>
                   <thead className="sticky top-0 bg-slate-50 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                     <tr>
-                      <th scope="col" className="px-3 py-2">Time</th>
-                      <th scope="col" className="px-3 py-2">Title</th>
-                      <th scope="col" className="px-3 py-2">Kind</th>
+                      <th scope="col" className="px-3 py-2">
+                        Time
+                      </th>
+                      <th scope="col" className="px-3 py-2">
+                        Title
+                      </th>
+                      <th scope="col" className="px-3 py-2">
+                        Kind
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {preview.entries.map((entry) => (
-                      <tr key={`${entry.lineNumber}-${entry.startTime}`} className="border-t border-slate-100 dark:border-slate-700">
+                    {preview.entries.map(entry => (
+                      <tr
+                        key={`${entry.lineNumber}-${entry.startTime}`}
+                        className="border-t border-slate-100 dark:border-slate-700"
+                      >
                         <td className="whitespace-nowrap px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">
                           {entry.startTime} – {entry.endTime}
-                          {entry.crossesMidnight && <span className="ml-1 text-xs text-muted">+1 day</span>}
+                          {entry.crossesMidnight && (
+                            <span className="ml-1 text-xs text-muted">
+                              +1 day
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-2">{entry.title}</td>
                         <td className="px-3 py-2 text-muted">
-                          {PLAN_KIND_LABELS[entry.kind as PlanKind] ?? entry.kind}
+                          {PLAN_KIND_LABELS[entry.kind as PlanKind] ??
+                            entry.kind}
                         </td>
                       </tr>
                     ))}
@@ -171,7 +198,11 @@ export default function PlanTextImport({ dayValue, blockCount }: Props) {
                 type="button"
                 disabled={pending}
                 onClick={handleImport}
-                className={mode === "replace" && blockCount > 0 ? "btn-danger mt-3" : "btn-primary mt-3"}
+                className={
+                  mode === "replace" && blockCount > 0
+                    ? "btn-danger mt-3"
+                    : "btn-primary mt-3"
+                }
               >
                 {pending && <Spinner />}
                 {pending

@@ -16,7 +16,9 @@ describe("parseFoodRange", () => {
     expect(range.to.getMonth()).toBe(8);
     expect(range.to.getDate()).toBe(2);
     expect(range.to.getHours()).toBe(23);
-    expect(range.label).toBe(`${formatDate(range.from)} – ${formatDate(range.to)}`);
+    expect(range.label).toBe(
+      `${formatDate(range.from)} – ${formatDate(range.to)}`
+    );
   });
 
   it("uses the previous Monday–Sunday for last week", () => {

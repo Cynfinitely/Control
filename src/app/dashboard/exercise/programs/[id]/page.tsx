@@ -14,7 +14,11 @@ import { StartWorkoutForm } from "../../ProgramsSection";
 
 export const metadata = { title: "Program" };
 
-export default async function WorkoutProgramDetail({ params }: { params: { id: string } }) {
+export default async function WorkoutProgramDetail({
+  params,
+}: {
+  params: { id: string };
+}) {
   const user = await requireModule("exercise");
   const program = await prisma.workoutProgram.findFirst({
     where: { id: params.id, userId: user.id },
@@ -28,7 +32,8 @@ export default async function WorkoutProgramDetail({ params }: { params: { id: s
 
   return (
     <div>
-      <PageHeader help="exercise:program"
+      <PageHeader
+        help="exercise:program"
         breadcrumb={
           <Breadcrumb
             items={[
@@ -52,27 +57,48 @@ export default async function WorkoutProgramDetail({ params }: { params: { id: s
                 todayValue={toDateInputValue(new Date())}
               />
             )}
-            <ProgramStatusActions id={program.id} name={program.name} archived={archived} />
+            <ProgramStatusActions
+              id={program.id}
+              name={program.name}
+              archived={archived}
+            />
           </>
         }
       />
 
-      <FormAction action={updateProgramForm} successMessage="Program updated" className="card mb-6 grid grid-cols-1 gap-3">
+      <FormAction
+        action={updateProgramForm}
+        successMessage="Program updated"
+        className="card mb-6 grid grid-cols-1 gap-3"
+      >
         <input type="hidden" name="id" value={program.id} />
         <div>
           <label className="label" htmlFor="program-name">
             Name
           </label>
-          <input id="program-name" name="name" className="input" required defaultValue={program.name} />
+          <input
+            id="program-name"
+            name="name"
+            className="input"
+            required
+            defaultValue={program.name}
+          />
         </div>
         <div>
           <label className="label" htmlFor="program-notes">
             Notes <span className="font-normal text-muted">(optional)</span>
           </label>
-          <input id="program-notes" name="notes" className="input" defaultValue={program.notes ?? ""} />
+          <input
+            id="program-notes"
+            name="notes"
+            className="input"
+            defaultValue={program.notes ?? ""}
+          />
         </div>
         <div>
-          <SubmitButton className="btn-primary touch-target w-full sm:w-auto">Save program</SubmitButton>
+          <SubmitButton className="btn-primary touch-target w-full sm:w-auto">
+            Save program
+          </SubmitButton>
         </div>
       </FormAction>
 
@@ -116,22 +142,45 @@ export default async function WorkoutProgramDetail({ params }: { params: { id: s
             <label className="label" htmlFor="add-ex-name">
               Add exercise
             </label>
-            <input id="add-ex-name" name="name" className="input" placeholder="e.g. Bench press" required />
+            <input
+              id="add-ex-name"
+              name="name"
+              className="input"
+              placeholder="e.g. Bench press"
+              required
+            />
           </div>
           <div className="sm:col-span-2">
             <label className="label" htmlFor="add-ex-sets">
               Sets
             </label>
-            <input id="add-ex-sets" name="plannedSets" type="number" min={1} inputMode="numeric" className="input" defaultValue={3} />
+            <input
+              id="add-ex-sets"
+              name="plannedSets"
+              type="number"
+              min={1}
+              inputMode="numeric"
+              className="input"
+              defaultValue={3}
+            />
           </div>
           <div className="sm:col-span-2">
             <label className="label" htmlFor="add-ex-reps">
               Reps <span className="font-normal text-muted">(optional)</span>
             </label>
-            <input id="add-ex-reps" name="plannedReps" type="number" min={1} inputMode="numeric" className="input" />
+            <input
+              id="add-ex-reps"
+              name="plannedReps"
+              type="number"
+              min={1}
+              inputMode="numeric"
+              className="input"
+            />
           </div>
           <div className="col-span-2 sm:col-span-3">
-            <SubmitButton className="btn-primary touch-target w-full">Add</SubmitButton>
+            <SubmitButton className="btn-primary touch-target w-full">
+              Add
+            </SubmitButton>
           </div>
         </FormAction>
       </div>

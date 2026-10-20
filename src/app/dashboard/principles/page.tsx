@@ -1,5 +1,8 @@
 import { requireModule } from "@/lib/session";
-import { getActivePrinciples, getPrincipleReviewedToday } from "@/lib/queries/principles";
+import {
+  getActivePrinciples,
+  getPrincipleReviewedToday,
+} from "@/lib/queries/principles";
 import PageHeader from "@/components/PageHeader";
 import PrinciplesView from "./PrinciplesView";
 
@@ -14,7 +17,8 @@ export default async function PrinciplesPage() {
 
   return (
     <div>
-      <PageHeader help="principles"
+      <PageHeader
+        help="principles"
         title="Principles"
         description="Read your guardrails as one list. Use Manage only when you need to change them."
       />

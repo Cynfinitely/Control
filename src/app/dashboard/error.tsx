@@ -9,5 +9,12 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <ErrorRecovery error={error} reset={reset} homeHref="/dashboard" autoRecover="reset" />;
+  return (
+    <ErrorRecovery
+      error={error}
+      reset={reset}
+      homeHref="/dashboard"
+      autoRecover="reset"
+    />
+  );
 }

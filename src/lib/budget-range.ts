@@ -37,13 +37,19 @@ export type BudgetSearchParams = {
 const VALID_PERIODS = new Set<LedgerPeriod>(["week", "month", "custom"]);
 const VALID_FILTERS = new Set<LedgerTypeFilter>(["all", "income", "expense"]);
 
-export function parseLedgerParams(searchParams: BudgetSearchParams): LedgerParams {
-  const period: LedgerPeriod = VALID_PERIODS.has(searchParams.ledger as LedgerPeriod)
+export function parseLedgerParams(
+  searchParams: BudgetSearchParams
+): LedgerParams {
+  const period: LedgerPeriod = VALID_PERIODS.has(
+    searchParams.ledger as LedgerPeriod
+  )
     ? (searchParams.ledger as LedgerPeriod)
     : "month";
 
   const refDay = parseDayParam(searchParams.day);
-  const typeFilter: LedgerTypeFilter = VALID_FILTERS.has(searchParams.filter as LedgerTypeFilter)
+  const typeFilter: LedgerTypeFilter = VALID_FILTERS.has(
+    searchParams.filter as LedgerTypeFilter
+  )
     ? (searchParams.filter as LedgerTypeFilter)
     : "all";
   const categoryId = searchParams.category?.trim() || null;
@@ -88,9 +94,9 @@ export function parseLedgerParams(searchParams: BudgetSearchParams): LedgerParam
   };
 }
 
-export function groupTransactionsByDay<
-  T extends { date: Date | string },
->(entries: T[]): { dayKey: string; dayLabel: string; entries: T[] }[] {
+export function groupTransactionsByDay<T extends { date: Date | string }>(
+  entries: T[]
+): { dayKey: string; dayLabel: string; entries: T[] }[] {
   const groups = new Map<string, T[]>();
 
   for (const entry of entries) {
@@ -118,8 +124,10 @@ export function buildBudgetUrl(
   const qs = new URLSearchParams();
 
   if (merged.month) qs.set("month", merged.month);
-  if (merged.day && merged.day !== toDateInputValue(new Date())) qs.set("day", merged.day);
-  if (merged.ledger && merged.ledger !== "month") qs.set("ledger", merged.ledger);
+  if (merged.day && merged.day !== toDateInputValue(new Date()))
+    qs.set("day", merged.day);
+  if (merged.ledger && merged.ledger !== "month")
+    qs.set("ledger", merged.ledger);
   if (merged.from) qs.set("from", merged.from);
   if (merged.to) qs.set("to", merged.to);
   if (merged.filter && merged.filter !== "all") qs.set("filter", merged.filter);

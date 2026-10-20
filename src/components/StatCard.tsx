@@ -49,13 +49,25 @@ export default function StatCard({
   surface = "card",
   className,
 }: Props) {
-  const pct = progress !== undefined ? Math.round(Math.min(100, Math.max(0, progress))) : undefined;
+  const pct =
+    progress !== undefined
+      ? Math.round(Math.min(100, Math.max(0, progress)))
+      : undefined;
 
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <p className={clsx("text-slate-600 dark:text-slate-400", size === "sm" ? "text-xs" : "text-sm")}>{label}</p>
-        {icon && <Icon name={icon} className="h-4 w-4 shrink-0 text-brand-500" />}
+        <p
+          className={clsx(
+            "text-slate-600 dark:text-slate-400",
+            size === "sm" ? "text-xs" : "text-sm"
+          )}
+        >
+          {label}
+        </p>
+        {icon && (
+          <Icon name={icon} className="h-4 w-4 shrink-0 text-brand-500" />
+        )}
       </div>
       <p
         className={clsx(
@@ -74,13 +86,21 @@ export default function StatCard({
           aria-valuemin={0}
           aria-valuemax={100}
         >
-          <div className={clsx("h-full rounded-full transition-all", TONE_BAR[tone])} style={{ width: `${pct}%` }} />
+          <div
+            className={clsx(
+              "h-full rounded-full transition-all",
+              TONE_BAR[tone]
+            )}
+            style={{ width: `${pct}%` }}
+          />
         </div>
       )}
       {(hint || status) && (
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
           {status && <span className={TONE_BADGE[tone]}>{status}</span>}
-          {hint && <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>}
+          {hint && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+          )}
         </div>
       )}
     </>
@@ -90,7 +110,8 @@ export default function StatCard({
     surface === "card" ? "card" : "tile",
     surface === "card" && size === "sm" && "p-4",
     "block min-w-0",
-    href && "transition hover:border-brand-300 hover:shadow-md dark:hover:border-brand-700",
+    href &&
+      "transition hover:border-brand-300 hover:shadow-md dark:hover:border-brand-700",
     className
   );
 

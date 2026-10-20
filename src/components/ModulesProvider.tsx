@@ -13,7 +13,11 @@ export default function ModulesProvider({
   disabled: readonly ModuleId[];
   children: React.ReactNode;
 }) {
-  return <ModulesContext.Provider value={disabled}>{children}</ModulesContext.Provider>;
+  return (
+    <ModulesContext.Provider value={disabled}>
+      {children}
+    </ModulesContext.Provider>
+  );
 }
 
 /** `useModules().has("budget")` is false when the user switched Budget off. */

@@ -14,11 +14,24 @@ type Props = {
 
 const OPTIONS: { scope: OccurrenceScope; label: string; hint: string }[] = [
   { scope: "this", label: "This occurrence", hint: "Only this date changes." },
-  { scope: "thisAndFuture", label: "This and following", hint: "This date and every one after it." },
-  { scope: "all", label: "Entire series", hint: "Every occurrence, past and future." },
+  {
+    scope: "thisAndFuture",
+    label: "This and following",
+    hint: "This date and every one after it.",
+  },
+  {
+    scope: "all",
+    label: "Entire series",
+    hint: "Every occurrence, past and future.",
+  },
 ];
 
-export default function OccurrenceScopeDialog({ open, mode, onChoose, onCancel }: Props) {
+export default function OccurrenceScopeDialog({
+  open,
+  mode,
+  onChoose,
+  onCancel,
+}: Props) {
   const isDelete = mode === "delete";
 
   return (
@@ -26,16 +39,25 @@ export default function OccurrenceScopeDialog({ open, mode, onChoose, onCancel }
       open={open}
       onClose={onCancel}
       title={isDelete ? "Delete recurring event" : "Save recurring event"}
-      description={isDelete ? "Which occurrences do you want to delete?" : "Which occurrences should this change apply to?"}
+      description={
+        isDelete
+          ? "Which occurrences do you want to delete?"
+          : "Which occurrences should this change apply to?"
+      }
       size="sm"
       footer={
-        <button type="button" className="btn-ghost" onClick={onCancel} data-autofocus>
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={onCancel}
+          data-autofocus
+        >
           Cancel
         </button>
       }
     >
       <div className="flex flex-col gap-2">
-        {OPTIONS.map((opt) => (
+        {OPTIONS.map(opt => (
           <button
             key={opt.scope}
             type="button"
@@ -47,10 +69,19 @@ export default function OccurrenceScopeDialog({ open, mode, onChoose, onCancel }
                 : "ring-slate-200 hover:bg-slate-50 dark:ring-slate-700 dark:hover:bg-slate-700/50"
             )}
           >
-            <span className={clsx("text-sm font-medium", isDelete ? "text-red-700 dark:text-red-400" : "text-slate-900 dark:text-slate-100")}>
+            <span
+              className={clsx(
+                "text-sm font-medium",
+                isDelete
+                  ? "text-red-700 dark:text-red-400"
+                  : "text-slate-900 dark:text-slate-100"
+              )}
+            >
               {isDelete ? `Delete ${opt.label.toLowerCase()}` : opt.label}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">{opt.hint}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {opt.hint}
+            </span>
           </button>
         ))}
       </div>

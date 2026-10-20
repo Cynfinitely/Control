@@ -13,7 +13,11 @@ import {
   toDateInputValue,
   toMonthKey,
 } from "@/lib/date";
-import { getOccurrencesInRange, getReminder, getStandaloneReminders } from "@/lib/queries/calendar";
+import {
+  getOccurrencesInRange,
+  getReminder,
+  getStandaloneReminders,
+} from "@/lib/queries/calendar";
 import PageHeader from "@/components/PageHeader";
 import CalendarShell from "@/components/calendar/CalendarShell";
 import { expandRruleStarts } from "@/lib/calendar";
@@ -41,8 +45,11 @@ export default async function CalendarPage({
   const timezone = profile?.timezone ?? "Europe/Istanbul";
 
   // Notification deep links: open the day that contains the event occurrence / reminder.
-  const focusAt = searchParams.event && searchParams.at ? new Date(searchParams.at) : null;
-  const focusReminder = searchParams.reminder ? await getReminder(user.id, searchParams.reminder) : null;
+  const focusAt =
+    searchParams.event && searchParams.at ? new Date(searchParams.at) : null;
+  const focusReminder = searchParams.reminder
+    ? await getReminder(user.id, searchParams.reminder)
+    : null;
   const focusDate =
     focusAt && !Number.isNaN(focusAt.getTime())
       ? focusAt
@@ -53,16 +60,27 @@ export default async function CalendarPage({
 
   const viewRaw = searchParams.view ?? (hasFocus ? "day" : "month");
   const view =
-    viewRaw === "week" || viewRaw === "day" || viewRaw === "agenda" || viewRaw === "month"
+    viewRaw === "week" ||
+    viewRaw === "day" ||
+    viewRaw === "agenda" ||
+    viewRaw === "month"
       ? viewRaw
       : "month";
 
-  const day = searchParams.day || !focusDate ? parseDayParam(searchParams.day) : startOfDay(focusDate);
+  const day =
+    searchParams.day || !focusDate
+      ? parseDayParam(searchParams.day)
+      : startOfDay(focusDate);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
-  const monthDate = searchParams.month ? parseMonthParam(searchParams.month) : startOfMonth(day);
+  const monthDate = searchParams.month
+    ? parseMonthParam(searchParams.month)
+    : startOfMonth(day);
   const monthKey = toMonthKey(monthDate);
-  const monthLabel = monthDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const monthLabel = monthDate.toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+  });
 
   let rangeStart: Date;
   let rangeEnd: Date;
@@ -86,11 +104,21 @@ export default async function CalendarPage({
   ]);
 
   // Expand recurring standalone reminders into chips for the visible range
-  const reminderChips: { id: string; title: string | null; remindAt: string | null; rrule: string | null }[] =
-    [];
+  const reminderChips: {
+    id: string;
+    title: string | null;
+    remindAt: string | null;
+    rrule: string | null;
+  }[] = [];
   for (const r of remindersRaw) {
     if (r.rrule && r.remindAt) {
-      const starts = expandRruleStarts(r.rrule, r.remindAt, timezone, rangeStart, rangeEnd);
+      const starts = expandRruleStarts(
+        r.rrule,
+        r.remindAt,
+        timezone,
+        rangeStart,
+        rangeEnd
+      );
       for (const s of starts) {
         reminderChips.push({
           id: r.id,
@@ -111,7 +139,8 @@ export default async function CalendarPage({
 
   return (
     <div>
-      <PageHeader help="calendar"
+      <PageHeader
+        help="calendar"
         title="Calendar"
         description="Events, reminders, and what is coming up — separate from your daily plan."
       />
@@ -122,7 +151,7 @@ export default async function CalendarPage({
         dayValue={dayValue}
         dayLabel={dayLabel}
         view={view}
-        occurrences={occurrences.map((o) => ({
+        occurrences={occurrences.map(o => ({
           eventId: o.eventId,
           originalStartsAt: o.originalStartsAt.toISOString(),
           startsAt: o.startsAt.toISOString(),
@@ -138,7 +167,11 @@ export default async function CalendarPage({
         }))}
         reminders={reminderChips}
         focusEventId={searchParams.event}
-        focusAt={focusAt && !Number.isNaN(focusAt.getTime()) ? focusAt.toISOString() : undefined}
+        focusAt={
+          focusAt && !Number.isNaN(focusAt.getTime())
+            ? focusAt.toISOString()
+            : undefined
+        }
         focusReminder={
           focusReminder && focusReminder.remindAt
             ? {

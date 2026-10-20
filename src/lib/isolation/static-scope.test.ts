@@ -95,7 +95,10 @@ describe("per-user query scoping", () => {
 
     const unreviewed = Object.entries(found)
       .filter(([key, count]) => count > (REVIEWED[key] ?? 0))
-      .map(([key, count]) => `${key} (lines ${lines[key].join(", ")}): ${count} found, ${REVIEWED[key] ?? 0} reviewed`);
+      .map(
+        ([key, count]) =>
+          `${key} (lines ${lines[key].join(", ")}): ${count} found, ${REVIEWED[key] ?? 0} reviewed`
+      );
 
     expect(unreviewed).toEqual([]);
   });
@@ -103,9 +106,9 @@ describe("per-user query scoping", () => {
   it("the reviewed list has no stale entries", () => {
     const found = new Set(
       calls
-        .filter((c) => !GLOBAL_MODELS.has(c.model) && !/\buserId\b/.test(c.args))
-        .map((c) => `${c.file}::${c.model}.${c.method}`)
+        .filter(c => !GLOBAL_MODELS.has(c.model) && !/\buserId\b/.test(c.args))
+        .map(c => `${c.file}::${c.model}.${c.method}`)
     );
-    expect(Object.keys(REVIEWED).filter((key) => !found.has(key))).toEqual([]);
+    expect(Object.keys(REVIEWED).filter(key => !found.has(key))).toEqual([]);
   });
 });

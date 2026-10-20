@@ -1,7 +1,11 @@
 import { Suspense } from "react";
 import { requireModule } from "@/lib/session";
 import { toDateInputValue, formatDayLabel, parseDayParam } from "@/lib/date";
-import { getBacklogTodos, getDayTodos, getStaleOpenTodoCount } from "@/lib/queries/todos";
+import {
+  getBacklogTodos,
+  getDayTodos,
+  getStaleOpenTodoCount,
+} from "@/lib/queries/todos";
 import PageHeader from "@/components/PageHeader";
 import DayNavigator from "@/components/DayNavigator";
 import SubmitButton from "@/components/SubmitButton";
@@ -24,7 +28,10 @@ export default async function TodosPage({
   const day = parseDayParam(searchParams.day);
   const dayValue = toDateInputValue(day);
   const dayLabel = formatDayLabel(day);
-  const dayName = dayLabel === "Today" || dayLabel === "Yesterday" ? dayLabel.toLowerCase() : dayLabel;
+  const dayName =
+    dayLabel === "Today" || dayLabel === "Yesterday"
+      ? dayLabel.toLowerCase()
+      : dayLabel;
 
   const [dayTodos, backlog, staleCount] = await Promise.all([
     getDayTodos(user.id, dayValue),
@@ -34,10 +41,18 @@ export default async function TodosPage({
 
   return (
     <div>
-      <PageHeader help="todos" title="Todos" description="Simple daily checklist — add tasks, check them off." />
+      <PageHeader
+        help="todos"
+        title="Todos"
+        description="Simple daily checklist — add tasks, check them off."
+      />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <DayNavigator basePath="/dashboard/todos" dayValue={dayValue} dayLabel={dayLabel} />
+        <DayNavigator
+          basePath="/dashboard/todos"
+          dayValue={dayValue}
+          dayLabel={dayLabel}
+        />
         {staleCount > 0 && <StaleBacklogButton count={staleCount} />}
       </div>
 
@@ -67,7 +82,12 @@ export default async function TodosPage({
               <label htmlFor="todo-priority" className="label">
                 Priority
               </label>
-              <select id="todo-priority" name="priority" className="input" defaultValue="medium">
+              <select
+                id="todo-priority"
+                name="priority"
+                className="input"
+                defaultValue="medium"
+              >
                 <option value="high">High</option>
                 <option value="medium">Medium</option>
                 <option value="low">Low</option>
@@ -77,25 +97,44 @@ export default async function TodosPage({
               <label htmlFor="todo-category" className="label">
                 Category
               </label>
-              <input id="todo-category" name="category" className="input" placeholder="e.g. work, health" />
+              <input
+                id="todo-category"
+                name="category"
+                className="input"
+                placeholder="e.g. work, health"
+              />
             </div>
             <div>
               <label htmlFor="todo-due" className="label">
                 Due date
               </label>
-              <input id="todo-due" name="dueDate" type="date" className="input" />
+              <input
+                id="todo-due"
+                name="dueDate"
+                type="date"
+                className="input"
+              />
             </div>
             <div>
               <label htmlFor="todo-destination" className="label">
                 Add to
               </label>
-              <select id="todo-destination" name="destination" className="input" defaultValue="day">
-                <option value="day">{dayLabel === "Today" ? "Today" : `This day (${dayLabel})`}</option>
+              <select
+                id="todo-destination"
+                name="destination"
+                className="input"
+                defaultValue="day"
+              >
+                <option value="day">
+                  {dayLabel === "Today" ? "Today" : `This day (${dayLabel})`}
+                </option>
                 <option value="backlog">Backlog</option>
               </select>
             </div>
             <div className="col-span-2 flex items-end lg:col-span-1">
-              <SubmitButton className="btn-primary touch-target w-full">Add</SubmitButton>
+              <SubmitButton className="btn-primary touch-target w-full">
+                Add
+              </SubmitButton>
             </div>
           </FormAction>
         </FocusTarget>
@@ -112,14 +151,25 @@ export default async function TodosPage({
       >
         {backlog.length === 0 ? (
           <p className="text-sm text-muted">
-            Nothing saved for later. To park a todo here, choose “Backlog” under “Add to” above.
+            Nothing saved for later. To park a todo here, choose “Backlog” under
+            “Add to” above.
           </p>
         ) : (
           <>
-            <p className="text-sm text-muted">Saved for later. Pull items into {dayName === "today" ? "today’s" : "this day’s"} list when you’re ready.</p>
+            <p className="text-sm text-muted">
+              Saved for later. Pull items into{" "}
+              {dayName === "today" ? "today’s" : "this day’s"} list when you’re
+              ready.
+            </p>
             <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-700">
-              {backlog.map((t) => (
-                <BacklogRow key={t.id} id={t.id} title={t.title} dayValue={dayValue} dayName={dayName} />
+              {backlog.map(t => (
+                <BacklogRow
+                  key={t.id}
+                  id={t.id}
+                  title={t.title}
+                  dayValue={dayValue}
+                  dayName={dayName}
+                />
               ))}
             </ul>
           </>

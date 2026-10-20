@@ -91,8 +91,12 @@ export default function PrioritiesManager({ priorities }: Props) {
 
       {atCap && (
         <p className="mb-6 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
-          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
-          You&apos;ve reached the maximum of {MAX_LIFE_PRIORITIES} priorities. Remove one to add another.
+          <Icon
+            name="info"
+            className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400"
+          />
+          You&apos;ve reached the maximum of {MAX_LIFE_PRIORITIES} priorities.
+          Remove one to add another.
         </p>
       )}
 
@@ -106,10 +110,7 @@ export default function PrioritiesManager({ priorities }: Props) {
       ) : (
         <ol className="space-y-2">
           {priorities.map((item, index) => (
-            <li
-              key={item.id}
-              className="card flex items-start gap-3 py-4"
-            >
+            <li key={item.id} className="card flex items-start gap-3 py-4">
               <span
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold tabular-nums text-brand-700 dark:bg-brand-950 dark:text-brand-300"
                 aria-hidden
@@ -117,9 +118,13 @@ export default function PrioritiesManager({ priorities }: Props) {
                 {index + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-slate-800 dark:text-slate-100">{item.title}</p>
+                <p className="font-medium text-slate-800 dark:text-slate-100">
+                  {item.title}
+                </p>
                 {item.note && (
-                  <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{item.note}</p>
+                  <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                    {item.note}
+                  </p>
                 )}
                 <CollapsibleSection title="Edit" className="mt-1 text-sm">
                   <FormAction
@@ -129,7 +134,10 @@ export default function PrioritiesManager({ priorities }: Props) {
                   >
                     <input type="hidden" name="id" value={item.id} />
                     <div>
-                      <label htmlFor={`priority-title-${item.id}`} className="label">
+                      <label
+                        htmlFor={`priority-title-${item.id}`}
+                        className="label"
+                      >
                         Title
                       </label>
                       <input
@@ -141,7 +149,10 @@ export default function PrioritiesManager({ priorities }: Props) {
                       />
                     </div>
                     <div>
-                      <label htmlFor={`priority-note-${item.id}`} className="label">
+                      <label
+                        htmlFor={`priority-note-${item.id}`}
+                        className="label"
+                      >
                         Note (optional)
                       </label>
                       <input
@@ -151,12 +162,19 @@ export default function PrioritiesManager({ priorities }: Props) {
                         defaultValue={item.note ?? ""}
                       />
                     </div>
-                    <SubmitButton className="btn-primary">Save changes</SubmitButton>
+                    <SubmitButton className="btn-primary">
+                      Save changes
+                    </SubmitButton>
                   </FormAction>
                 </CollapsibleSection>
               </div>
-              <div className="flex shrink-0 items-center" aria-busy={movingId === item.id || undefined}>
-                {movingId === item.id && <Spinner className="mr-1 h-4 w-4 text-brand-600" />}
+              <div
+                className="flex shrink-0 items-center"
+                aria-busy={movingId === item.id || undefined}
+              >
+                {movingId === item.id && (
+                  <Spinner className="mr-1 h-4 w-4 text-brand-600" />
+                )}
                 <IconButton
                   icon="chevronUp"
                   disabled={index === 0 || isMoving}

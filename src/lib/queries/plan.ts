@@ -2,7 +2,13 @@ import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
 import { startOfDay, endOfDay } from "@/lib/date";
 import { sortBlocksByTime, blocksOverlap } from "@/lib/plan/overlap";
-import { isBlockOverdue, isBlockActive, isBlockUpcoming, parseTimeToMinutes, getCurrentTimeMinutes } from "@/lib/plan/time";
+import {
+  isBlockOverdue,
+  isBlockActive,
+  isBlockUpcoming,
+  parseTimeToMinutes,
+  getCurrentTimeMinutes,
+} from "@/lib/plan/time";
 import { toDateInputValue } from "@/lib/date";
 
 export type PlanBlockItem = {
@@ -50,9 +56,16 @@ const blockSelect = {
   sortOrder: true,
 } as const;
 
-async function syncLinkedBlockStatuses(userId: string, blocks: PlanBlockItem[]): Promise<PlanBlockItem[]> {
-  const todoIds = blocks.filter((b) => b.linkType === "todo" && b.linkId).map((b) => b.linkId!);
-  const followUpIds = blocks.filter((b) => b.linkType === "followup" && b.linkId).map((b) => b.linkId!);
+async function syncLinkedBlockStatuses(
+  userId: string,
+  blocks: PlanBlockItem[]
+): Promise<PlanBlockItem[]> {
+  const todoIds = blocks
+    .filter(b => b.linkType === "todo" && b.linkId)
+    .map(b => b.linkId!);
+  const followUpIds = blocks
+    .filter(b => b.linkType === "followup" && b.linkId)
+    .map(b => b.linkId!);
 
   const [todos, followUps] = await Promise.all([
     todoIds.length
@@ -69,12 +82,12 @@ async function syncLinkedBlockStatuses(userId: string, blocks: PlanBlockItem[]):
       : [],
   ]);
 
-  const todoStatus = new Map(todos.map((t) => [t.id, t.status]));
-  const followUpDone = new Map(followUps.map((f) => [f.id, f.done]));
+  const todoStatus = new Map(todos.map(t => [t.id, t.status]));
+  const followUpDone = new Map(followUps.map(f => [f.id, f.done]));
 
   const updates: { id: string; status: string }[] = [];
 
-  const synced = blocks.map((block) => {
+  const synced = blocks.map(block => {
     if (block.status !== "planned") return block;
 
     if (block.linkType === "todo" && block.linkId) {
@@ -97,7 +110,7 @@ async function syncLinkedBlockStatuses(userId: string, blocks: PlanBlockItem[]):
 
   if (updates.length > 0) {
     await Promise.all(
-      updates.map((u) =>
+      updates.map(u =>
         prisma.planBlock.updateMany({
           where: { id: u.id, userId, status: "planned" },
           data: { status: u.status },
@@ -109,7 +122,10 @@ async function syncLinkedBlockStatuses(userId: string, blocks: PlanBlockItem[]):
   return synced;
 }
 
-export async function getDayPlanBlocks(userId: string, dayKey: string): Promise<PlanBlockItem[]> {
+export async function getDayPlanBlocks(
+  userId: string,
+  dayKey: string
+): Promise<PlanBlockItem[]> {
   const day = new Date(dayKey + "T00:00:00");
   const blocks = await cachedQuery(
     ["plan-day", userId, dayKey],
@@ -129,7 +145,9 @@ export async function getDayPlanBlocks(userId: string, dayKey: string): Promise<
   return sortBlocksByTime(synced);
 }
 
-export async function getPlanTemplates(userId: string): Promise<PlanTemplateItem[]> {
+export async function getPlanTemplates(
+  userId: string
+): Promise<PlanTemplateItem[]> {
   return cachedQuery(
     ["plan-templates", userId],
     [cacheTag("plan", userId)],
@@ -139,7 +157,7 @@ export async function getPlanTemplates(userId: string): Promise<PlanTemplateItem
         orderBy: [{ isDefault: "desc" }, { name: "asc" }],
         include: { _count: { select: { blocks: true } } },
       });
-      return templates.map((t) => ({
+      return templates.map(t => ({
         id: t.id,
         name: t.name,
         dayOfWeek: t.dayOfWeek,
@@ -150,7 +168,10 @@ export async function getPlanTemplates(userId: string): Promise<PlanTemplateItem
   );
 }
 
-export async function getDismissedSuggestionKeys(userId: string, dayKey: string): Promise<string[]> {
+export async function getDismissedSuggestionKeys(
+  userId: string,
+  dayKey: string
+): Promise<string[]> {
   const day = new Date(dayKey + "T00:00:00");
   const rows = await cachedQuery(
     ["plan-dismissals", userId, dayKey],
@@ -164,10 +185,14 @@ export async function getDismissedSuggestionKeys(userId: string, dayKey: string)
         select: { suggestionKey: true },
       })
   );
-  return rows.map((r) => r.suggestionKey);
+  return rows.map(r => r.suggestionKey);
 }
 
-export async function getPlanDayStats(userId: string, dayKey: string, now = new Date()): Promise<PlanDayStats> {
+export async function getPlanDayStats(
+  userId: string,
+  dayKey: string,
+  now = new Date()
+): Promise<PlanDayStats> {
   const blocks = await getDayPlanBlocks(userId, dayKey);
 
   let hasOverlaps = false;
@@ -181,15 +206,17 @@ export async function getPlanDayStats(userId: string, dayKey: string, now = new 
     if (hasOverlaps) break;
   }
 
-  const doneBlocks = blocks.filter((b) => b.status === "done").length;
-  const skippedBlocks = blocks.filter((b) => b.status === "skipped").length;
+  const doneBlocks = blocks.filter(b => b.status === "done").length;
+  const skippedBlocks = blocks.filter(b => b.status === "skipped").length;
   const totalBlocks = blocks.length;
-  const completionPct = totalBlocks === 0 ? 0 : Math.round((doneBlocks / totalBlocks) * 100);
+  const completionPct =
+    totalBlocks === 0 ? 0 : Math.round((doneBlocks / totalBlocks) * 100);
 
   const isToday = dayKey === toDateInputValue(now);
 
   const runningBehindCount = isToday
-    ? blocks.filter((b) => isBlockOverdue(b.startTime, b.endTime, b.status, now)).length
+    ? blocks.filter(b => isBlockOverdue(b.startTime, b.endTime, b.status, now))
+        .length
     : 0;
 
   return {
@@ -202,12 +229,19 @@ export async function getPlanDayStats(userId: string, dayKey: string, now = new 
   };
 }
 
-export async function getPlanPreviewBlocks(userId: string, dayKey: string, limit = 5, now = new Date()) {
+export async function getPlanPreviewBlocks(
+  userId: string,
+  dayKey: string,
+  limit = 5,
+  now = new Date()
+) {
   const blocks = await getDayPlanBlocks(userId, dayKey);
 
-  const current = blocks.find((b) => isBlockActive(b.startTime, b.endTime, now) && b.status === "planned");
+  const current = blocks.find(
+    b => isBlockActive(b.startTime, b.endTime, now) && b.status === "planned"
+  );
   const upcoming = blocks.filter(
-    (b) => b.status === "planned" && isBlockUpcoming(b.startTime, now)
+    b => b.status === "planned" && isBlockUpcoming(b.startTime, now)
   );
 
   const preview: PlanBlockItem[] = [];
@@ -220,14 +254,18 @@ export async function getPlanPreviewBlocks(userId: string, dayKey: string, limit
   }
 
   if (preview.length < limit) {
-    const remaining = blocks.filter((b) => !preview.some((p) => p.id === b.id));
+    const remaining = blocks.filter(b => !preview.some(p => p.id === b.id));
     for (const block of remaining) {
       if (preview.length >= limit) break;
       preview.push(block);
     }
   }
 
-  preview.sort((a, b) => (parseTimeToMinutes(a.startTime) ?? 0) - (parseTimeToMinutes(b.startTime) ?? 0));
+  preview.sort(
+    (a, b) =>
+      (parseTimeToMinutes(a.startTime) ?? 0) -
+      (parseTimeToMinutes(b.startTime) ?? 0)
+  );
 
   return {
     blocks: preview.slice(0, limit),

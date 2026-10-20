@@ -1,6 +1,12 @@
 "use client";
 
-import { Fragment, useEffect, useOptimistic, useState, useTransition } from "react";
+import {
+  Fragment,
+  useEffect,
+  useOptimistic,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import clsx from "clsx";
@@ -12,9 +18,21 @@ import CheckButton from "@/components/CheckButton";
 import PendingIndicator from "@/components/PendingIndicator";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 import { useToast } from "@/components/Toast";
-import { kindColor, PLAN_KIND_LABELS, PLAN_KIND_LINKS, PLAN_KIND_MODULES, type PlanKind } from "@/lib/plan/kinds";
+import {
+  kindColor,
+  PLAN_KIND_LABELS,
+  PLAN_KIND_LINKS,
+  PLAN_KIND_MODULES,
+  type PlanKind,
+} from "@/lib/plan/kinds";
 import { useModules } from "@/components/ModulesProvider";
-import { formatMinutesToTime, getCurrentTimeMinutes, isBlockActive, isBlockOverdue, parseTimeToMinutes } from "@/lib/plan/time";
+import {
+  formatMinutesToTime,
+  getCurrentTimeMinutes,
+  isBlockActive,
+  isBlockOverdue,
+  parseTimeToMinutes,
+} from "@/lib/plan/time";
 import { blocksOverlap } from "@/lib/plan/overlap";
 import type { ActionResult } from "@/lib/action-result";
 import type { PlanBlockItem } from "@/lib/queries/plan";
@@ -36,18 +54,23 @@ type OptimisticAction =
   | { type: "skip"; id: string }
   | { type: "delete"; id: string };
 
-function applyOptimistic(blocks: PlanBlockItem[], action: OptimisticAction): PlanBlockItem[] {
+function applyOptimistic(
+  blocks: PlanBlockItem[],
+  action: OptimisticAction
+): PlanBlockItem[] {
   switch (action.type) {
     case "toggle":
-      return blocks.map((b) =>
+      return blocks.map(b =>
         b.id === action.id
           ? { ...b, status: b.status === "done" ? "planned" : "done" }
           : b
       );
     case "skip":
-      return blocks.map((b) => (b.id === action.id ? { ...b, status: "skipped" } : b));
+      return blocks.map(b =>
+        b.id === action.id ? { ...b, status: "skipped" } : b
+      );
     case "delete":
-      return blocks.filter((b) => b.id !== action.id);
+      return blocks.filter(b => b.id !== action.id);
   }
 }
 
@@ -66,10 +89,22 @@ function useNowMinutes(enabled: boolean) {
 function NowLine({ minutes }: { minutes: number }) {
   const label = formatMinutesToTime(minutes);
   return (
-    <div role="separator" aria-label={`Current time ${label}`} className="flex items-center gap-2 py-0.5">
-      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
-      <span className="shrink-0 text-xs font-semibold tabular-nums text-brand-700 dark:text-brand-300">Now {label}</span>
-      <span className="h-0.5 flex-1 rounded bg-brand-500/70" aria-hidden="true" />
+    <div
+      role="separator"
+      aria-label={`Current time ${label}`}
+      className="flex items-center gap-2 py-0.5"
+    >
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full bg-brand-600 dark:bg-brand-400"
+        aria-hidden="true"
+      />
+      <span className="shrink-0 text-xs font-semibold tabular-nums text-brand-700 dark:text-brand-300">
+        Now {label}
+      </span>
+      <span
+        className="h-0.5 flex-1 rounded bg-brand-500/70"
+        aria-hidden="true"
+      />
     </div>
   );
 }
@@ -94,11 +129,18 @@ function BlockRow({
   const [editing, setEditing] = useState(false);
   const isDone = block.status === "done";
   const isSkipped = block.status === "skipped";
-  const active = isToday && isBlockActive(block.startTime, block.endTime) && block.status === "planned";
-  const overdue = isToday && isBlockOverdue(block.startTime, block.endTime, block.status);
+  const active =
+    isToday &&
+    isBlockActive(block.startTime, block.endTime) &&
+    block.status === "planned";
+  const overdue =
+    isToday && isBlockOverdue(block.startTime, block.endTime, block.status);
   const modules = useModules();
   const kindModule = PLAN_KIND_MODULES[block.kind as PlanKind];
-  const moduleLink = !kindModule || modules.has(kindModule) ? PLAN_KIND_LINKS[block.kind as PlanKind] : undefined;
+  const moduleLink =
+    !kindModule || modules.has(kindModule)
+      ? PLAN_KIND_LINKS[block.kind as PlanKind]
+      : undefined;
   const kindLabel = PLAN_KIND_LABELS[block.kind as PlanKind] ?? block.kind;
   const formId = `block-${block.id}`;
 
@@ -128,7 +170,9 @@ function BlockRow({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={clsx("font-medium", isDone && "line-through")}>{block.title}</span>
+            <span className={clsx("font-medium", isDone && "line-through")}>
+              {block.title}
+            </span>
             <span className="badge-muted">{kindLabel}</span>
             {active && <span className="badge-brand">Now</span>}
             {isSkipped && <span className="badge-muted">Skipped</span>}
@@ -145,7 +189,10 @@ function BlockRow({
           </p>
           {block.notes && <p className="mt-1 text-sm">{block.notes}</p>}
           {moduleLink && (
-            <Link href={moduleLink} className="mt-1 inline-flex min-h-[32px] items-center rounded-sm text-xs font-medium underline underline-offset-2 hover:no-underline">
+            <Link
+              href={moduleLink}
+              className="mt-1 inline-flex min-h-[32px] items-center rounded-sm text-xs font-medium underline underline-offset-2 hover:no-underline"
+            >
               Open in {kindLabel.toLowerCase()}
               <Icon name="arrowRight" className="ml-1 h-3 w-3" />
             </Link>
@@ -166,7 +213,7 @@ function BlockRow({
           )}
           <button
             type="button"
-            onClick={() => setEditing((v) => !v)}
+            onClick={() => setEditing(v => !v)}
             className="btn-ghost btn-sm min-h-[40px]"
             aria-expanded={editing}
             aria-controls={`${formId}-edit`}
@@ -196,25 +243,50 @@ function BlockRow({
             <label htmlFor={`${formId}-title`} className="label">
               Title
             </label>
-            <input id={`${formId}-title`} name="title" className="input" defaultValue={block.title} required />
+            <input
+              id={`${formId}-title`}
+              name="title"
+              className="input"
+              defaultValue={block.title}
+              required
+            />
           </div>
           <div>
             <label htmlFor={`${formId}-start`} className="label">
               Start
             </label>
-            <input id={`${formId}-start`} name="startTime" type="time" className="input" defaultValue={block.startTime} required />
+            <input
+              id={`${formId}-start`}
+              name="startTime"
+              type="time"
+              className="input"
+              defaultValue={block.startTime}
+              required
+            />
           </div>
           <div>
             <label htmlFor={`${formId}-end`} className="label">
               End
             </label>
-            <input id={`${formId}-end`} name="endTime" type="time" className="input" defaultValue={block.endTime} required />
+            <input
+              id={`${formId}-end`}
+              name="endTime"
+              type="time"
+              className="input"
+              defaultValue={block.endTime}
+              required
+            />
           </div>
           <div>
             <label htmlFor={`${formId}-kind`} className="label">
               Kind
             </label>
-            <select id={`${formId}-kind`} name="kind" className="input" defaultValue={block.kind}>
+            <select
+              id={`${formId}-kind`}
+              name="kind"
+              className="input"
+              defaultValue={block.kind}
+            >
               {Object.entries(PLAN_KIND_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -226,13 +298,23 @@ function BlockRow({
             <label htmlFor={`${formId}-notes`} className="label">
               Notes
             </label>
-            <input id={`${formId}-notes`} name="notes" className="input" defaultValue={block.notes ?? ""} placeholder="Optional" />
+            <input
+              id={`${formId}-notes`}
+              name="notes"
+              className="input"
+              defaultValue={block.notes ?? ""}
+              placeholder="Optional"
+            />
           </div>
           <div className="flex flex-wrap gap-2 sm:col-span-2">
             <SubmitButton className="btn-primary" pendingLabel="Saving…">
               Save changes
             </SubmitButton>
-            <button type="button" className="btn-ghost" onClick={() => setEditing(false)}>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setEditing(false)}
+            >
               Cancel
             </button>
           </div>
@@ -242,14 +324,21 @@ function BlockRow({
   );
 }
 
-export default function PlanTimeline({ initialBlocks, isToday, showCurrentTimeLine }: Props) {
+export default function PlanTimeline({
+  initialBlocks,
+  isToday,
+  showCurrentTimeLine,
+}: Props) {
   const [pending, startTransition] = useTransition();
   const [blocks, setOptimistic] = useOptimistic(initialBlocks, applyOptimistic);
   const router = useRouter();
   const { success, error } = useToast();
   const nowMinutes = useNowMinutes(Boolean(showCurrentTimeLine && isToday));
 
-  function run(action: OptimisticAction, fn: (fd: FormData) => Promise<ActionResult>) {
+  function run(
+    action: OptimisticAction,
+    fn: (fd: FormData) => Promise<ActionResult>
+  ) {
     startTransition(async () => {
       setOptimistic(action);
       let result: ActionResult;
@@ -296,7 +385,9 @@ export default function PlanTimeline({ initialBlocks, isToday, showCurrentTimeLi
     nowMinutes === null
       ? -1
       : (() => {
-          const idx = blocks.findIndex((b) => (parseTimeToMinutes(b.startTime) ?? 0) > nowMinutes);
+          const idx = blocks.findIndex(
+            b => (parseTimeToMinutes(b.startTime) ?? 0) > nowMinutes
+          );
           return idx === -1 ? blocks.length : idx;
         })();
 
@@ -305,19 +396,23 @@ export default function PlanTimeline({ initialBlocks, isToday, showCurrentTimeLi
       <PendingIndicator pending={pending} />
       {blocks.map((block, index) => (
         <Fragment key={block.id}>
-          {nowMinutes !== null && index === nowIndex && <NowLine minutes={nowMinutes} />}
+          {nowMinutes !== null && index === nowIndex && (
+            <NowLine minutes={nowMinutes} />
+          )}
           <BlockRow
             block={block}
             isToday={isToday}
             hasOverlap={overlapIds.has(block.id)}
             pending={pending}
-            onToggle={(id) => run({ type: "toggle", id }, togglePlanBlockStatus)}
-            onSkip={(id) => run({ type: "skip", id }, skipPlanBlock)}
-            onDelete={(id) => run({ type: "delete", id }, deletePlanBlock)}
+            onToggle={id => run({ type: "toggle", id }, togglePlanBlockStatus)}
+            onSkip={id => run({ type: "skip", id }, skipPlanBlock)}
+            onDelete={id => run({ type: "delete", id }, deletePlanBlock)}
           />
         </Fragment>
       ))}
-      {nowMinutes !== null && nowIndex === blocks.length && <NowLine minutes={nowMinutes} />}
+      {nowMinutes !== null && nowIndex === blocks.length && (
+        <NowLine minutes={nowMinutes} />
+      )}
     </div>
   );
 }

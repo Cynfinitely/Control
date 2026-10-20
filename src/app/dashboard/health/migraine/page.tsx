@@ -1,5 +1,11 @@
 import { requireModule } from "@/lib/session";
-import { formatDayLabel, parseDayParam, parseMonthParam, toDateInputValue, toMonthKey } from "@/lib/date";
+import {
+  formatDayLabel,
+  parseDayParam,
+  parseMonthParam,
+  toDateInputValue,
+  toMonthKey,
+} from "@/lib/date";
 import { getMonthMigraineLogs } from "@/lib/queries/migraine";
 import { periodLabel } from "@/lib/period";
 import PageHeader from "@/components/PageHeader";
@@ -18,19 +24,25 @@ export default async function MigrainePage({
   const todayKey = toDateInputValue(new Date());
   const monthLabel = periodLabel("monthly", monthKey);
 
-  const parsedDay = searchParams.day ? toDateInputValue(parseDayParam(searchParams.day)) : null;
+  const parsedDay = searchParams.day
+    ? toDateInputValue(parseDayParam(searchParams.day))
+    : null;
   // Only honour ?day= when it falls inside the month being shown, so the panel
   // never edits a day the calendar doesn't display.
-  const requestedDay = parsedDay && parsedDay.startsWith(monthKey) ? parsedDay : null;
+  const requestedDay =
+    parsedDay && parsedDay.startsWith(monthKey) ? parsedDay : null;
   const defaultDay = monthKey === toMonthKey(new Date()) ? todayKey : null;
   const selectedDay = requestedDay ?? defaultDay;
 
   const logs = await getMonthMigraineLogs(user.id, monthKey);
-  const selectedLabel = selectedDay ? formatDayLabel(parseDayParam(selectedDay)) : "Pick a day";
+  const selectedLabel = selectedDay
+    ? formatDayLabel(parseDayParam(selectedDay))
+    : "Pick a day";
 
   return (
     <div>
-      <PageHeader help="migraine"
+      <PageHeader
+        help="migraine"
         title="Migraine"
         description="Tap a day, set pain. Add duration and a note when you can."
       />

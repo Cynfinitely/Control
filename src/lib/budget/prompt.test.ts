@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { formatEuro } from "@/lib/budget";
-import { buildMonthBudgetPrompt, merchantLabel, type MonthBudgetPromptSnapshot } from "./prompt";
+import {
+  buildMonthBudgetPrompt,
+  merchantLabel,
+  type MonthBudgetPromptSnapshot,
+} from "./prompt";
 
-function snapshot(overrides: Partial<MonthBudgetPromptSnapshot> = {}): MonthBudgetPromptSnapshot {
+function snapshot(
+  overrides: Partial<MonthBudgetPromptSnapshot> = {}
+): MonthBudgetPromptSnapshot {
   return {
     monthLabel: "July 2026",
     monthKey: "2026-07",
@@ -20,7 +26,14 @@ function snapshot(overrides: Partial<MonthBudgetPromptSnapshot> = {}): MonthBudg
       { categoryId: "food", name: "Food", totalCents: 80000 },
       { categoryId: "transport", name: "Transport", totalCents: 40000 },
     ],
-    merchants: [{ merchantKey: "K-MARKET", label: "K-MARKET KALLIO", totalCents: 4520, count: 2 }],
+    merchants: [
+      {
+        merchantKey: "K-MARKET",
+        label: "K-MARKET KALLIO",
+        totalCents: 4520,
+        count: 2,
+      },
+    ],
     uncategorizedCount: 0,
     entries: [
       {
@@ -58,11 +71,21 @@ function snapshot(overrides: Partial<MonthBudgetPromptSnapshot> = {}): MonthBudg
 describe("merchantLabel", () => {
   it("prefers raw description, then note, then merchant key", () => {
     expect(
-      merchantLabel({ rawDescription: "K-MARKET", note: "ignored", merchantKey: "KEY" })
+      merchantLabel({
+        rawDescription: "K-MARKET",
+        note: "ignored",
+        merchantKey: "KEY",
+      })
     ).toBe("K-MARKET");
-    expect(merchantLabel({ rawDescription: null, note: "Lunch", merchantKey: "KEY" })).toBe("Lunch");
-    expect(merchantLabel({ rawDescription: null, note: null, merchantKey: "HSL" })).toBe("HSL");
-    expect(merchantLabel({ rawDescription: "  ", note: null, merchantKey: null })).toBe("Unknown");
+    expect(
+      merchantLabel({ rawDescription: null, note: "Lunch", merchantKey: "KEY" })
+    ).toBe("Lunch");
+    expect(
+      merchantLabel({ rawDescription: null, note: null, merchantKey: "HSL" })
+    ).toBe("HSL");
+    expect(
+      merchantLabel({ rawDescription: "  ", note: null, merchantKey: null })
+    ).toBe("Unknown");
   });
 });
 
@@ -83,8 +106,12 @@ describe("buildMonthBudgetPrompt", () => {
   });
 
   it("warns when transactions are still uncategorized", () => {
-    const withWarning = buildMonthBudgetPrompt(snapshot({ uncategorizedCount: 3 }));
-    expect(withWarning).toContain("WARNING: 3 transactions this month are still uncategorized.");
+    const withWarning = buildMonthBudgetPrompt(
+      snapshot({ uncategorizedCount: 3 })
+    );
+    expect(withWarning).toContain(
+      "WARNING: 3 transactions this month are still uncategorized."
+    );
     const without = buildMonthBudgetPrompt(snapshot({ uncategorizedCount: 0 }));
     expect(without).not.toContain("WARNING:");
   });
@@ -92,7 +119,7 @@ describe("buildMonthBudgetPrompt", () => {
   it("lists transactions in chronological order", () => {
     const text = buildMonthBudgetPrompt(snapshot());
     const block = text.split("## Transactions\n")[1];
-    const dates = [...block.matchAll(/^(\d{4}-\d{2}-\d{2})/gm)].map((m) => m[1]);
+    const dates = [...block.matchAll(/^(\d{4}-\d{2}-\d{2})/gm)].map(m => m[1]);
     expect(dates).toEqual(["2026-07-03", "2026-07-08", "2026-07-20"]);
   });
 

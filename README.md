@@ -128,15 +128,15 @@ To apply migrations manually: `DATABASE_URL=... DIRECT_URL=... npm run db:migrat
 
 ## Useful scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start the dev server |
-| `npm run build` / `npm run start` | Production build / serve |
-| `npm run setup` | Generate client + migrate + seed |
-| `npm run db:migrate` | Create/apply migrations (dev) |
-| `npm run db:migrate:deploy` | Apply migrations (production) |
-| `npm run db:seed` | Re-run the seed |
-| `npm run db:studio` | Open Prisma Studio |
+| Script                            | Description                      |
+| --------------------------------- | -------------------------------- |
+| `npm run dev`                     | Start the dev server             |
+| `npm run build` / `npm run start` | Production build / serve         |
+| `npm run setup`                   | Generate client + migrate + seed |
+| `npm run db:migrate`              | Create/apply migrations (dev)    |
+| `npm run db:migrate:deploy`       | Apply migrations (production)    |
+| `npm run db:seed`                 | Re-run the seed                  |
+| `npm run db:studio`               | Open Prisma Studio               |
 
 ## Migrating from SQLite
 

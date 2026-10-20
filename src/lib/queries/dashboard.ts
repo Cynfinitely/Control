@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { startOfDay, endOfDay, startOfWeek, addDays, coerceDate, toDateInputValue } from "@/lib/date";
+import {
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  addDays,
+  coerceDate,
+  toDateInputValue,
+} from "@/lib/date";
 import { getPeriodKey } from "@/lib/period";
 import { historicalDebtRemaining } from "@/lib/prayer-debt";
 import { getBudgetSummaryForDashboard } from "@/lib/queries/budget";
@@ -20,7 +27,13 @@ export async function getDashboardStats(userId: string, todayKey: string) {
 
   return cachedQuery(
     ["dashboard-stats", "v4", userId, todayKey],
-    [cacheTag("dashboard", userId), cacheTag("plan", userId), cacheTag("religious", userId), cacheTag("todos", userId), cacheTag("networking", userId)],
+    [
+      cacheTag("dashboard", userId),
+      cacheTag("plan", userId),
+      cacheTag("religious", userId),
+      cacheTag("todos", userId),
+      cacheTag("networking", userId),
+    ],
     async () => {
       const [
         todayOpenTodos,
@@ -72,23 +85,43 @@ export async function getDashboardStats(userId: string, todayKey: string) {
           },
         }),
         prisma.goal.count({
-          where: { userId, status: "active", deletedAt: null, period: "weekly", periodKey: weekKey },
+          where: {
+            userId,
+            status: "active",
+            deletedAt: null,
+            period: "weekly",
+            periodKey: weekKey,
+          },
         }),
         prisma.goal.count({
-          where: { userId, status: "completed", deletedAt: null, period: "weekly", periodKey: weekKey },
+          where: {
+            userId,
+            status: "completed",
+            deletedAt: null,
+            period: "weekly",
+            periodKey: weekKey,
+          },
         }),
         prisma.foodLogEntry.count({
           where: { userId, deletedAt: null, date: { gte: from, lte: to } },
         }),
         prisma.foodLogEntry.findMany({
-          where: { userId, deletedAt: null, date: { gte: weekStart, lte: weekEnd } },
+          where: {
+            userId,
+            deletedAt: null,
+            date: { gte: weekStart, lte: weekEnd },
+          },
           select: { date: true },
         }),
         prisma.workout.count({
           where: { userId, deletedAt: null, date: { gte: from, lte: to } },
         }),
         prisma.workout.count({
-          where: { userId, deletedAt: null, date: { gte: weekStart, lte: weekEnd } },
+          where: {
+            userId,
+            deletedAt: null,
+            date: { gte: weekStart, lte: weekEnd },
+          },
         }),
         prisma.prayerLog.findMany({
           where: { userId, date: { gte: from, lte: to } },
@@ -104,12 +137,22 @@ export async function getDashboardStats(userId: string, todayKey: string) {
           where: { userId, deletedAt: null },
           select: {
             touchCadenceDays: true,
-            interactions: { orderBy: { date: "desc" }, take: 1, select: { date: true } },
+            interactions: {
+              orderBy: { date: "desc" },
+              take: 1,
+              select: { date: true },
+            },
           },
         }),
-        prisma.careerGoal.count({ where: { userId, status: "active", deletedAt: null } }),
+        prisma.careerGoal.count({
+          where: { userId, status: "active", deletedAt: null },
+        }),
         prisma.learningEntry.aggregate({
-          where: { userId, deletedAt: null, date: { gte: weekStart, lte: weekEnd } },
+          where: {
+            userId,
+            deletedAt: null,
+            date: { gte: weekStart, lte: weekEnd },
+          },
           _sum: { hours: true },
         }),
         prisma.certification.count({
@@ -128,24 +171,37 @@ export async function getDashboardStats(userId: string, todayKey: string) {
           where: { userId, deletedAt: null, planDate: { gte: from, lte: to } },
         }),
         prisma.planBlock.count({
-          where: { userId, deletedAt: null, status: "done", planDate: { gte: from, lte: to } },
+          where: {
+            userId,
+            deletedAt: null,
+            status: "done",
+            planDate: { gte: from, lte: to },
+          },
         }),
       ]);
 
-      const foodDaysThisWeek = new Set(foodDatesThisWeek.map((f) => toDateInputValue(coerceDate(f.date)))).size;
+      const foodDaysThisWeek = new Set(
+        foodDatesThisWeek.map(f => toDateInputValue(coerceDate(f.date)))
+      ).size;
       const todayPrayers = summarizeDayPrayers(prayersToday);
       const prayersOnTimeToday = todayPrayers.onTime;
-      const prayersOnTimeWeek = prayersThisWeek.filter((p) => p.status === "ontime").length;
+      const prayersOnTimeWeek = prayersThisWeek.filter(
+        p => p.status === "ontime"
+      ).length;
       const prayersLoggedWeek = prayersThisWeek.length;
       const weeklyPrayerRate =
-        prayersLoggedWeek > 0 ? Math.round((prayersOnTimeWeek / prayersLoggedWeek) * 100) : 0;
+        prayersLoggedWeek > 0
+          ? Math.round((prayersOnTimeWeek / prayersLoggedWeek) * 100)
+          : 0;
 
       const historicalRemaining = historicalDebtRemaining(prayerDebts);
       const pendingQaza = pendingQazaDaily + historicalRemaining;
 
       const overdueContacts = countOverdueContacts(
-        contactTouches.map((c) => ({
-          lastTouch: c.interactions[0] ? coerceDate(c.interactions[0].date) : null,
+        contactTouches.map(c => ({
+          lastTouch: c.interactions[0]
+            ? coerceDate(c.interactions[0].date)
+            : null,
           touchCadenceDays: c.touchCadenceDays,
         })),
         day
@@ -153,10 +209,25 @@ export async function getDashboardStats(userId: string, todayKey: string) {
 
       const health = {
         todos:
-          overdueTodos > 0 ? ("bad" as DomainHealth) : todayOpenTodos === 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
-        goals: weeklyGoals === 0 ? ("warn" as DomainHealth) : weeklyGoalsCompleted > 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
-        food: mealsToday > 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
-        exercise: workoutsThisWeek >= 3 ? ("good" as DomainHealth) : workoutsThisWeek > 0 ? ("warn" as DomainHealth) : ("bad" as DomainHealth),
+          overdueTodos > 0
+            ? ("bad" as DomainHealth)
+            : todayOpenTodos === 0
+              ? ("good" as DomainHealth)
+              : ("warn" as DomainHealth),
+        goals:
+          weeklyGoals === 0
+            ? ("warn" as DomainHealth)
+            : weeklyGoalsCompleted > 0
+              ? ("good" as DomainHealth)
+              : ("warn" as DomainHealth),
+        food:
+          mealsToday > 0 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
+        exercise:
+          workoutsThisWeek >= 3
+            ? ("good" as DomainHealth)
+            : workoutsThisWeek > 0
+              ? ("warn" as DomainHealth)
+              : ("bad" as DomainHealth),
         religious:
           pendingQaza > 5
             ? ("bad" as DomainHealth)
@@ -165,16 +236,18 @@ export async function getDashboardStats(userId: string, todayKey: string) {
               : prayersOnTimeToday >= 4
                 ? ("good" as DomainHealth)
                 : ("warn" as DomainHealth),
-        career: (learningHoursWeek._sum.hours ?? 0) >= 2 ? ("good" as DomainHealth) : ("warn" as DomainHealth),
+        career:
+          (learningHoursWeek._sum.hours ?? 0) >= 2
+            ? ("good" as DomainHealth)
+            : ("warn" as DomainHealth),
         networking: networkingHealth(overdueContacts),
-        budget:
-          !budgetSummary.setupComplete
+        budget: !budgetSummary.setupComplete
+          ? ("warn" as DomainHealth)
+          : budgetSummary.uncategorizedCount > 0
             ? ("warn" as DomainHealth)
-            : budgetSummary.uncategorizedCount > 0
-              ? ("warn" as DomainHealth)
-              : budgetSummary.monthNetCents >= 0
-                ? ("good" as DomainHealth)
-                : ("bad" as DomainHealth),
+            : budgetSummary.monthNetCents >= 0
+              ? ("good" as DomainHealth)
+              : ("bad" as DomainHealth),
       };
 
       return {
@@ -203,7 +276,9 @@ export async function getDashboardStats(userId: string, todayKey: string) {
         planBlocksToday,
         planBlocksDoneToday,
         planCompletionPct:
-          planBlocksToday === 0 ? 0 : Math.round((planBlocksDoneToday / planBlocksToday) * 100),
+          planBlocksToday === 0
+            ? 0
+            : Math.round((planBlocksDoneToday / planBlocksToday) * 100),
         health,
       };
     }

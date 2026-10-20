@@ -7,7 +7,13 @@ import {
   normalizeLocations,
   type OpenMeteoForecastResponse,
 } from "./client";
-import { formatDayShort, formatHour, formatPrecip, formatTemp, formatWind } from "./format";
+import {
+  formatDayShort,
+  formatHour,
+  formatPrecip,
+  formatTemp,
+  formatWind,
+} from "./format";
 
 const SAMPLE: OpenMeteoForecastResponse = {
   timezone: "Europe/Helsinki",
@@ -22,7 +28,12 @@ const SAMPLE: OpenMeteoForecastResponse = {
     is_day: 1,
   },
   hourly: {
-    time: ["2026-10-01T13:00", "2026-10-01T14:00", "2026-10-01T15:00", "2026-10-02T00:00"],
+    time: [
+      "2026-10-01T13:00",
+      "2026-10-01T14:00",
+      "2026-10-01T15:00",
+      "2026-10-02T00:00",
+    ],
     temperature_2m: [9, 9.4, 9.1, 6],
     precipitation_probability: [10, 20, null, 60],
     weather_code: [3, 3, 61, 63],
@@ -62,14 +73,27 @@ describe("normalizeForecast", () => {
   const forecast = normalizeForecast(SAMPLE, "metric");
 
   it("flattens Open-Meteo arrays into rows", () => {
-    expect(forecast.current).toMatchObject({ temperature: 9.4, feelsLike: 6.8, code: 3, isDay: true });
+    expect(forecast.current).toMatchObject({
+      temperature: 9.4,
+      feelsLike: 6.8,
+      code: 3,
+      isDay: true,
+    });
     expect(forecast.hourly).toHaveLength(4);
-    expect(forecast.hourly[2]).toMatchObject({ time: "2026-10-01T15:00", precipitationProbability: null, code: 61 });
-    expect(forecast.daily[1]).toMatchObject({ date: "2026-10-02", tempMax: 12, precipitationProbability: null });
+    expect(forecast.hourly[2]).toMatchObject({
+      time: "2026-10-01T15:00",
+      precipitationProbability: null,
+      code: 61,
+    });
+    expect(forecast.daily[1]).toMatchObject({
+      date: "2026-10-02",
+      tempMax: 12,
+      precipitationProbability: null,
+    });
   });
 
   it("hoursForDay starts today at the current hour", () => {
-    expect(hoursForDay(forecast, "2026-10-01").map((h) => h.time)).toEqual([
+    expect(hoursForDay(forecast, "2026-10-01").map(h => h.time)).toEqual([
       "2026-10-01T14:00",
       "2026-10-01T15:00",
     ]);
@@ -82,14 +106,36 @@ describe("normalizeLocations", () => {
     expect(
       normalizeLocations({
         results: [
-          { name: "Helsinki", latitude: 60.17, longitude: 24.94, admin1: "Uusimaa", country: "Finland" },
-          { name: "Istanbul", latitude: 41.01, longitude: 28.95, admin1: "Istanbul", country: "Türkiye" },
+          {
+            name: "Helsinki",
+            latitude: 60.17,
+            longitude: 24.94,
+            admin1: "Uusimaa",
+            country: "Finland",
+          },
+          {
+            name: "Istanbul",
+            latitude: 41.01,
+            longitude: 28.95,
+            admin1: "Istanbul",
+            country: "Türkiye",
+          },
           { name: "Nowhere", latitude: 0, longitude: 0 },
         ],
       })
     ).toEqual([
-      { name: "Helsinki", region: "Uusimaa, Finland", latitude: 60.17, longitude: 24.94 },
-      { name: "Istanbul", region: "Türkiye", latitude: 41.01, longitude: 28.95 },
+      {
+        name: "Helsinki",
+        region: "Uusimaa, Finland",
+        latitude: 60.17,
+        longitude: 24.94,
+      },
+      {
+        name: "Istanbul",
+        region: "Türkiye",
+        latitude: 41.01,
+        longitude: 28.95,
+      },
       { name: "Nowhere", region: null, latitude: 0, longitude: 0 },
     ]);
     expect(normalizeLocations({})).toEqual([]);

@@ -4,21 +4,21 @@ How Control's UI is put together. Follow these when adding or changing screens s
 
 ## Tokens (`src/app/globals.css`)
 
-| Need | Use | Don't |
-|---|---|---|
-| Primary / secondary / destructive button | `btn-primary`, `btn-ghost`, `btn-danger` (outline), `btn-danger-solid` (confirm dialogs) | raw `bg-brand-600 …`, `btn-ghost text-red-600` |
-| Small button | add `btn-sm` (`btn-ghost btn-sm`) | `text-xs py-1 px-2` overrides |
-| Icon-only button | `<IconButton icon="trash" aria-label="Delete X" tone="danger" />` or `btn-icon` / `btn-icon-danger` (44px hit area) | `text-slate-300` icons, `h-3 w-3` buttons |
-| Inline text action | `link` | `text-xs text-brand-600` |
-| Text field | `input` (+ a real `<label>`) | placeholder-only fields |
-| Field label / hint / error | `label`, `hint`, `field-error` | `text-slate-400` hints |
-| Surface | `card`; list with edge-to-edge rows: `card-flush` + `divide-y`; quiet inset: `tile` | raw `rounded-xl border bg-white`, cards inside cards |
-| Status pill | `badge-muted`, `badge-brand`, `badge-success`, `badge-warning`, `badge-danger` | raw `bg-green-100 text-green-700` pills, `emerald-*` |
-| Chip / filter pill | `chip chip-idle` / `chip chip-active` (or `SegmentedControl`) | ad-hoc `rounded-full px-3 py-1 text-xs` |
-| Section heading (h2) | `section-title` | one-off `text-lg font-semibold …` |
-| Sub-heading (h3) | `subsection-title` | `<p className="font-semibold">` |
-| Small uppercase label | `eyebrow` | `text-xs uppercase text-slate-400` |
-| Secondary text | `text-muted` (or `text-slate-500 dark:text-slate-400`) | `text-slate-400` / `text-slate-300` on meaningful text (fails contrast) |
+| Need                                     | Use                                                                                                                 | Don't                                                                   |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Primary / secondary / destructive button | `btn-primary`, `btn-ghost`, `btn-danger` (outline), `btn-danger-solid` (confirm dialogs)                            | raw `bg-brand-600 …`, `btn-ghost text-red-600`                          |
+| Small button                             | add `btn-sm` (`btn-ghost btn-sm`)                                                                                   | `text-xs py-1 px-2` overrides                                           |
+| Icon-only button                         | `<IconButton icon="trash" aria-label="Delete X" tone="danger" />` or `btn-icon` / `btn-icon-danger` (44px hit area) | `text-slate-300` icons, `h-3 w-3` buttons                               |
+| Inline text action                       | `link`                                                                                                              | `text-xs text-brand-600`                                                |
+| Text field                               | `input` (+ a real `<label>`)                                                                                        | placeholder-only fields                                                 |
+| Field label / hint / error               | `label`, `hint`, `field-error`                                                                                      | `text-slate-400` hints                                                  |
+| Surface                                  | `card`; list with edge-to-edge rows: `card-flush` + `divide-y`; quiet inset: `tile`                                 | raw `rounded-xl border bg-white`, cards inside cards                    |
+| Status pill                              | `badge-muted`, `badge-brand`, `badge-success`, `badge-warning`, `badge-danger`                                      | raw `bg-green-100 text-green-700` pills, `emerald-*`                    |
+| Chip / filter pill                       | `chip chip-idle` / `chip chip-active` (or `SegmentedControl`)                                                       | ad-hoc `rounded-full px-3 py-1 text-xs`                                 |
+| Section heading (h2)                     | `section-title`                                                                                                     | one-off `text-lg font-semibold …`                                       |
+| Sub-heading (h3)                         | `subsection-title`                                                                                                  | `<p className="font-semibold">`                                         |
+| Small uppercase label                    | `eyebrow`                                                                                                           | `text-xs uppercase text-slate-400`                                      |
+| Secondary text                           | `text-muted` (or `text-slate-500 dark:text-slate-400`)                                                              | `text-slate-400` / `text-slate-300` on meaningful text (fails contrast) |
 
 Focus rings are global (`:focus-visible` in `@layer base`); don't remove outlines.
 
@@ -36,9 +36,17 @@ Focus rings are global (`:focus-visible` in `@layer base`); don't remove outline
 - **`FormField`**: `<FormField label="Name" hint="…" error={…}>{(id, aria) => <input id={id} {...aria} className="input" />}</FormField>`. Works in server and client components.
 - **`ActionForm`**: the default way to submit a server action from any page.
   ```tsx
-  <ActionForm action={deleteThing} confirm={{ title: "Delete “X”?", message: "This can't be undone." }} successMessage="Deleted">
+  <ActionForm
+    action={deleteThing}
+    confirm={{ title: "Delete “X”?", message: "This can't be undone." }}
+    successMessage="Deleted"
+  >
     <input type="hidden" name="id" value={x.id} />
-    <SubmitIconButton icon={<Icon name="trash" className="h-4 w-4" />} aria-label={`Delete ${x.name}`} className="btn-icon-danger" />
+    <SubmitIconButton
+      icon={<Icon name="trash" className="h-4 w-4" />}
+      aria-label={`Delete ${x.name}`}
+      className="btn-icon-danger"
+    />
   </ActionForm>
   ```
   - The action may return `ActionResult` (`success(msg)` / `failure(msg)` from `@/lib/action-result`) or nothing. On success it toasts the returned message, falling back to `successMessage`; on failure it toasts the error.

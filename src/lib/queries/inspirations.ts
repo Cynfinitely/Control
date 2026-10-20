@@ -7,7 +7,9 @@ export type InspirationItem = {
   author: string | null;
 };
 
-export async function getInspirations(userId: string): Promise<InspirationItem[]> {
+export async function getInspirations(
+  userId: string
+): Promise<InspirationItem[]> {
   return cachedQuery(
     ["inspirations", userId],
     [cacheTag("inspirations", userId)],

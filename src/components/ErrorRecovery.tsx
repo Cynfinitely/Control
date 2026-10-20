@@ -13,7 +13,12 @@ type Props = {
   autoRecover?: "reset" | "reload";
 };
 
-export default function ErrorRecovery({ error, reset, homeHref, autoRecover }: Props) {
+export default function ErrorRecovery({
+  error,
+  reset,
+  homeHref,
+  autoRecover,
+}: Props) {
   const network = isNetworkError(error);
   const tried = useRef(false);
 
@@ -34,7 +39,9 @@ export default function ErrorRecovery({ error, reset, homeHref, autoRecover }: P
 
   return (
     <div role="alert" className="card mx-auto mt-8 max-w-md text-center">
-      <h1 className="section-title">{network ? "Connection lost" : "Something went wrong"}</h1>
+      <h1 className="section-title">
+        {network ? "Connection lost" : "Something went wrong"}
+      </h1>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
         {network
           ? "The app couldn't reach the server. Check your network and try again."

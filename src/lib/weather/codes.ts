@@ -33,8 +33,14 @@ const CODES: Record<number, { label: string; day: string; night?: string }> = {
   99: { label: "Thunderstorm, hail", day: "cloud-lightning" },
 };
 
-export function describeWeather(code: number | null | undefined, isDay = true): WeatherCondition {
+export function describeWeather(
+  code: number | null | undefined,
+  isDay = true
+): WeatherCondition {
   const entry = code == null ? undefined : CODES[code];
   if (!entry) return { label: "Unknown", icon: "cloud" };
-  return { label: entry.label, icon: !isDay && entry.night ? entry.night : entry.day };
+  return {
+    label: entry.label,
+    icon: !isDay && entry.night ? entry.night : entry.day,
+  };
 }

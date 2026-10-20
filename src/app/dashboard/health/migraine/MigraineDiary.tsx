@@ -37,7 +37,10 @@ const PAIN_GROUPS: { label: string; values: number[] }[] = [
 
 function toLogMap(logs: MigraineDayLog[]): LogMap {
   return Object.fromEntries(
-    logs.map((log) => [log.date, { pain: log.pain, durationMin: log.durationMin, note: log.note }])
+    logs.map(log => [
+      log.date,
+      { pain: log.pain, durationMin: log.durationMin, note: log.note },
+    ])
   );
 }
 
@@ -82,9 +85,14 @@ export default function MigraineDiary({
   const { error, success } = useToast();
   const panelRef = useRef<HTMLElement>(null);
   const [pending, startTransition] = useTransition();
-  const [logMap, setOptimistic] = useOptimistic(toLogMap(logs), applyOptimistic);
+  const [logMap, setOptimistic] = useOptimistic(
+    toLogMap(logs),
+    applyOptimistic
+  );
   const [noteDraft, setNoteDraft] = useState(() => {
-    const initial = selectedDay ? toLogMap(logs)[selectedDay]?.note ?? "" : "";
+    const initial = selectedDay
+      ? (toLogMap(logs)[selectedDay]?.note ?? "")
+      : "";
     return initial;
   });
   const [noteDay, setNoteDay] = useState(selectedDay);
@@ -92,7 +100,7 @@ export default function MigraineDiary({
 
   if (noteDay !== selectedDay) {
     setNoteDay(selectedDay);
-    setNoteDraft(selectedDay ? logMap[selectedDay]?.note ?? "" : "");
+    setNoteDraft(selectedDay ? (logMap[selectedDay]?.note ?? "") : "");
   }
 
   const [year, month] = monthKey.split("-").map(Number);
@@ -115,17 +123,28 @@ export default function MigraineDiary({
     // calendar to that month so the panel never edits a day outside it.
     const targetMonth = toMonthKey(day);
     const params = new URLSearchParams();
-    if (targetMonth !== toMonthKey(new Date())) params.set("month", targetMonth);
+    if (targetMonth !== toMonthKey(new Date()))
+      params.set("month", targetMonth);
     if (key !== todayKey) params.set("day", key);
     const qs = params.toString();
-    router.push(`/dashboard/health/migraine${qs ? `?${qs}` : ""}`, { scroll: false });
+    router.push(`/dashboard/health/migraine${qs ? `?${qs}` : ""}`, {
+      scroll: false,
+    });
     // On small screens the day panel sits above the calendar: bring it into view.
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 1023px)").matches
+    ) {
       panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
 
-  function runSave(date: string, entry: LogEntry, fd: FormData, successMessage?: string) {
+  function runSave(
+    date: string,
+    entry: LogEntry,
+    fd: FormData,
+    successMessage?: string
+  ) {
     startTransition(async () => {
       setOptimistic({ date, entry });
       try {
@@ -150,7 +169,11 @@ export default function MigraineDiary({
     fd.set("pain", String(pain));
     runSave(
       selectedDay,
-      { pain, durationMin: selected?.durationMin ?? null, note: selected?.note ?? null },
+      {
+        pain,
+        durationMin: selected?.durationMin ?? null,
+        note: selected?.note ?? null,
+      },
       fd
     );
   }
@@ -201,9 +224,24 @@ export default function MigraineDiary({
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       <div className="order-3 grid grid-cols-3 gap-3 lg:order-none lg:col-span-2">
-        <StatCard size="sm" label="Migraine days" value={stats.migraineDays} hint={`in ${monthLabel.split(" ")[0]}`} />
-        <StatCard size="sm" label="Average pain" value={formatAveragePain(stats.averagePain, stats.migraineDays)} hint="of 10" />
-        <StatCard size="sm" label="Severe days" value={stats.severeDays} hint="pain 7–10" />
+        <StatCard
+          size="sm"
+          label="Migraine days"
+          value={stats.migraineDays}
+          hint={`in ${monthLabel.split(" ")[0]}`}
+        />
+        <StatCard
+          size="sm"
+          label="Average pain"
+          value={formatAveragePain(stats.averagePain, stats.migraineDays)}
+          hint="of 10"
+        />
+        <StatCard
+          size="sm"
+          label="Severe days"
+          value={stats.severeDays}
+          hint="pain 7–10"
+        />
       </div>
 
       <div className="card order-2 space-y-4 lg:order-none">
@@ -216,7 +254,7 @@ export default function MigraineDiary({
 
         <div>
           <div className="grid grid-cols-7 text-center text-[10px] font-medium text-slate-500 dark:text-slate-400 sm:text-xs">
-            {WEEKDAYS.map((d) => (
+            {WEEKDAYS.map(d => (
               <div key={d} className="px-0.5 py-1.5">
                 <span className="sm:hidden">{d[0]}</span>
                 <span className="hidden sm:inline">{d}</span>
@@ -224,9 +262,10 @@ export default function MigraineDiary({
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
-            {days.map((day) => {
+            {days.map(day => {
               const key = toDateInputValue(day);
-              const inMonth = day.getMonth() === month! - 1 && day.getFullYear() === year;
+              const inMonth =
+                day.getMonth() === month! - 1 && day.getFullYear() === year;
               const isToday = key === todayKey;
               const isSelected = key === selectedDay;
               const isFuture = key > todayKey;
@@ -250,12 +289,21 @@ export default function MigraineDiary({
                     "touch-target flex flex-col items-center justify-center gap-0.5 rounded-lg p-1 text-sm transition",
                     isFuture && "cursor-not-allowed opacity-40",
                     !inMonth && "text-slate-500 dark:text-slate-400",
-                    isToday && !isSelected && "ring-1 ring-inset ring-brand-400",
+                    isToday &&
+                      !isSelected &&
+                      "ring-1 ring-inset ring-brand-400",
                     isSelected && "ring-2 ring-brand-500",
-                    !isFuture && !isSelected && "hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                    !isFuture &&
+                      !isSelected &&
+                      "hover:bg-slate-50 dark:hover:bg-slate-700/60"
                   )}
                 >
-                  <span className={clsx("text-xs font-medium", isToday && "text-brand-700 dark:text-brand-300")}>
+                  <span
+                    className={clsx(
+                      "text-xs font-medium",
+                      isToday && "text-brand-700 dark:text-brand-300"
+                    )}
+                  >
                     {day.getDate()}
                   </span>
                   {entry ? (
@@ -292,21 +340,25 @@ export default function MigraineDiary({
             {selectedLabel}
           </h2>
           {!selectedDay && (
-            <p className="mt-1 text-sm text-muted">Tap a day on the calendar to log pain.</p>
+            <p className="mt-1 text-sm text-muted">
+              Tap a day on the calendar to log pain.
+            </p>
           )}
           {isFutureSelected && (
-            <p className="mt-1 text-sm text-muted">Future days stay empty until they arrive.</p>
+            <p className="mt-1 text-sm text-muted">
+              Future days stay empty until they arrive.
+            </p>
           )}
         </div>
 
         {canEdit && (
           <>
             <div className="space-y-3">
-              {PAIN_GROUPS.map((group) => (
+              {PAIN_GROUPS.map(group => (
                 <fieldset key={group.label}>
                   <legend className="label">{group.label}</legend>
                   <div className="flex flex-wrap gap-2">
-                    {group.values.map((n) => {
+                    {group.values.map(n => {
                       const active = selected?.pain === n;
                       return (
                         <button
@@ -332,12 +384,16 @@ export default function MigraineDiary({
               ))}
             </div>
 
-            <CollapsibleSection key={selectedDay ?? "none"} title="More" defaultOpen={moreOpen}>
+            <CollapsibleSection
+              key={selectedDay ?? "none"}
+              title="More"
+              defaultOpen={moreOpen}
+            >
               <div className="space-y-4">
                 <fieldset>
                   <legend className="label">Duration</legend>
                   <div className="flex flex-wrap gap-2">
-                    {DURATION_PRESETS.map((preset) => {
+                    {DURATION_PRESETS.map(preset => {
                       const active = selected?.durationMin === preset.minutes;
                       return (
                         <button
@@ -356,7 +412,11 @@ export default function MigraineDiary({
                       );
                     })}
                   </div>
-                  {!selected && <p className="hint">Set a pain level first, then duration.</p>}
+                  {!selected && (
+                    <p className="hint">
+                      Set a pain level first, then duration.
+                    </p>
+                  )}
                 </fieldset>
 
                 <div>
@@ -372,10 +432,12 @@ export default function MigraineDiary({
                     aria-describedby="migraine-note-hint"
                     placeholder="Triggers, meds, what helped — optional"
                     value={noteDraft}
-                    onChange={(e) => setNoteDraft(e.target.value)}
+                    onChange={e => setNoteDraft(e.target.value)}
                   />
                   <p id="migraine-note-hint" className="hint">
-                    {selected ? "Optional. Saved when you press Save note." : "Set a pain level first to add a note."}
+                    {selected
+                      ? "Optional. Saved when you press Save note."
+                      : "Set a pain level first to add a note."}
                   </p>
                   <div className="mt-2">
                     <button
@@ -420,7 +482,13 @@ export default function MigraineDiary({
   );
 }
 
-function LegendSwatch({ className, label }: { className: string; label: string }) {
+function LegendSwatch({
+  className,
+  label,
+}: {
+  className: string;
+  label: string;
+}) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className={clsx("h-3 w-3 rounded-full", className)} />

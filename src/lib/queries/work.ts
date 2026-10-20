@@ -37,11 +37,11 @@ async function resolveLinkLabels(
   }[]
 ): Promise<WorkFocusItemRow[]> {
   const goalIds = items
-    .filter((i) => i.linkType === "career_goal" && i.linkId)
-    .map((i) => i.linkId as string);
+    .filter(i => i.linkType === "career_goal" && i.linkId)
+    .map(i => i.linkId as string);
   const skillIds = items
-    .filter((i) => i.linkType === "skill" && i.linkId)
-    .map((i) => i.linkId as string);
+    .filter(i => i.linkType === "skill" && i.linkId)
+    .map(i => i.linkId as string);
 
   const [goals, skills] = await Promise.all([
     goalIds.length
@@ -58,10 +58,10 @@ async function resolveLinkLabels(
       : Promise.resolve([]),
   ]);
 
-  const goalMap = new Map(goals.map((g) => [g.id, g.title]));
-  const skillMap = new Map(skills.map((s) => [s.id, s.name]));
+  const goalMap = new Map(goals.map(g => [g.id, g.title]));
+  const skillMap = new Map(skills.map(s => [s.id, s.name]));
 
-  return items.map((item) => {
+  return items.map(item => {
     let linkLabel: string | null = null;
     if (item.linkType === "career_goal" && item.linkId) {
       linkLabel = goalMap.get(item.linkId) ?? null;
@@ -72,7 +72,10 @@ async function resolveLinkLabels(
   });
 }
 
-export async function getWorkDay(userId: string, dayKey: string): Promise<WorkDayView> {
+export async function getWorkDay(
+  userId: string,
+  dayKey: string
+): Promise<WorkDayView> {
   const date = startOfDay(new Date(dayKey + "T00:00:00"));
   return cachedQuery(
     ["work-day", userId, dayKey],
@@ -113,23 +116,33 @@ export async function getWorkLinkOptions(userId: string): Promise<{
   goals: WorkLinkOption[];
   skills: WorkLinkOption[];
 }> {
-  return cachedQuery(["work-links", userId], [cacheTag("work", userId), cacheTag("career", userId)], async () => {
-    const [goals, skills] = await Promise.all([
-      prisma.careerGoal.findMany({
-        where: { userId, deletedAt: null, status: "active" },
-        orderBy: { title: "asc" },
-        select: { id: true, title: true },
-      }),
-      prisma.skill.findMany({
-        where: { userId, deletedAt: null },
-        orderBy: { name: "asc" },
-        select: { id: true, name: true },
-      }),
-    ]);
+  return cachedQuery(
+    ["work-links", userId],
+    [cacheTag("work", userId), cacheTag("career", userId)],
+    async () => {
+      const [goals, skills] = await Promise.all([
+        prisma.careerGoal.findMany({
+          where: { userId, deletedAt: null, status: "active" },
+          orderBy: { title: "asc" },
+          select: { id: true, title: true },
+        }),
+        prisma.skill.findMany({
+          where: { userId, deletedAt: null },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        }),
+      ]);
 
-    return {
-      goals: goals.map((g) => ({ value: `career_goal:${g.id}`, label: `Goal: ${g.title}` })),
-      skills: skills.map((s) => ({ value: `skill:${s.id}`, label: `Skill: ${s.name}` })),
-    };
-  });
+      return {
+        goals: goals.map(g => ({
+          value: `career_goal:${g.id}`,
+          label: `Goal: ${g.title}`,
+        })),
+        skills: skills.map(s => ({
+          value: `skill:${s.id}`,
+          label: `Skill: ${s.name}`,
+        })),
+      };
+    }
+  );
 }

@@ -44,7 +44,7 @@ const JOB_STAGES = [
 
 function stageInfo(stage: string) {
   return (
-    JOB_STAGES.find((s) => s.value === stage) ?? {
+    JOB_STAGES.find(s => s.value === stage) ?? {
       value: stage,
       label: stage.charAt(0).toUpperCase() + stage.slice(1),
       badge: "badge-muted",
@@ -84,7 +84,15 @@ function DeleteButton({
   );
 }
 
-function SectionHeader({ id, title, meta }: { id: string; title: string; meta?: React.ReactNode }) {
+function SectionHeader({
+  id,
+  title,
+  meta,
+}: {
+  id: string;
+  title: string;
+  meta?: React.ReactNode;
+}) {
   return (
     <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
       <h2 id={id} className="section-title">
@@ -98,7 +106,7 @@ function SectionHeader({ id, title, meta }: { id: string; title: string; meta?: 
 function StageOptions() {
   return (
     <>
-      {JOB_STAGES.map((s) => (
+      {JOB_STAGES.map(s => (
         <option key={s.value} value={s.value}>
           {s.label}
         </option>
@@ -117,11 +125,32 @@ export default async function CareerPage({
   const now = new Date();
   const tab = parseCareerTab(searchParams.tab);
 
-  const [goals, skills, certs, experiences, learningRows, learningCount, jobAppRows, contacts] = await Promise.all([
-    prisma.careerGoal.findMany({ where: { userId, deletedAt: null }, orderBy: { createdAt: "desc" } }),
-    prisma.skill.findMany({ where: { userId, deletedAt: null }, orderBy: { name: "asc" } }),
-    prisma.certification.findMany({ where: { userId, deletedAt: null }, orderBy: { issuedAt: "desc" } }),
-    prisma.workExperience.findMany({ where: { userId, deletedAt: null }, orderBy: { startDate: "desc" } }),
+  const [
+    goals,
+    skills,
+    certs,
+    experiences,
+    learningRows,
+    learningCount,
+    jobAppRows,
+    contacts,
+  ] = await Promise.all([
+    prisma.careerGoal.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.skill.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { name: "asc" },
+    }),
+    prisma.certification.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { issuedAt: "desc" },
+    }),
+    prisma.workExperience.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { startDate: "desc" },
+    }),
     prisma.learningEntry.findMany({
       where: { userId, deletedAt: null },
       orderBy: { date: "desc" },
@@ -141,17 +170,29 @@ export default async function CareerPage({
     }),
   ]);
 
-  const networkingOn = !(await getDisabledModules(userId)).includes("networking");
+  const networkingOn = !(await getDisabledModules(userId)).includes(
+    "networking"
+  );
 
   // Never render a linked record that belongs to someone else.
-  const learning = learningRows.map((l) => ({ ...l, skill: l.skill?.userId === userId ? l.skill : null }));
-  const jobApps = jobAppRows.map((j) => ({ ...j, contact: j.contact?.userId === userId ? j.contact : null }));
+  const learning = learningRows.map(l => ({
+    ...l,
+    skill: l.skill?.userId === userId ? l.skill : null,
+  }));
+  const jobApps = jobAppRows.map(j => ({
+    ...j,
+    contact: j.contact?.userId === userId ? j.contact : null,
+  }));
 
   const certExpirySoon = addDays(now, 30);
 
   const goalsPanel = (
     <section aria-labelledby="career-goals-heading" className="space-y-3">
-      <SectionHeader id="career-goals-heading" title="Career goals" meta={`${goals.length} total`} />
+      <SectionHeader
+        id="career-goals-heading"
+        title="Career goals"
+        meta={`${goals.length} total`}
+      />
       <CollapsibleSection title="Add goal" variant="card">
         <ActionForm
           action={createCareerGoal}
@@ -160,13 +201,29 @@ export default async function CareerPage({
           className="grid grid-cols-1 gap-4 sm:grid-cols-2"
         >
           <FormField label="Title" className="sm:col-span-2" required>
-            {(_id, aria) => <input {...aria} name="title" className="input" required />}
+            {(_id, aria) => (
+              <input {...aria} name="title" className="input" required />
+            )}
           </FormField>
           <FormField label="Target date">
-            {(_id, aria) => <input {...aria} name="targetDate" type="date" className="input" />}
+            {(_id, aria) => (
+              <input
+                {...aria}
+                name="targetDate"
+                type="date"
+                className="input"
+              />
+            )}
           </FormField>
           <FormField label="Description" className="sm:col-span-2">
-            {(_id, aria) => <textarea {...aria} name="description" className="input" rows={2} />}
+            {(_id, aria) => (
+              <textarea
+                {...aria}
+                name="description"
+                className="input"
+                rows={2}
+              />
+            )}
           </FormField>
           <div className="sm:col-span-2">
             <SubmitButton className="btn-primary">Add goal</SubmitButton>
@@ -183,24 +240,41 @@ export default async function CareerPage({
         />
       ) : (
         <ul className="space-y-2">
-          {goals.map((g) => {
+          {goals.map(g => {
             const completed = g.status === "completed";
             return (
-              <li key={g.id} className="card flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
+              <li
+                key={g.id}
+                className="card flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between"
+              >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-medium text-slate-800 dark:text-slate-100">{g.title}</h3>
-                    <span className={completed ? "badge-success" : "badge-brand"}>
+                    <h3 className="font-medium text-slate-800 dark:text-slate-100">
+                      {g.title}
+                    </h3>
+                    <span
+                      className={completed ? "badge-success" : "badge-brand"}
+                    >
                       {completed ? "Completed" : "Active"}
                     </span>
                   </div>
-                  {g.description && <p className="mt-1 text-sm text-muted">{g.description}</p>}
-                  {g.targetDate && <p className="mt-1 text-xs text-muted">Target: {formatDate(g.targetDate)}</p>}
+                  {g.description && (
+                    <p className="mt-1 text-sm text-muted">{g.description}</p>
+                  )}
+                  {g.targetDate && (
+                    <p className="mt-1 text-xs text-muted">
+                      Target: {formatDate(g.targetDate)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <ActionForm action={setCareerGoalStatus}>
                     <input type="hidden" name="id" value={g.id} />
-                    <input type="hidden" name="status" value={completed ? "active" : "completed"} />
+                    <input
+                      type="hidden"
+                      name="status"
+                      value={completed ? "active" : "completed"}
+                    />
                     <SubmitButton className="btn-ghost btn-sm">
                       {completed ? "Reopen" : "Mark complete"}
                     </SubmitButton>
@@ -224,7 +298,11 @@ export default async function CareerPage({
   const skillsPanel = (
     <div className="space-y-10">
       <section aria-labelledby="career-skills-heading" className="space-y-3">
-        <SectionHeader id="career-skills-heading" title="Skills" meta={`${skills.length} total`} />
+        <SectionHeader
+          id="career-skills-heading"
+          title="Skills"
+          meta={`${skills.length} total`}
+        />
         <CollapsibleSection title="Add skill" variant="card">
           <ActionForm
             action={createSkill}
@@ -233,12 +311,19 @@ export default async function CareerPage({
             className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr_2fr_auto] sm:items-end"
           >
             <FormField label="Skill" required>
-              {(_id, aria) => <input {...aria} name="name" className="input" required />}
+              {(_id, aria) => (
+                <input {...aria} name="name" className="input" required />
+              )}
             </FormField>
             <FormField label="Level (1–5)">
               {(_id, aria) => (
-                <select {...aria} name="level" className="input" defaultValue="3">
-                  {SKILL_LEVELS.map((n) => (
+                <select
+                  {...aria}
+                  name="level"
+                  className="input"
+                  defaultValue="3"
+                >
+                  {SKILL_LEVELS.map(n => (
                     <option key={n} value={n}>
                       {n}
                     </option>
@@ -247,7 +332,9 @@ export default async function CareerPage({
               )}
             </FormField>
             <FormField label="Notes">
-              {(_id, aria) => <input {...aria} name="notes" className="input" />}
+              {(_id, aria) => (
+                <input {...aria} name="notes" className="input" />
+              )}
             </FormField>
             <SubmitButton className="btn-primary">Add skill</SubmitButton>
           </ActionForm>
@@ -262,14 +349,18 @@ export default async function CareerPage({
           />
         ) : (
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {skills.map((s) => (
+            {skills.map(s => (
               <li key={s.id} className="card flex flex-col gap-3 py-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <h3 className="font-medium text-slate-800 dark:text-slate-100">{s.name}</h3>
-                    <p className="mt-0.5 text-sm text-muted">Level {s.level} of 5</p>
+                    <h3 className="font-medium text-slate-800 dark:text-slate-100">
+                      {s.name}
+                    </h3>
+                    <p className="mt-0.5 text-sm text-muted">
+                      Level {s.level} of 5
+                    </p>
                     <div className="mt-1.5 flex gap-1" aria-hidden="true">
-                      {SKILL_LEVELS.map((n) => (
+                      {SKILL_LEVELS.map(n => (
                         <span
                           key={n}
                           className={`h-2 w-6 rounded-full ${n <= s.level ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-700"}`}
@@ -277,7 +368,9 @@ export default async function CareerPage({
                       ))}
                     </div>
                     {s.notes && (
-                      <p className="mt-2 whitespace-pre-line break-words text-sm text-slate-600 dark:text-slate-400">{s.notes}</p>
+                      <p className="mt-2 whitespace-pre-line break-words text-sm text-slate-600 dark:text-slate-400">
+                        {s.notes}
+                      </p>
                     )}
                   </div>
                   <DeleteButton
@@ -288,12 +381,24 @@ export default async function CareerPage({
                     successMessage="Skill deleted"
                   />
                 </div>
-                <ActionForm action={updateSkillLevel} className="flex items-end gap-2">
+                <ActionForm
+                  action={updateSkillLevel}
+                  className="flex items-end gap-2"
+                >
                   <input type="hidden" name="id" value={s.id} />
-                  <FormField label={`Level for ${s.name}`} hideLabel className="w-28">
+                  <FormField
+                    label={`Level for ${s.name}`}
+                    hideLabel
+                    className="w-28"
+                  >
                     {(_id, aria) => (
-                      <select {...aria} name="level" defaultValue={String(s.level)} className="input">
-                        {SKILL_LEVELS.map((n) => (
+                      <select
+                        {...aria}
+                        name="level"
+                        defaultValue={String(s.level)}
+                        className="input"
+                      >
+                        {SKILL_LEVELS.map(n => (
                           <option key={n} value={n}>
                             Level {n}
                           </option>
@@ -301,7 +406,9 @@ export default async function CareerPage({
                       </select>
                     )}
                   </FormField>
-                  <SubmitButton className="btn-ghost btn-sm min-h-[38px] whitespace-nowrap">Set level</SubmitButton>
+                  <SubmitButton className="btn-ghost btn-sm min-h-[38px] whitespace-nowrap">
+                    Set level
+                  </SubmitButton>
                 </ActionForm>
               </li>
             ))}
@@ -310,7 +417,11 @@ export default async function CareerPage({
       </section>
 
       <section aria-labelledby="career-certs-heading" className="space-y-3">
-        <SectionHeader id="career-certs-heading" title="Certifications" meta={`${certs.length} total`} />
+        <SectionHeader
+          id="career-certs-heading"
+          title="Certifications"
+          meta={`${certs.length} total`}
+        />
         <CollapsibleSection title="Add certification" variant="card">
           <ActionForm
             action={createCertification}
@@ -319,22 +430,44 @@ export default async function CareerPage({
             className="grid grid-cols-1 gap-4 sm:grid-cols-2"
           >
             <FormField label="Name" required>
-              {(_id, aria) => <input {...aria} name="name" className="input" required />}
+              {(_id, aria) => (
+                <input {...aria} name="name" className="input" required />
+              )}
             </FormField>
             <FormField label="Issuer">
-              {(_id, aria) => <input {...aria} name="issuer" className="input" />}
+              {(_id, aria) => (
+                <input {...aria} name="issuer" className="input" />
+              )}
             </FormField>
             <FormField label="Issued">
-              {(_id, aria) => <input {...aria} name="issuedAt" type="date" className="input" />}
+              {(_id, aria) => (
+                <input
+                  {...aria}
+                  name="issuedAt"
+                  type="date"
+                  className="input"
+                />
+              )}
             </FormField>
             <FormField label="Expires">
-              {(_id, aria) => <input {...aria} name="expiresAt" type="date" className="input" />}
+              {(_id, aria) => (
+                <input
+                  {...aria}
+                  name="expiresAt"
+                  type="date"
+                  className="input"
+                />
+              )}
             </FormField>
             <FormField label="Credential ID" className="sm:col-span-2">
-              {(_id, aria) => <input {...aria} name="credentialId" className="input" />}
+              {(_id, aria) => (
+                <input {...aria} name="credentialId" className="input" />
+              )}
             </FormField>
             <div className="sm:col-span-2">
-              <SubmitButton className="btn-primary">Add certification</SubmitButton>
+              <SubmitButton className="btn-primary">
+                Add certification
+              </SubmitButton>
             </div>
           </ActionForm>
         </CollapsibleSection>
@@ -348,16 +481,26 @@ export default async function CareerPage({
           />
         ) : (
           <ul className="space-y-2">
-            {certs.map((c) => {
-              const expiringSoon = c.expiresAt && c.expiresAt <= certExpirySoon && c.expiresAt >= now;
+            {certs.map(c => {
+              const expiringSoon =
+                c.expiresAt &&
+                c.expiresAt <= certExpirySoon &&
+                c.expiresAt >= now;
               const expired = c.expiresAt && c.expiresAt < now;
               return (
-                <li key={c.id} className="card flex items-start justify-between gap-3 py-4">
+                <li
+                  key={c.id}
+                  className="card flex items-start justify-between gap-3 py-4"
+                >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-medium text-slate-800 dark:text-slate-100">{c.name}</h3>
+                      <h3 className="font-medium text-slate-800 dark:text-slate-100">
+                        {c.name}
+                      </h3>
                       {expired && <span className="badge-danger">Expired</span>}
-                      {expiringSoon && !expired && <span className="badge-warning">Expiring soon</span>}
+                      {expiringSoon && !expired && (
+                        <span className="badge-warning">Expiring soon</span>
+                      )}
                     </div>
                     <p className="mt-0.5 text-xs text-muted">
                       {c.issuer ?? "—"}
@@ -384,7 +527,11 @@ export default async function CareerPage({
 
   const workPanel = (
     <section aria-labelledby="career-work-heading" className="space-y-3">
-      <SectionHeader id="career-work-heading" title="Work history" meta={`${experiences.length} total`} />
+      <SectionHeader
+        id="career-work-heading"
+        title="Work history"
+        meta={`${experiences.length} total`}
+      />
       <CollapsibleSection title="Add experience" variant="card">
         <WorkExperienceForm />
       </CollapsibleSection>
@@ -398,16 +545,26 @@ export default async function CareerPage({
         />
       ) : (
         <ul className="space-y-2">
-          {experiences.map((e) => (
-            <li key={e.id} className="card flex items-start justify-between gap-3 py-4">
+          {experiences.map(e => (
+            <li
+              key={e.id}
+              className="card flex items-start justify-between gap-3 py-4"
+            >
               <div className="min-w-0">
                 <h3 className="font-medium text-slate-800 dark:text-slate-100">
-                  {e.role} <span className="font-normal text-muted">@ {e.company}</span>
+                  {e.role}{" "}
+                  <span className="font-normal text-muted">@ {e.company}</span>
                 </h3>
                 <p className="mt-0.5 text-xs text-muted">
-                  {formatRange(e.startDate, e.current ? null : e.endDate, e.current ? "Present" : "—")}
+                  {formatRange(
+                    e.startDate,
+                    e.current ? null : e.endDate,
+                    e.current ? "Present" : "—"
+                  )}
                 </p>
-                {e.summary && <p className="mt-1 text-sm text-muted">{e.summary}</p>}
+                {e.summary && (
+                  <p className="mt-1 text-sm text-muted">{e.summary}</p>
+                )}
               </div>
               <DeleteButton
                 action={deleteWorkExperience}
@@ -442,11 +599,18 @@ export default async function CareerPage({
           className="grid grid-cols-1 gap-4 sm:grid-cols-3"
         >
           <FormField label="Title" className="sm:col-span-2" required>
-            {(_id, aria) => <input {...aria} name="title" className="input" required />}
+            {(_id, aria) => (
+              <input {...aria} name="title" className="input" required />
+            )}
           </FormField>
           <FormField label="Kind">
             {(_id, aria) => (
-              <select {...aria} name="kind" className="input" defaultValue="course">
+              <select
+                {...aria}
+                name="kind"
+                className="input"
+                defaultValue="course"
+              >
                 <option value="course">Course</option>
                 <option value="book">Book</option>
                 <option value="project">Project</option>
@@ -456,7 +620,12 @@ export default async function CareerPage({
           </FormField>
           <FormField label="Status">
             {(_id, aria) => (
-              <select {...aria} name="status" className="input" defaultValue="in_progress">
+              <select
+                {...aria}
+                name="status"
+                className="input"
+                defaultValue="in_progress"
+              >
                 <option value="in_progress">In progress</option>
                 <option value="completed">Completed</option>
               </select>
@@ -464,19 +633,38 @@ export default async function CareerPage({
           </FormField>
           <FormField label="Hours">
             {(_id, aria) => (
-              <input {...aria} name="hours" type="number" step="any" min={0} className="input" defaultValue={0} />
+              <input
+                {...aria}
+                name="hours"
+                type="number"
+                step="any"
+                min={0}
+                className="input"
+                defaultValue={0}
+              />
             )}
           </FormField>
           <FormField label="Date">
             {(_id, aria) => (
-              <input {...aria} name="date" type="date" className="input" defaultValue={toDateInputValue(now)} />
+              <input
+                {...aria}
+                name="date"
+                type="date"
+                className="input"
+                defaultValue={toDateInputValue(now)}
+              />
             )}
           </FormField>
           <FormField label="Related skill">
             {(_id, aria) => (
-              <select {...aria} name="skillId" className="input" defaultValue="">
+              <select
+                {...aria}
+                name="skillId"
+                className="input"
+                defaultValue=""
+              >
                 <option value="">— none —</option>
-                {skills.map((s) => (
+                {skills.map(s => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
@@ -499,19 +687,29 @@ export default async function CareerPage({
         />
       ) : (
         <ul className="space-y-2">
-          {learning.map((l) => (
-            <li key={l.id} className="card flex items-start justify-between gap-3 py-4">
+          {learning.map(l => (
+            <li
+              key={l.id}
+              className="card flex items-start justify-between gap-3 py-4"
+            >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-medium text-slate-800 dark:text-slate-100">{l.title}</h3>
+                  <h3 className="font-medium text-slate-800 dark:text-slate-100">
+                    {l.title}
+                  </h3>
                   <span className="badge-muted capitalize">{l.kind}</span>
-                  <span className={l.status === "completed" ? "badge-success" : "badge-brand"}>
+                  <span
+                    className={
+                      l.status === "completed" ? "badge-success" : "badge-brand"
+                    }
+                  >
                     {l.status === "completed" ? "Completed" : "In progress"}
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-muted">
                   {formatDate(l.date)} · {l.hours}h
-                  {(l.skill?.name || l.skillName) && ` · ${l.skill?.name ?? l.skillName}`}
+                  {(l.skill?.name || l.skillName) &&
+                    ` · ${l.skill?.name ?? l.skillName}`}
                 </p>
               </div>
               <DeleteButton
@@ -530,7 +728,11 @@ export default async function CareerPage({
 
   const applicationsPanel = (
     <section aria-labelledby="career-apps-heading" className="space-y-3">
-      <SectionHeader id="career-apps-heading" title="Job applications" meta={`${jobApps.length} total`} />
+      <SectionHeader
+        id="career-apps-heading"
+        title="Job applications"
+        meta={`${jobApps.length} total`}
+      />
       <CollapsibleSection title="Add application" variant="card">
         <ActionForm
           action={createJobApplication}
@@ -539,14 +741,23 @@ export default async function CareerPage({
           className="grid grid-cols-1 gap-4 sm:grid-cols-2"
         >
           <FormField label="Company" required>
-            {(_id, aria) => <input {...aria} name="company" className="input" required />}
+            {(_id, aria) => (
+              <input {...aria} name="company" className="input" required />
+            )}
           </FormField>
           <FormField label="Role" required>
-            {(_id, aria) => <input {...aria} name="role" className="input" required />}
+            {(_id, aria) => (
+              <input {...aria} name="role" className="input" required />
+            )}
           </FormField>
           <FormField label="Stage">
             {(_id, aria) => (
-              <select {...aria} name="stage" className="input" defaultValue="applied">
+              <select
+                {...aria}
+                name="stage"
+                className="input"
+                defaultValue="applied"
+              >
                 <StageOptions />
               </select>
             )}
@@ -554,9 +765,14 @@ export default async function CareerPage({
           {networkingOn && (
             <FormField label="Linked contact">
               {(_id, aria) => (
-                <select {...aria} name="contactId" className="input" defaultValue="">
+                <select
+                  {...aria}
+                  name="contactId"
+                  className="input"
+                  defaultValue=""
+                >
                   <option value="">— none —</option>
-                  {contacts.map((c) => (
+                  {contacts.map(c => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
@@ -566,10 +782,14 @@ export default async function CareerPage({
             </FormField>
           )}
           <FormField label="Follow-up date">
-            {(_id, aria) => <input {...aria} name="dueDate" type="date" className="input" />}
+            {(_id, aria) => (
+              <input {...aria} name="dueDate" type="date" className="input" />
+            )}
           </FormField>
           <FormField label="Notes" className="sm:col-span-2">
-            {(_id, aria) => <textarea {...aria} name="notes" className="input" rows={2} />}
+            {(_id, aria) => (
+              <textarea {...aria} name="notes" className="input" rows={2} />
+            )}
           </FormField>
           <div className="sm:col-span-2">
             <SubmitButton className="btn-primary">Add application</SubmitButton>
@@ -586,7 +806,7 @@ export default async function CareerPage({
         />
       ) : (
         <ul className="space-y-2">
-          {jobApps.map((j) => {
+          {jobApps.map(j => {
             const stage = stageInfo(j.stage);
             return (
               <li
@@ -596,32 +816,54 @@ export default async function CareerPage({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-medium text-slate-800 dark:text-slate-100">
-                      {j.role} <span className="font-normal text-muted">@ {j.company}</span>
+                      {j.role}{" "}
+                      <span className="font-normal text-muted">
+                        @ {j.company}
+                      </span>
                     </h3>
                     <span className={stage.badge}>{stage.label}</span>
                   </div>
                   {(j.contact || j.dueDate) && (
                     <p className="mt-0.5 text-xs text-muted">
-                      {[j.contact && `Contact: ${j.contact.name}`, j.dueDate && `Follow up ${formatDate(j.dueDate)}`]
+                      {[
+                        j.contact && `Contact: ${j.contact.name}`,
+                        j.dueDate && `Follow up ${formatDate(j.dueDate)}`,
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
                   )}
                   {j.notes && (
-                    <p className="mt-1 whitespace-pre-line break-words text-sm text-slate-600 dark:text-slate-400">{j.notes}</p>
+                    <p className="mt-1 whitespace-pre-line break-words text-sm text-slate-600 dark:text-slate-400">
+                      {j.notes}
+                    </p>
                   )}
                 </div>
                 <div className="flex items-end gap-2">
-                  <ActionForm action={updateJobStage} className="flex items-end gap-2">
+                  <ActionForm
+                    action={updateJobStage}
+                    className="flex items-end gap-2"
+                  >
                     <input type="hidden" name="id" value={j.id} />
-                    <FormField label={`Stage for ${j.role} @ ${j.company}`} hideLabel className="w-36">
+                    <FormField
+                      label={`Stage for ${j.role} @ ${j.company}`}
+                      hideLabel
+                      className="w-36"
+                    >
                       {(_id, aria) => (
-                        <select {...aria} name="stage" className="input" defaultValue={j.stage}>
+                        <select
+                          {...aria}
+                          name="stage"
+                          className="input"
+                          defaultValue={j.stage}
+                        >
                           <StageOptions />
                         </select>
                       )}
                     </FormField>
-                    <SubmitButton className="btn-ghost btn-sm min-h-[38px] whitespace-nowrap">Update stage</SubmitButton>
+                    <SubmitButton className="btn-ghost btn-sm min-h-[38px] whitespace-nowrap">
+                      Update stage
+                    </SubmitButton>
                   </ActionForm>
                   <DeleteButton
                     action={deleteJobApplication}
@@ -649,7 +891,11 @@ export default async function CareerPage({
 
   return (
     <div>
-      <PageHeader help={`career:${tab}`} title="Career" description="Track goals, skills, certifications, work history, and learning.">
+      <PageHeader
+        help={`career:${tab}`}
+        title="Career"
+        description="Track goals, skills, certifications, work history, and learning."
+      >
         <CareerTabs active={tab} />
       </PageHeader>
       {panels[tab]}

@@ -8,7 +8,10 @@ type Props = {
 
 export default function LifePrioritiesCard({ items }: Props) {
   return (
-    <section className="card mb-6 border-l-4 border-l-brand-500" aria-labelledby="life-priorities-title">
+    <section
+      className="card mb-6 border-l-4 border-l-brand-500"
+      aria-labelledby="life-priorities-title"
+    >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 id="life-priorities-title" className="section-title">
@@ -17,7 +20,10 @@ export default function LifePrioritiesCard({ items }: Props) {
           <p className="mt-1 text-sm text-muted">What you serve first.</p>
         </div>
         {items.length > 0 && (
-          <Link href="/dashboard/priorities" className="btn-ghost btn-sm min-h-[40px]">
+          <Link
+            href="/dashboard/priorities"
+            className="btn-ghost btn-sm min-h-[40px]"
+          >
             Manage
           </Link>
         )}
@@ -44,7 +50,9 @@ export default function LifePrioritiesCard({ items }: Props) {
                 {index + 1}
               </span>
               <div className="min-w-0 pt-0.5">
-                <p className="font-medium text-slate-800 dark:text-slate-100">{item.title}</p>
+                <p className="font-medium text-slate-800 dark:text-slate-100">
+                  {item.title}
+                </p>
                 {item.note && <p className="text-sm text-muted">{item.note}</p>}
               </div>
             </li>

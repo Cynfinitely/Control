@@ -55,12 +55,17 @@ export default function BacklogRow({ id, title, dayValue, dayName }: Props) {
 
   return (
     <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-3">
-      <span className="min-w-0 flex-1 break-words text-slate-800 dark:text-slate-100">{title}</span>
+      <span className="min-w-0 flex-1 break-words text-slate-800 dark:text-slate-100">
+        {title}
+      </span>
       <div className="flex shrink-0 items-center gap-1">
         <ActionForm action={pullFromBacklog}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="dayDate" value={dayValue} />
-          <SubmitButton className="btn-ghost btn-sm min-h-[40px]" disabled={pending}>
+          <SubmitButton
+            className="btn-ghost btn-sm min-h-[40px]"
+            disabled={pending}
+          >
             Add to {dayName}
           </SubmitButton>
         </ActionForm>

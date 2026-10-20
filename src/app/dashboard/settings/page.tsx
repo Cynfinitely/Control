@@ -23,7 +23,8 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <PageHeader help="settings"
+      <PageHeader
+        help="settings"
         title="Settings"
         description="Manage your profile, modules, weather location, password, and appearance."
       />
@@ -35,7 +36,9 @@ export default async function SettingsPage() {
           timezone={user.timezone}
         />
         <ModulesForm disabled={disabledModules} />
-        {!disabledModules.includes("weather") && <WeatherLocationForm current={weatherPref} />}
+        {!disabledModules.includes("weather") && (
+          <WeatherLocationForm current={weatherPref} />
+        )}
         <PasswordForm />
         <section className="card space-y-4" aria-labelledby="appearance-title">
           <h2 id="appearance-title" className="section-title">

@@ -1,7 +1,21 @@
 import { requireModule } from "@/lib/session";
-import { toDateInputValue, formatDate, formatDayLabel, parseDayParam } from "@/lib/date";
-import { getDayPrayers, getDayMadeUpPrayers, getPrayerStreak, getReligiousSidebarData } from "@/lib/queries/religious";
-import { historicalDebtRemaining, prayerDebtRemaining, PRAYERS } from "@/lib/prayer-debt";
+import {
+  toDateInputValue,
+  formatDate,
+  formatDayLabel,
+  parseDayParam,
+} from "@/lib/date";
+import {
+  getDayPrayers,
+  getDayMadeUpPrayers,
+  getPrayerStreak,
+  getReligiousSidebarData,
+} from "@/lib/queries/religious";
+import {
+  historicalDebtRemaining,
+  prayerDebtRemaining,
+  PRAYERS,
+} from "@/lib/prayer-debt";
 import { groupPendingQaza, prayerLabel } from "@/lib/religious/day-prayers";
 import { khatmPercent, QURAN_TOTAL_PAGES } from "@/lib/quran";
 import PageHeader from "@/components/PageHeader";
@@ -33,7 +47,15 @@ function TodayBadge() {
   return <span className="badge-brand">Today</span>;
 }
 
-function ProgressBar({ pct, label, className }: { pct: number; label: string; className?: string }) {
+function ProgressBar({
+  pct,
+  label,
+  className,
+}: {
+  pct: number;
+  label: string;
+  className?: string;
+}) {
   const value = Math.round(Math.min(100, Math.max(0, pct)));
   return (
     <div
@@ -72,13 +94,22 @@ export default async function ReligiousPage({
     getReligiousSidebarData(user.id, todayValue),
   ]);
 
-  const { pendingQaza, prayerDebts, dhikr, quran, fasts, dhikrTargets, quranState, readingItems, readingEntries } =
-    sidebar;
+  const {
+    pendingQaza,
+    prayerDebts,
+    dhikr,
+    quran,
+    fasts,
+    dhikrTargets,
+    quranState,
+    readingItems,
+    readingEntries,
+  } = sidebar;
   const currentPage = quranState?.currentPage ?? 1;
   const khatmsCompleted = quranState?.khatmsCompleted ?? 0;
 
   const prayerStatuses = Object.fromEntries(
-    PRAYERS.map((p) => [p, dayPrayers.find((t) => t.prayer === p)?.status])
+    PRAYERS.map(p => [p, dayPrayers.find(t => t.prayer === p)?.status])
   );
 
   const qazaGroups = groupPendingQaza(pendingQaza);
@@ -87,14 +118,17 @@ export default async function ReligiousPage({
   const dailyQazaCount = pendingQaza.length;
   const totalQaza = dailyQazaCount + historicalRemaining;
   const debtWithRemaining = prayerDebts
-    .map((d) => ({ ...d, remaining: prayerDebtRemaining(d) }))
-    .filter((d) => d.remaining > 0)
-    .sort((a, b) => PRAYERS.indexOf(a.prayer as never) - PRAYERS.indexOf(b.prayer as never));
+    .map(d => ({ ...d, remaining: prayerDebtRemaining(d) }))
+    .filter(d => d.remaining > 0)
+    .sort(
+      (a, b) =>
+        PRAYERS.indexOf(a.prayer as never) - PRAYERS.indexOf(b.prayer as never)
+    );
 
-  const hasHistoricalDebt = prayerDebts.some((d) => d.owed > 0);
+  const hasHistoricalDebt = prayerDebts.some(d => d.owed > 0);
   // The note and period are the same on every row; take them from one that has them.
-  const debtNote = prayerDebts.find((d) => d.note)?.note;
-  const debtPeriod = prayerDebts.find((d) => d.periodStart || d.periodEnd);
+  const debtNote = prayerDebts.find(d => d.note)?.note;
+  const debtPeriod = prayerDebts.find(d => d.periodStart || d.periodEnd);
   const clearDebtForm = (
     <ActionForm
       action={clearPrayerDebt}
@@ -113,18 +147,27 @@ export default async function ReligiousPage({
   );
 
   const dhikrTotal = dhikr.reduce((s, d) => s + d.count, 0);
-  const dayName = isToday ? "today" : dayLabel === "Yesterday" ? "yesterday" : dayLabel;
+  const dayName = isToday
+    ? "today"
+    : dayLabel === "Yesterday"
+      ? "yesterday"
+      : dayLabel;
   const prayerSectionTitle = `Prayers for ${dayName}`;
 
   return (
     <div>
-      <PageHeader help="religious"
+      <PageHeader
+        help="religious"
         title="Religious"
         description="Track daily prayers, qaza, dhikr, Quran khatm, daily readings, and fasting."
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        <StatCard label="On-time streak" value={streak} hint="days with all 5 on time" />
+        <StatCard
+          label="On-time streak"
+          value={streak}
+          hint="days with all 5 on time"
+        />
         <StatCard
           label="Qaza pending"
           value={totalQaza}
@@ -136,7 +179,9 @@ export default async function ReligiousPage({
           value={
             <>
               {currentPage}
-              <span className="text-base font-medium text-muted">/{QURAN_TOTAL_PAGES}</span>
+              <span className="text-base font-medium text-muted">
+                /{QURAN_TOTAL_PAGES}
+              </span>
             </>
           }
           progress={khatmPercent(currentPage)}
@@ -149,18 +194,29 @@ export default async function ReligiousPage({
           <h2 id="prayers-title" className="section-title">
             {prayerSectionTitle}
           </h2>
-          <DayNavigator basePath="/dashboard/religious" dayValue={dayValue} dayLabel={dayLabel} maxDay={todayValue} />
+          <DayNavigator
+            basePath="/dashboard/religious"
+            dayValue={dayValue}
+            dayLabel={dayLabel}
+            maxDay={todayValue}
+          />
         </div>
         {!isToday && (
           <p className="mb-4 flex items-start gap-1.5 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
             <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              You’re editing prayers for {formatDate(day)}. Dhikr, Quran, readings and fasting below still log to
-              today.
+              You’re editing prayers for {formatDate(day)}. Dhikr, Quran,
+              readings and fasting below still log to today.
             </span>
           </p>
         )}
-        <PrayerStatusPanel key={dayValue} dayValue={dayValue} dayName={dayName} initialStatuses={prayerStatuses} madeUp={madeUpPrayers} />
+        <PrayerStatusPanel
+          key={dayValue}
+          dayValue={dayValue}
+          dayName={dayName}
+          initialStatuses={prayerStatuses}
+          madeUp={madeUpPrayers}
+        />
       </section>
 
       {qazaGroups.length > 0 && (
@@ -169,7 +225,8 @@ export default async function ReligiousPage({
             Daily qaza
           </h2>
           <p className="mb-4 mt-1 text-sm text-muted">
-            Prayers you mark missed land here. When you make one up, fulfil it; the oldest is fulfilled first.
+            Prayers you mark missed land here. When you make one up, fulfil it;
+            the oldest is fulfilled first.
           </p>
           <ul className="divide-y divide-slate-100 dark:divide-slate-700">
             {qazaGroups.map(({ prayer, count, items, oldest, newest }) => {
@@ -179,11 +236,16 @@ export default async function ReligiousPage({
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <p className="font-medium text-slate-800 dark:text-slate-100">
-                        {label} <span className="badge-warning ml-1 tabular-nums">{count} pending</span>
+                        {label}{" "}
+                        <span className="badge-warning ml-1 tabular-nums">
+                          {count} pending
+                        </span>
                       </p>
                       {oldest && (
                         <p className="mt-0.5 text-xs text-muted">
-                          {count === 1 || !newest || formatDate(oldest) === formatDate(newest)
+                          {count === 1 ||
+                          !newest ||
+                          formatDate(oldest) === formatDate(newest)
                             ? `From ${formatDate(oldest)}`
                             : `${formatDate(oldest)} – ${formatDate(newest)}`}
                         </p>
@@ -193,12 +255,18 @@ export default async function ReligiousPage({
                       <ActionForm action={fulfillQazaForPrayer}>
                         <input type="hidden" name="prayer" value={prayer} />
                         <input type="hidden" name="amount" value="1" />
-                        <SubmitButton className="btn-primary touch-target" aria-label={`Fulfill one ${label} qaza`}>
+                        <SubmitButton
+                          className="btn-primary touch-target"
+                          aria-label={`Fulfill one ${label} qaza`}
+                        >
                           Fulfill one
                         </SubmitButton>
                       </ActionForm>
                       {count > 1 && (
-                        <ActionForm action={fulfillQazaForPrayer} className="flex items-end gap-2">
+                        <ActionForm
+                          action={fulfillQazaForPrayer}
+                          className="flex items-end gap-2"
+                        >
                           <input type="hidden" name="prayer" value={prayer} />
                           <FormField label={`How many ${label}`} hideLabel>
                             {(_id, aria) => (
@@ -214,15 +282,20 @@ export default async function ReligiousPage({
                               />
                             )}
                           </FormField>
-                          <SubmitButton className="btn-ghost touch-target">Fulfill</SubmitButton>
+                          <SubmitButton className="btn-ghost touch-target">
+                            Fulfill
+                          </SubmitButton>
                         </ActionForm>
                       )}
                     </div>
                   </div>
                   {count > 1 && (
-                    <CollapsibleSection title="Show dates" className="mt-2 text-sm">
+                    <CollapsibleSection
+                      title="Show dates"
+                      className="mt-2 text-sm"
+                    >
                       <ul className="flex flex-wrap gap-1.5">
-                        {items.map((q) => (
+                        {items.map(q => (
                           <li key={q.id} className="badge-muted">
                             {formatDate(q.sourceDate)}
                           </li>
@@ -246,31 +319,45 @@ export default async function ReligiousPage({
             {debtNote && <p className="text-sm text-muted">{debtNote}</p>}
             {debtPeriod && (
               <p className="text-xs text-muted">
-                Period: {formatDate(debtPeriod.periodStart)} – {formatDate(debtPeriod.periodEnd)}
+                Period: {formatDate(debtPeriod.periodStart)} –{" "}
+                {formatDate(debtPeriod.periodEnd)}
               </p>
             )}
             <ul className="space-y-4">
-              {debtWithRemaining.map((d) => {
-                const pct = d.owed > 0 ? Math.round((d.fulfilled / d.owed) * 100) : 0;
+              {debtWithRemaining.map(d => {
+                const pct =
+                  d.owed > 0 ? Math.round((d.fulfilled / d.owed) * 100) : 0;
                 const label = prayerLabel(d.prayer);
                 return (
                   <li key={d.prayer}>
                     <div className="mb-1 flex flex-wrap items-center justify-between gap-x-3 text-sm">
-                      <span className="font-medium text-slate-800 dark:text-slate-100">{label}</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-100">
+                        {label}
+                      </span>
                       <span className="text-muted">
                         {d.fulfilled}/{d.owed} fulfilled · {d.remaining} left
                       </span>
                     </div>
-                    <ProgressBar pct={pct} label={`${label} historical debt fulfilled`} className="mb-2" />
+                    <ProgressBar
+                      pct={pct}
+                      label={`${label} historical debt fulfilled`}
+                      className="mb-2"
+                    />
                     <div className="flex flex-wrap items-end gap-2">
                       <ActionForm action={fulfillPrayerDebt}>
                         <input type="hidden" name="prayer" value={d.prayer} />
                         <input type="hidden" name="amount" value="1" />
-                        <SubmitButton className="btn-ghost touch-target" aria-label={`Fulfill one ${label}`}>
+                        <SubmitButton
+                          className="btn-ghost touch-target"
+                          aria-label={`Fulfill one ${label}`}
+                        >
                           Fulfill 1
                         </SubmitButton>
                       </ActionForm>
-                      <ActionForm action={fulfillPrayerDebt} className="flex items-end gap-2">
+                      <ActionForm
+                        action={fulfillPrayerDebt}
+                        className="flex items-end gap-2"
+                      >
                         <input type="hidden" name="prayer" value={d.prayer} />
                         <FormField label={`How many ${label}`} hideLabel>
                           {(_id, aria) => (
@@ -286,7 +373,9 @@ export default async function ReligiousPage({
                             />
                           )}
                         </FormField>
-                        <SubmitButton className="btn-ghost touch-target">Fulfill</SubmitButton>
+                        <SubmitButton className="btn-ghost touch-target">
+                          Fulfill
+                        </SubmitButton>
                       </ActionForm>
                     </div>
                   </li>
@@ -298,27 +387,43 @@ export default async function ReligiousPage({
         ) : hasHistoricalDebt ? (
           <div className="mb-2 space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-300">
-              All historical debt is fulfilled ({prayerDebts.reduce((sum, d) => sum + d.fulfilled, 0)} prayers made up).
-              You can keep it as a record, change it below, or clear it.
+              All historical debt is fulfilled (
+              {prayerDebts.reduce((sum, d) => sum + d.fulfilled, 0)} prayers
+              made up). You can keep it as a record, change it below, or clear
+              it.
             </p>
             {clearDebtForm}
           </div>
         ) : (
           <p className="mb-2 text-sm text-muted">
-            No historical debt logged yet. Use the setup below if you owe prayers from before you started tracking.
+            No historical debt logged yet. Use the setup below if you owe
+            prayers from before you started tracking.
           </p>
         )}
         <CollapsibleSection
-          title={hasHistoricalDebt ? "Update historical debt" : "Set up historical debt"}
+          title={
+            hasHistoricalDebt
+              ? "Update historical debt"
+              : "Set up historical debt"
+          }
           className="mt-4"
         >
           <PrayerDebtSetup existingDebts={prayerDebts} />
         </CollapsibleSection>
       </section>
 
-      <QuranKhatmCard currentPage={currentPage} khatmsCompleted={khatmsCompleted} sessions={quran} dayValue={todayValue} />
+      <QuranKhatmCard
+        currentPage={currentPage}
+        khatmsCompleted={khatmsCompleted}
+        sessions={quran}
+        dayValue={todayValue}
+      />
 
-      <DailyReadingsPanel items={readingItems} todayEntries={readingEntries} dayValue={todayValue} />
+      <DailyReadingsPanel
+        items={readingItems}
+        todayEntries={readingEntries}
+        dayValue={todayValue}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="card" aria-labelledby="dhikr-title">
@@ -330,34 +435,58 @@ export default async function ReligiousPage({
           </div>
           <ActionForm action={logDhikr} className="mt-3 space-y-3">
             <FormField label="Dhikr">
-              {(_id, aria) => <input {...aria} name="name" className="input" placeholder="e.g. Subhanallah" required list="dhikr-names" />}
+              {(_id, aria) => (
+                <input
+                  {...aria}
+                  name="name"
+                  className="input"
+                  placeholder="e.g. Subhanallah"
+                  required
+                  list="dhikr-names"
+                />
+              )}
             </FormField>
             {dhikrTargets.length > 0 && (
               <datalist id="dhikr-names">
-                {dhikrTargets.map((t) => (
+                {dhikrTargets.map(t => (
                   <option key={t.id} value={t.name} />
                 ))}
               </datalist>
             )}
             <FormField label="Count">
               {(_id, aria) => (
-                <input {...aria} name="count" type="number" min={1} inputMode="numeric" className="input" defaultValue={33} />
+                <input
+                  {...aria}
+                  name="count"
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  className="input"
+                  defaultValue={33}
+                />
               )}
             </FormField>
             <input type="hidden" name="date" value={todayValue} />
-            <SubmitButton className="btn-primary touch-target w-full">Log dhikr</SubmitButton>
+            <SubmitButton className="btn-primary touch-target w-full">
+              Log dhikr
+            </SubmitButton>
           </ActionForm>
           {dhikrTargets.length > 0 && (
             <div className="mt-4 space-y-3">
               <h3 className="subsection-title">Daily targets</h3>
-              {dhikrTargets.map((t) => {
-                const logged = dhikr.filter((d) => d.name === t.name).reduce((s, d) => s + d.count, 0);
-                const pct = t.dailyTarget > 0 ? (logged / t.dailyTarget) * 100 : 0;
+              {dhikrTargets.map(t => {
+                const logged = dhikr
+                  .filter(d => d.name === t.name)
+                  .reduce((s, d) => s + d.count, 0);
+                const pct =
+                  t.dailyTarget > 0 ? (logged / t.dailyTarget) * 100 : 0;
                 const done = logged >= t.dailyTarget;
                 return (
                   <div key={t.id}>
                     <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-slate-800 dark:text-slate-100">{t.name}</span>
+                      <span className="text-slate-800 dark:text-slate-100">
+                        {t.name}
+                      </span>
                       <span className="flex items-center gap-2 text-muted">
                         {done && (
                           <span className="badge-success">
@@ -368,7 +497,11 @@ export default async function ReligiousPage({
                         {logged}/{t.dailyTarget}
                       </span>
                     </div>
-                    <ProgressBar pct={pct} label={`${t.name} daily target`} className="mt-1" />
+                    <ProgressBar
+                      pct={pct}
+                      label={`${t.name} daily target`}
+                      className="mt-1"
+                    />
                   </div>
                 );
               })}
@@ -381,19 +514,34 @@ export default async function ReligiousPage({
               className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto] sm:items-end"
             >
               <FormField label="Dhikr name">
-                {(_id, aria) => <input {...aria} name="name" className="input" required />}
+                {(_id, aria) => (
+                  <input {...aria} name="name" className="input" required />
+                )}
               </FormField>
               <FormField label="Per day">
                 {(_id, aria) => (
-                  <input {...aria} name="dailyTarget" type="number" min={1} inputMode="numeric" className="input" defaultValue={33} />
+                  <input
+                    {...aria}
+                    name="dailyTarget"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    className="input"
+                    defaultValue={33}
+                  />
                 )}
               </FormField>
-              <SubmitButton className="btn-ghost touch-target">Set target</SubmitButton>
+              <SubmitButton className="btn-ghost touch-target">
+                Set target
+              </SubmitButton>
             </ActionForm>
             {dhikrTargets.length > 0 && (
               <ul className="mt-3 divide-y divide-slate-100 dark:divide-slate-700">
-                {dhikrTargets.map((t) => (
-                  <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
+                {dhikrTargets.map(t => (
+                  <li
+                    key={t.id}
+                    className="flex items-center justify-between gap-2 text-sm"
+                  >
                     <span className="text-muted">
                       {t.name} · {t.dailyTarget}/day
                     </span>
@@ -401,7 +549,8 @@ export default async function ReligiousPage({
                       action={deleteDhikrTarget}
                       confirm={{
                         title: `Remove the “${t.name}” target?`,
-                        message: "Logged dhikr is kept; only the daily target is removed.",
+                        message:
+                          "Logged dhikr is kept; only the daily target is removed.",
                         confirmLabel: "Remove",
                       }}
                     >
@@ -420,13 +569,20 @@ export default async function ReligiousPage({
           <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-700">
             <h3 className="subsection-title">Logged today</h3>
             {dhikr.length === 0 ? (
-              <p className="mt-1 text-sm text-muted">Nothing logged yet today.</p>
+              <p className="mt-1 text-sm text-muted">
+                Nothing logged yet today.
+              </p>
             ) : (
               <ul className="mt-1 space-y-1">
-                {dhikr.map((d) => (
-                  <li key={d.id} className="flex justify-between text-sm text-muted">
+                {dhikr.map(d => (
+                  <li
+                    key={d.id}
+                    className="flex justify-between text-sm text-muted"
+                  >
                     <span>{d.name}</span>
-                    <span className="font-medium tabular-nums text-slate-700 dark:text-slate-100">{d.count}</span>
+                    <span className="font-medium tabular-nums text-slate-700 dark:text-slate-100">
+                      {d.count}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -440,11 +596,25 @@ export default async function ReligiousPage({
           </h2>
           <ActionForm action={logFasting} className="mt-3 space-y-3">
             <FormField label="Date">
-              {(_id, aria) => <input {...aria} type="date" name="date" className="input" defaultValue={todayValue} max={todayValue} />}
+              {(_id, aria) => (
+                <input
+                  {...aria}
+                  type="date"
+                  name="date"
+                  className="input"
+                  defaultValue={todayValue}
+                  max={todayValue}
+                />
+              )}
             </FormField>
             <FormField label="Kind">
               {(_id, aria) => (
-                <select {...aria} name="kind" className="input" defaultValue="ramadan">
+                <select
+                  {...aria}
+                  name="kind"
+                  className="input"
+                  defaultValue="ramadan"
+                >
                   <option value="ramadan">Ramadan</option>
                   <option value="voluntary">Voluntary</option>
                   <option value="makeup">Make-up (qada)</option>
@@ -454,13 +624,16 @@ export default async function ReligiousPage({
             <FormField
               label={
                 <>
-                  Note <span className="font-normal text-muted">(optional)</span>
+                  Note{" "}
+                  <span className="font-normal text-muted">(optional)</span>
                 </>
               }
             >
               {(_id, aria) => <input {...aria} name="note" className="input" />}
             </FormField>
-            <SubmitButton className="btn-primary touch-target w-full">Log fast</SubmitButton>
+            <SubmitButton className="btn-primary touch-target w-full">
+              Log fast
+            </SubmitButton>
           </ActionForm>
           <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-700">
             <h3 className="subsection-title">Recent fasts</h3>
@@ -468,10 +641,15 @@ export default async function ReligiousPage({
               <p className="mt-1 text-sm text-muted">No fasts logged yet.</p>
             ) : (
               <ul className="mt-1 space-y-1">
-                {fasts.map((f) => (
-                  <li key={f.id} className="flex justify-between text-sm text-muted">
+                {fasts.map(f => (
+                  <li
+                    key={f.id}
+                    className="flex justify-between text-sm text-muted"
+                  >
                     <span>{formatDate(f.date)}</span>
-                    <span className="badge-muted capitalize">{f.kind === "makeup" ? "Make-up" : f.kind}</span>
+                    <span className="badge-muted capitalize">
+                      {f.kind === "makeup" ? "Make-up" : f.kind}
+                    </span>
                   </li>
                 ))}
               </ul>

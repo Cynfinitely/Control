@@ -2,7 +2,10 @@ import type { HelpEntry } from "./types";
 
 const BUDGET_PAGES = {
   overview: { label: "Overview", href: "/dashboard/budget" },
-  uncategorized: { label: "Uncategorized", href: "/dashboard/budget?view=uncategorized" },
+  uncategorized: {
+    label: "Uncategorized",
+    href: "/dashboard/budget?view=uncategorized",
+  },
   categories: { label: "Categories", href: "/dashboard/budget/categories" },
 };
 
@@ -13,8 +16,8 @@ export const budgetHelp = {
       "Budget shows where your money goes. You import your bank transactions from Nordea, give them categories, and the page turns them into monthly income, spending and savings figures.",
     steps: [
       "In Nordea Netbank, download your account transactions as a CSV or TXT file.",
-      "Open \"Import Nordea CSV\" here and upload the file.",
-      "Read the import summary, then open the \"Uncategorized\" tab to categorize what is left.",
+      'Open "Import Nordea CSV" here and upload the file.',
+      'Read the import summary, then open the "Uncategorized" tab to categorize what is left.',
       "Come back to this tab and use the month navigator to review each month.",
       "Scroll to the transactions list to check, edit or delete individual rows.",
     ],
@@ -22,16 +25,16 @@ export const budgetHelp = {
       "Import Nordea statements in CSV or TXT format. Transactions you already imported are skipped, so uploading overlapping files is safe.",
       "Merchants you have categorized before are categorized automatically on every later import.",
       "Monthly cards for Income, Expenses, Net and Savings rate, with a comparison to the previous month.",
-      "\"Spending by category\" bars, \"Top merchants\" and a savings rate trend across months.",
+      '"Spending by category" bars, "Top merchants" and a savings rate trend across months.',
       "A transactions list with a Week, Month or Custom range, a filter for income or expenses, and a category filter.",
       "Edit or delete any transaction.",
-      "\"AI prompt…\" prepares a text summary of the month that you can copy into an AI assistant.",
-      "\"Imports & data\" lists every import with \"Undo import\", which removes just the rows from that file.",
-      "\"Reset all budget data\" deletes all budget transactions, imports and remembered merchant rules after you type RESET. Your categories are kept.",
+      '"AI prompt…" prepares a text summary of the month that you can copy into an AI assistant.',
+      '"Imports & data" lists every import with "Undo import", which removes just the rows from that file.',
+      '"Reset all budget data" deletes all budget transactions, imports and remembered merchant rules after you type RESET. Your categories are kept.',
     ],
     tips: [
       "Only Nordea export files are supported for import.",
-      "\"Reset all budget data\" cannot be undone. Use \"Undo import\" if you only want to remove one file.",
+      '"Reset all budget data" cannot be undone. Use "Undo import" if you only want to remove one file.',
       "Your bank file is read once to create the transactions. The file itself is not stored.",
     ],
     related: [BUDGET_PAGES.uncategorized, BUDGET_PAGES.categories],
@@ -73,7 +76,7 @@ export const budgetHelp = {
     ],
     capabilities: [
       "Separate lists for expense categories and income categories.",
-      "Add your own categories. They are marked \"Custom\"; the starting ones are marked \"Preset\".",
+      'Add your own categories. They are marked "Custom"; the starting ones are marked "Preset".',
       "Rename any category.",
       "Move a category up or down to change its position in lists and pickers.",
       "Hide a category, and show it again later.",

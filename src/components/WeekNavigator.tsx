@@ -24,11 +24,13 @@ export default function WeekNavigator({
   const weekStart = startOfWeek(new Date(weekValue + "T00:00:00"));
   const weekEnd = addDays(weekStart, 6);
   const currentStart = startOfWeek(new Date());
-  const isCurrent = toDateInputValue(weekStart) === toDateInputValue(currentStart);
+  const isCurrent =
+    toDateInputValue(weekStart) === toDateInputValue(currentStart);
 
   function buildUrl(start: Date) {
     const params = new URLSearchParams(extraParams);
-    if (toDateInputValue(start) !== toDateInputValue(currentStart)) params.set(param, toDateInputValue(start));
+    if (toDateInputValue(start) !== toDateInputValue(currentStart))
+      params.set(param, toDateInputValue(start));
     const qs = params.toString();
     return qs ? `${basePath}?${qs}` : basePath;
   }
@@ -41,8 +43,20 @@ export default function WeekNavigator({
       label={`${formatDate(weekStart)} – ${formatDate(weekEnd)}`}
       sublabel={isCurrent ? "This week" : undefined}
       prev={{ href: buildUrl(addDays(weekStart, -7)), label: "Previous week" }}
-      next={{ href: buildUrl(nextStart), label: "Next week", disabled: noFuture && nextStart > new Date() }}
-      reset={isCurrent ? undefined : { href: buildUrl(currentStart), label: "Go to this week", text: "This week" }}
+      next={{
+        href: buildUrl(nextStart),
+        label: "Next week",
+        disabled: noFuture && nextStart > new Date(),
+      }}
+      reset={
+        isCurrent
+          ? undefined
+          : {
+              href: buildUrl(currentStart),
+              label: "Go to this week",
+              text: "This week",
+            }
+      }
     />
   );
 }

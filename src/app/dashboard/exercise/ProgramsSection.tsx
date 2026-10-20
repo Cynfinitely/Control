@@ -63,8 +63,8 @@ export default function ProgramsSection({
 }) {
   const [showArchived, setShowArchived] = useState(false);
 
-  const active = programs.filter((p) => !p.archivedAt);
-  const archived = programs.filter((p) => p.archivedAt);
+  const active = programs.filter(p => !p.archivedAt);
+  const archived = programs.filter(p => p.archivedAt);
   const visible = showArchived ? archived : active;
 
   useEffect(() => {
@@ -78,11 +78,17 @@ export default function ProgramsSection({
           {showArchived ? "Archived programs" : "Programs"}
         </h2>
         <div className="flex flex-wrap gap-2">
-          <Link href="/dashboard/exercise/programs/new" className="btn-ghost touch-target">
+          <Link
+            href="/dashboard/exercise/programs/new"
+            className="btn-ghost touch-target"
+          >
             <Icon name="plus" className="h-4 w-4" />
             New program
           </Link>
-          <Link href="/dashboard/exercise/programs/new#paste" className="btn-ghost touch-target">
+          <Link
+            href="/dashboard/exercise/programs/new#paste"
+            className="btn-ghost touch-target"
+          >
             Paste from text
           </Link>
         </div>
@@ -111,7 +117,7 @@ export default function ProgramsSection({
 
       {visible.length > 0 && (
         <ul className="space-y-3">
-          {visible.map((program) => {
+          {visible.map(program => {
             const isArchived = Boolean(program.archivedAt);
             const count = program.exercises.length;
             return (
@@ -149,9 +155,15 @@ export default function ProgramsSection({
                       Edit
                     </Link>
                     {isArchived ? (
-                      <ActionForm action={restoreProgram} successMessage="Program restored">
+                      <ActionForm
+                        action={restoreProgram}
+                        successMessage="Program restored"
+                      >
                         <input type="hidden" name="id" value={program.id} />
-                        <SubmitButton className="btn-ghost touch-target w-full sm:w-auto" aria-label={`Restore ${program.name}`}>
+                        <SubmitButton
+                          className="btn-ghost touch-target w-full sm:w-auto"
+                          aria-label={`Restore ${program.name}`}
+                        >
                           <Icon name="undo" className="h-4 w-4" />
                           Restore
                         </SubmitButton>
@@ -162,12 +174,16 @@ export default function ProgramsSection({
                         successMessage="Program archived"
                         confirm={{
                           title: `Archive “${program.name}”?`,
-                          message: "It will be hidden from your active list. You can restore it later.",
+                          message:
+                            "It will be hidden from your active list. You can restore it later.",
                           confirmLabel: "Archive",
                         }}
                       >
                         <input type="hidden" name="id" value={program.id} />
-                        <SubmitButton className="btn-ghost touch-target w-full sm:w-auto" aria-label={`Archive ${program.name}`}>
+                        <SubmitButton
+                          className="btn-ghost touch-target w-full sm:w-auto"
+                          aria-label={`Archive ${program.name}`}
+                        >
                           Archive
                         </SubmitButton>
                       </ActionForm>
@@ -176,9 +192,13 @@ export default function ProgramsSection({
                 </div>
 
                 {count > 0 ? (
-                  <CollapsibleSection title="Exercises" count={count} className="mt-2">
+                  <CollapsibleSection
+                    title="Exercises"
+                    count={count}
+                    className="mt-2"
+                  >
                     <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
-                      {program.exercises.map((ex) => (
+                      {program.exercises.map(ex => (
                         <li key={ex.id}>{formatProgramExerciseLabel(ex)}</li>
                       ))}
                     </ol>
@@ -186,7 +206,10 @@ export default function ProgramsSection({
                 ) : (
                   <p className="mt-2 text-sm text-muted">
                     No exercises yet.{" "}
-                    <Link href={`/dashboard/exercise/programs/${program.id}`} className="link">
+                    <Link
+                      href={`/dashboard/exercise/programs/${program.id}`}
+                      className="link"
+                    >
                       Add exercises
                     </Link>
                   </p>
@@ -202,9 +225,11 @@ export default function ProgramsSection({
           type="button"
           className="btn-ghost touch-target mt-3"
           aria-pressed={showArchived}
-          onClick={() => setShowArchived((v) => !v)}
+          onClick={() => setShowArchived(v => !v)}
         >
-          {showArchived ? "Show active programs" : `Show archived (${archived.length})`}
+          {showArchived
+            ? "Show active programs"
+            : `Show archived (${archived.length})`}
         </button>
       )}
     </section>

@@ -15,7 +15,13 @@ type Props = {
 };
 
 /** Opens a dialog with a ready-to-copy AI analysis prompt. */
-export default function AiPromptDialog({ subject, prompt, description, warning, buttonClassName }: Props) {
+export default function AiPromptDialog({
+  subject,
+  prompt,
+  description,
+  warning,
+  buttonClassName,
+}: Props) {
   const { success } = useToast();
   const [open, setOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -34,7 +40,11 @@ export default function AiPromptDialog({ subject, prompt, description, warning, 
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={buttonClassName ?? "btn-ghost"}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={buttonClassName ?? "btn-ghost"}
+      >
         <Icon name="sparkles" className="h-4 w-4" />
         AI prompt…
       </button>
@@ -48,10 +58,19 @@ export default function AiPromptDialog({ subject, prompt, description, warning, 
         initialFocusRef={copyRef}
         footer={
           <>
-            <button type="button" onClick={() => setOpen(false)} className="btn-ghost">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="btn-ghost"
+            >
               Close
             </button>
-            <button ref={copyRef} type="button" onClick={copyPrompt} className="btn-primary">
+            <button
+              ref={copyRef}
+              type="button"
+              onClick={copyPrompt}
+              className="btn-primary"
+            >
               <Icon name="copy" className="h-4 w-4" />
               Copy prompt
             </button>

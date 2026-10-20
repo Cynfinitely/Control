@@ -32,14 +32,24 @@ export default function ProgramExerciseRow({
 }: Props) {
   return (
     <li className="card">
-      <FormAction action={updateProgramExerciseForm} successMessage="Exercise updated" className="grid grid-cols-2 gap-3 sm:grid-cols-12 sm:items-end">
+      <FormAction
+        action={updateProgramExerciseForm}
+        successMessage="Exercise updated"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-12 sm:items-end"
+      >
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="programId" value={programId} />
         <div className="col-span-2 sm:col-span-5">
           <label className="label" htmlFor={`ex-name-${id}`}>
             Exercise
           </label>
-          <input id={`ex-name-${id}`} name="name" className="input" required defaultValue={name} />
+          <input
+            id={`ex-name-${id}`}
+            name="name"
+            className="input"
+            required
+            defaultValue={name}
+          />
         </div>
         <div className="sm:col-span-2">
           <label className="label" htmlFor={`ex-sets-${id}`}>
@@ -71,7 +81,9 @@ export default function ProgramExerciseRow({
           />
         </div>
         <div className="col-span-2 sm:col-span-3">
-          <SubmitButton className="btn-ghost touch-target w-full">Save</SubmitButton>
+          <SubmitButton className="btn-ghost touch-target w-full">
+            Save
+          </SubmitButton>
         </div>
       </FormAction>
 

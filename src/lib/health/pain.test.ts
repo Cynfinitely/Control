@@ -50,7 +50,7 @@ describe("painToneClass", () => {
 
 describe("DURATION_PRESETS", () => {
   it("maps the four diary chips to minutes", () => {
-    expect(DURATION_PRESETS.map((p) => p.minutes)).toEqual([90, 180, 480, 1440]);
+    expect(DURATION_PRESETS.map(p => p.minutes)).toEqual([90, 180, 480, 1440]);
   });
 });
 
@@ -64,12 +64,12 @@ describe("monthMigraineStats", () => {
   });
 
   it("counts days, averages peak pain, and tallies severe days", () => {
-    expect(
-      monthMigraineStats([{ pain: 2 }, { pain: 8 }, { pain: 5 }])
-    ).toEqual({
-      migraineDays: 3,
-      averagePain: 5,
-      severeDays: 1,
-    });
+    expect(monthMigraineStats([{ pain: 2 }, { pain: 8 }, { pain: 5 }])).toEqual(
+      {
+        migraineDays: 3,
+        averagePain: 5,
+        severeDays: 1,
+      }
+    );
   });
 });

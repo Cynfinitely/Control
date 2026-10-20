@@ -32,12 +32,15 @@ export default function ProgramStatusActions({
       successMessage="Program archived"
       confirm={{
         title: `Archive “${name}”?`,
-        message: "It will be hidden from your active list. You can restore it later.",
+        message:
+          "It will be hidden from your active list. You can restore it later.",
         confirmLabel: "Archive",
       }}
     >
       <input type="hidden" name="id" value={id} />
-      <SubmitButton className="btn-ghost touch-target w-full sm:w-auto">Archive</SubmitButton>
+      <SubmitButton className="btn-ghost touch-target w-full sm:w-auto">
+        Archive
+      </SubmitButton>
     </ActionForm>
   );
 }

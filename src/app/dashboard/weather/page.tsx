@@ -27,7 +27,11 @@ export default async function WeatherPage({
   if (!weather.pref) {
     return (
       <div>
-        <PageHeader help="weather" title="Weather" description="Daily and weekly forecast for your location." />
+        <PageHeader
+          help="weather"
+          title="Weather"
+          description="Daily and weekly forecast for your location."
+        />
         <EmptyState
           icon="cloud-sun"
           title="Set your location"
@@ -43,16 +47,28 @@ export default async function WeatherPage({
 
   return (
     <div>
-      <PageHeader help="weather"
+      <PageHeader
+        help="weather"
         title="Weather"
-        description={[pref.locationName, pref.region].filter(Boolean).join(" · ")}
+        description={[pref.locationName, pref.region]
+          .filter(Boolean)
+          .join(" · ")}
         action={
-          <Link href="/dashboard/settings#weather-settings-title" className="btn-ghost touch-target">
+          <Link
+            href="/dashboard/settings#weather-settings-title"
+            className="btn-ghost touch-target"
+          >
             Change location
           </Link>
         }
       >
-        <TabNav items={VIEWS} active={view} variant="pills" aria-label="Forecast view" className="mb-0" />
+        <TabNav
+          items={VIEWS}
+          active={view}
+          variant="pills"
+          aria-label="Forecast view"
+          className="mb-0"
+        />
       </PageHeader>
 
       {"error" in weather ? (
@@ -67,7 +83,12 @@ export default async function WeatherPage({
           {view === "week" ? (
             <WeekForecast forecast={weather.forecast} />
           ) : (
-            <DayForecast forecast={weather.forecast} day={searchParams.day ?? weather.forecast.current.time.slice(0, 10)} />
+            <DayForecast
+              forecast={weather.forecast}
+              day={
+                searchParams.day ?? weather.forecast.current.time.slice(0, 10)
+              }
+            />
           )}
         </>
       )}

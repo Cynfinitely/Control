@@ -1,4 +1,9 @@
-import { MODULE_SECTIONS, MODULES, moduleFilter, type ModuleId } from "@/lib/modules";
+import {
+  MODULE_SECTIONS,
+  MODULES,
+  moduleFilter,
+  type ModuleId,
+} from "@/lib/modules";
 
 export type NavItem = {
   href: string;
@@ -15,11 +20,11 @@ export type NavSection = {
 
 const HOME: NavItem = { href: "/dashboard", label: "Home", icon: "home" };
 
-export const navSections: NavSection[] = MODULE_SECTIONS.map((title) => ({
+export const navSections: NavSection[] = MODULE_SECTIONS.map(title => ({
   title,
   items: [
     ...(title === "Today" ? [HOME] : []),
-    ...MODULES.filter((m) => m.section === title).map((m) => ({
+    ...MODULES.filter(m => m.section === title).map(m => ({
       href: m.href,
       label: m.label,
       icon: m.icon,
@@ -29,9 +34,11 @@ export const navSections: NavSection[] = MODULE_SECTIONS.map((title) => ({
 }));
 
 /** Nav sections without the modules the user switched off; empty sections are dropped. */
-export function visibleNavSections(disabled: readonly ModuleId[]): NavSection[] {
+export function visibleNavSections(
+  disabled: readonly ModuleId[]
+): NavSection[] {
   const modules = moduleFilter(disabled);
   return navSections
-    .map((section) => ({ ...section, items: modules.keep(section.items) }))
-    .filter((section) => section.items.length > 0);
+    .map(section => ({ ...section, items: modules.keep(section.items) }))
+    .filter(section => section.items.length > 0);
 }

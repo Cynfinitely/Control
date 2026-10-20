@@ -8,7 +8,9 @@ export function getWeekKey(d: Date): string {
   const thursday = new Date(date);
   thursday.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
   const yearStart = new Date(thursday.getFullYear(), 0, 1);
-  const week = Math.ceil(((thursday.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  const week = Math.ceil(
+    ((thursday.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
+  );
   return `${thursday.getFullYear()}-W${String(week).padStart(2, "0")}`;
 }
 
@@ -31,17 +33,25 @@ export function getPeriodKey(period: GoalPeriod, d: Date): string {
 }
 
 export function periodLabel(period: GoalPeriod, key: string): string {
-  if (period === "weekly") return `Week ${key.split("-W")[1]}, ${key.split("-W")[0]}`;
+  if (period === "weekly")
+    return `Week ${key.split("-W")[1]}, ${key.split("-W")[0]}`;
   if (period === "monthly") {
     const [y, m] = key.split("-");
-    const month = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-GB", { month: "long" });
+    const month = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(
+      "en-GB",
+      { month: "long" }
+    );
     return `${month} ${y}`;
   }
   return key;
 }
 
 /** Shift reference date by N periods (negative = past). */
-export function shiftPeriodDate(period: GoalPeriod, offset: number, ref = new Date()): Date {
+export function shiftPeriodDate(
+  period: GoalPeriod,
+  offset: number,
+  ref = new Date()
+): Date {
   const d = new Date(ref);
   if (period === "weekly") {
     d.setDate(d.getDate() + offset * 7);

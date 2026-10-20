@@ -10,9 +10,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <ThemeProvider>
         <ToastProvider>
-          <NotificationProvider>
-            {children}
-          </NotificationProvider>
+          <NotificationProvider>{children}</NotificationProvider>
         </ToastProvider>
       </ThemeProvider>
     </SessionProvider>

@@ -56,7 +56,11 @@ describe("budget math", () => {
   });
 
   it("computes period totals", () => {
-    const totals = computePeriodTotals(txs, new Date("2026-01-01"), new Date("2026-01-31"));
+    const totals = computePeriodTotals(
+      txs,
+      new Date("2026-01-01"),
+      new Date("2026-01-31")
+    );
     expect(totals.incomeCents).toBe(50000);
     expect(totals.expenseCents).toBe(20000);
     expect(totals.netCents).toBe(30000);

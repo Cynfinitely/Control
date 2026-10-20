@@ -11,7 +11,7 @@ const NETWORK_ERROR_PATTERNS = [
 export function isNetworkError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
-  return NETWORK_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
+  return NETWORK_ERROR_PATTERNS.some(pattern => message.includes(pattern));
 }
 
 export function shouldPollNotifications({

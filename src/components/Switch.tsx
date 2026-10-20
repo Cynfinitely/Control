@@ -15,7 +15,13 @@ type Props = {
  * On/off toggle exposed as role="switch". The visible track is small; the
  * invisible pseudo-element gives it a 44px hit area like CheckButton.
  */
-export default function Switch({ checked, onChange, label, disabled, className }: Props) {
+export default function Switch({
+  checked,
+  onChange,
+  label,
+  disabled,
+  className,
+}: Props) {
   return (
     <button
       type="button"

@@ -11,7 +11,7 @@ export function neighborForMove(
   direction: "up" | "down"
 ): RankedItem | null {
   const sorted = [...items].sort((a, b) => a.sortOrder - b.sortOrder);
-  const index = sorted.findIndex((item) => item.id === id);
+  const index = sorted.findIndex(item => item.id === id);
   if (index === -1) return null;
   const neighborIndex = direction === "up" ? index - 1 : index + 1;
   return sorted[neighborIndex] ?? null;

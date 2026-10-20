@@ -13,13 +13,7 @@ import {
 } from "@/lib/date";
 
 export type FoodRangePreset =
-  | "7d"
-  | "14d"
-  | "week"
-  | "last-week"
-  | "month"
-  | "last-month"
-  | "custom";
+  "7d" | "14d" | "week" | "last-week" | "month" | "last-month" | "custom";
 
 export type FoodRangeSearchParams = {
   range?: string;
@@ -46,7 +40,12 @@ const VALID_PRESETS = new Set<FoodRangePreset>([
   "custom",
 ]);
 
-function datedRange(preset: FoodRangePreset, from: Date, to: Date, anchor: string): FoodRange {
+function datedRange(
+  preset: FoodRangePreset,
+  from: Date,
+  to: Date,
+  anchor: string
+): FoodRange {
   return {
     preset,
     from,
@@ -56,8 +55,13 @@ function datedRange(preset: FoodRangePreset, from: Date, to: Date, anchor: strin
   };
 }
 
-export function parseFoodRange(searchParams: FoodRangeSearchParams, now = new Date()): FoodRange {
-  const preset: FoodRangePreset = VALID_PRESETS.has(searchParams.range as FoodRangePreset)
+export function parseFoodRange(
+  searchParams: FoodRangeSearchParams,
+  now = new Date()
+): FoodRange {
+  const preset: FoodRangePreset = VALID_PRESETS.has(
+    searchParams.range as FoodRangePreset
+  )
     ? (searchParams.range as FoodRangePreset)
     : "7d";
 
@@ -90,7 +94,9 @@ export function parseFoodRange(searchParams: FoodRangeSearchParams, now = new Da
     return datedRange(preset, from, to, toMonthKey(from));
   }
 
-  const fromDay = searchParams.from ? parseDayParam(searchParams.from) : startOfDay(now);
+  const fromDay = searchParams.from
+    ? parseDayParam(searchParams.from)
+    : startOfDay(now);
   const toDay = searchParams.to
     ? parseDayParam(searchParams.to)
     : searchParams.from
@@ -106,9 +112,15 @@ export function parseFoodRange(searchParams: FoodRangeSearchParams, now = new Da
   return datedRange("custom", from, to, toDateInputValue(from));
 }
 
-export function shiftFoodRange(range: FoodRange, offset: number): Partial<FoodRangeSearchParams> {
+export function shiftFoodRange(
+  range: FoodRange,
+  offset: number
+): Partial<FoodRangeSearchParams> {
   if (range.preset === "week" || range.preset === "last-week") {
-    return { range: "week", anchor: toDateInputValue(addDays(range.from, offset * 7)) };
+    return {
+      range: "week",
+      anchor: toDateInputValue(addDays(range.from, offset * 7)),
+    };
   }
   if (range.preset === "month" || range.preset === "last-month") {
     const [year, month] = range.anchor.split("-").map(Number);
@@ -125,10 +137,12 @@ export function buildFoodReportUrl(
 ): string {
   const merged = { ...params, ...updates };
   const qs = new URLSearchParams();
-  const range = merged.range && merged.range !== "7d" ? merged.range : undefined;
+  const range =
+    merged.range && merged.range !== "7d" ? merged.range : undefined;
 
   if (range) qs.set("range", range);
-  if ((range === "week" || range === "month") && merged.anchor) qs.set("anchor", merged.anchor);
+  if ((range === "week" || range === "month") && merged.anchor)
+    qs.set("anchor", merged.anchor);
   if (range === "custom") {
     if (merged.from) qs.set("from", merged.from);
     if (merged.to) qs.set("to", merged.to);

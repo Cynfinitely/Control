@@ -18,7 +18,13 @@ type Props = {
  * gets focus containment, Escape-to-close and an inert background, plus the
  * same focus restore and scroll lock.
  */
-export default function SlideOver({ open, onClose, title, eyebrow, children }: Props) {
+export default function SlideOver({
+  open,
+  onClose,
+  title,
+  eyebrow,
+  children,
+}: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const onCloseRef = useRef(onClose);
@@ -50,11 +56,11 @@ export default function SlideOver({ open, onClose, title, eyebrow, children }: P
     <dialog
       ref={ref}
       aria-labelledby={titleId}
-      onCancel={(e) => {
+      onCancel={e => {
         e.preventDefault();
         onCloseRef.current();
       }}
-      onClick={(e) => {
+      onClick={e => {
         // Click on the backdrop (the dialog element itself, outside the panel) closes.
         if (e.target === ref.current) onCloseRef.current();
       }}
@@ -68,11 +74,19 @@ export default function SlideOver({ open, onClose, title, eyebrow, children }: P
               {title}
             </h2>
           </div>
-          <button type="button" data-slideover-close onClick={onClose} className="btn-icon -mr-2 -mt-1" aria-label="Close guide">
+          <button
+            type="button"
+            data-slideover-close
+            onClick={onClose}
+            className="btn-icon -mr-2 -mt-1"
+            aria-label="Close guide"
+          >
             <Icon name="x" className="h-5 w-5" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          {children}
+        </div>
       </div>
     </dialog>
   );

@@ -48,11 +48,13 @@ export default function SegmentedControl<T extends string>({
         className
       )}
     >
-      {options.map((opt) => {
+      {options.map(opt => {
         const active = opt.value === value;
         const classes = clsx(
           "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition",
-          size === "md" ? "min-h-[36px] px-3 text-sm" : "min-h-[32px] px-2.5 text-xs",
+          size === "md"
+            ? "min-h-[36px] px-3 text-sm"
+            : "min-h-[32px] px-2.5 text-xs",
           fill && "flex-1",
           active
             ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-slate-700 dark:text-white dark:ring-slate-600"

@@ -38,9 +38,14 @@ const TYPE_OPTIONS = [
 export default function BudgetTransactionRow({ entry, categories }: Props) {
   const id = useId();
   const [editing, setEditing] = useState(false);
-  const [type, setType] = useState<"expense" | "income">(entry.type === "income" ? "income" : "expense");
+  const [type, setType] = useState<"expense" | "income">(
+    entry.type === "income" ? "income" : "expense"
+  );
 
-  const filtered = useMemo(() => categories.filter((c) => c.kind === type), [categories, type]);
+  const filtered = useMemo(
+    () => categories.filter(c => c.kind === type),
+    [categories, type]
+  );
   const income = entry.type === "income";
   const title = entry.rawDescription || entry.note || entry.categoryName;
   const amount = `${income ? "+" : "−"}${formatEuro(entry.amountCents)}`;
@@ -51,16 +56,24 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
     <div className="card py-3">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className="break-words font-medium text-slate-800 dark:text-slate-100">{title}</p>
+          <p className="break-words font-medium text-slate-800 dark:text-slate-100">
+            {title}
+          </p>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
-            <span className={income ? "badge-success" : "badge-muted"}>{income ? "Income" : "Expense"}</span>
-            <span className={uncategorized ? "badge-warning" : undefined}>{entry.categoryName}</span>
+            <span className={income ? "badge-success" : "badge-muted"}>
+              {income ? "Income" : "Expense"}
+            </span>
+            <span className={uncategorized ? "badge-warning" : undefined}>
+              {entry.categoryName}
+            </span>
           </p>
         </div>
         <div className="-mr-2 flex shrink-0 flex-col items-end">
           <p
             className={`pr-2 pt-0.5 font-semibold tabular-nums ${
-              income ? "text-green-700 dark:text-green-400" : "text-slate-900 dark:text-slate-100"
+              income
+                ? "text-green-700 dark:text-green-400"
+                : "text-slate-900 dark:text-slate-100"
             }`}
           >
             {amount}
@@ -71,7 +84,7 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
               aria-label={`Edit ${title}`}
               aria-expanded={editing}
               aria-controls={formId}
-              onClick={() => setEditing((v) => !v)}
+              onClick={() => setEditing(v => !v)}
             />
             <ActionForm
               action={deleteTransaction}
@@ -101,9 +114,7 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
         >
           <input type="hidden" name="id" value={entry.id} />
           <div className="sm:col-span-2">
-            <p className="label">
-              Type
-            </p>
+            <p className="label">Type</p>
             <SegmentedControl
               aria-label="Transaction type"
               options={TYPE_OPTIONS}
@@ -139,12 +150,17 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
               name="categoryId"
               className="input"
               required
-              defaultValue={entry.categoryId && filtered.some((c) => c.id === entry.categoryId) ? entry.categoryId : ""}
+              defaultValue={
+                entry.categoryId &&
+                filtered.some(c => c.id === entry.categoryId)
+                  ? entry.categoryId
+                  : ""
+              }
             >
               <option value="" disabled>
                 Choose a category…
               </option>
-              {filtered.map((c) => (
+              {filtered.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -177,10 +193,17 @@ export default function BudgetTransactionRow({ entry, categories }: Props) {
             />
           </div>
           <div className="flex flex-wrap items-end gap-2 sm:col-span-2">
-            <SubmitButton className="btn-primary touch-target" pendingLabel="Saving…">
+            <SubmitButton
+              className="btn-primary touch-target"
+              pendingLabel="Saving…"
+            >
               Save changes
             </SubmitButton>
-            <button type="button" onClick={() => setEditing(false)} className="btn-ghost touch-target">
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="btn-ghost touch-target"
+            >
               Cancel
             </button>
           </div>

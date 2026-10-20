@@ -44,7 +44,13 @@ export function useToast() {
   return ctx;
 }
 
-function ToastItemView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: number) => void }) {
+function ToastItemView({
+  item,
+  onDismiss,
+}: {
+  item: ToastItem;
+  onDismiss: (id: number) => void;
+}) {
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const [paused, setPaused] = useState(false);
 
@@ -63,13 +69,22 @@ function ToastItemView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: n
       onBlur={() => setPaused(false)}
       className={clsx(
         "pointer-events-auto flex items-center gap-3 rounded-lg py-1.5 pl-4 pr-1.5 text-sm shadow-lg ring-1",
-        item.type === "success" && "bg-green-50 text-green-900 ring-green-200 dark:bg-green-950 dark:text-green-100 dark:ring-green-800",
-        item.type === "error" && "bg-red-50 text-red-900 ring-red-200 dark:bg-red-950 dark:text-red-100 dark:ring-red-800",
-        item.type === "info" && "bg-white text-slate-800 ring-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700"
+        item.type === "success" &&
+          "bg-green-50 text-green-900 ring-green-200 dark:bg-green-950 dark:text-green-100 dark:ring-green-800",
+        item.type === "error" &&
+          "bg-red-50 text-red-900 ring-red-200 dark:bg-red-950 dark:text-red-100 dark:ring-red-800",
+        item.type === "info" &&
+          "bg-white text-slate-800 ring-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700"
       )}
     >
       <Icon
-        name={item.type === "error" ? "alert" : item.type === "success" ? "check" : "info"}
+        name={
+          item.type === "error"
+            ? "alert"
+            : item.type === "success"
+              ? "check"
+              : "info"
+        }
         className="h-4 w-4 shrink-0"
       />
       <span className="flex-1 py-1.5">{item.message}</span>
@@ -101,19 +116,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const dismiss = useCallback((id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
   const toast = useCallback(
-    ({ message, type = "info", action, duration = action ? 8000 : 4000 }: ToastInput) => {
+    ({
+      message,
+      type = "info",
+      action,
+      duration = action ? 8000 : 4000,
+    }: ToastInput) => {
       const id = ++nextId;
-      setToasts((prev) => [...prev.slice(-4), { id, message, type, action, duration }]);
+      setToasts(prev => [
+        ...prev.slice(-4),
+        { id, message, type, action, duration },
+      ]);
     },
     []
   );
 
   const success = useCallback(
-    (message: string, action?: ToastInput["action"]) => toast({ message, type: "success", action }),
+    (message: string, action?: ToastInput["action"]) =>
+      toast({ message, type: "success", action }),
     [toast]
   );
 
@@ -131,7 +155,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         aria-relevant="additions"
         className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] mx-auto flex w-full max-w-sm flex-col gap-2 px-4 sm:left-auto sm:right-4 sm:mx-0 sm:px-0"
       >
-        {toasts.map((item) => (
+        {toasts.map(item => (
           <ToastItemView key={item.id} item={item} onDismiss={dismiss} />
         ))}
       </div>

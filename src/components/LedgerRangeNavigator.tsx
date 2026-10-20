@@ -47,7 +47,9 @@ export default function LedgerRangeNavigator({
     period === "month" && monthKey === toDateInputValue(new Date()).slice(0, 7);
 
   function navigate(updates: Partial<BudgetSearchParams>) {
-    router.push(buildBudgetUrl(basePath, searchParams, updates), { scroll: false });
+    router.push(buildBudgetUrl(basePath, searchParams, updates), {
+      scroll: false,
+    });
   }
 
   function setPeriod(next: LedgerPeriod) {
@@ -95,13 +97,29 @@ export default function LedgerRangeNavigator({
         <StepNavigator
           label={label}
           sublabel={period === "week" ? "Week" : "Month"}
-          prev={{ onClick: () => navigate(shiftLedgerPeriod(period, -1, refDay, monthKey)), label: `Previous ${period}` }}
-          next={{ onClick: () => navigate(shiftLedgerPeriod(period, 1, refDay, monthKey)), label: `Next ${period}` }}
+          prev={{
+            onClick: () =>
+              navigate(shiftLedgerPeriod(period, -1, refDay, monthKey)),
+            label: `Previous ${period}`,
+          }}
+          next={{
+            onClick: () =>
+              navigate(shiftLedgerPeriod(period, 1, refDay, monthKey)),
+            label: `Next ${period}`,
+          }}
           reset={
             period === "week" && !isCurrentWeek
-              ? { onClick: () => navigate({ day: todayValue, ledger: "week" }), label: "Go to this week", text: "This week" }
+              ? {
+                  onClick: () => navigate({ day: todayValue, ledger: "week" }),
+                  label: "Go to this week",
+                  text: "This week",
+                }
               : period === "month" && !isCurrentMonth
-                ? { onClick: goCurrentMonth, label: "Go to this month", text: "This month" }
+                ? {
+                    onClick: goCurrentMonth,
+                    label: "Go to this month",
+                    text: "This month",
+                  }
                 : undefined
           }
         />

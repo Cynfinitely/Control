@@ -104,8 +104,8 @@ export default function CalendarShell({
   const reminders = useMemo(
     () =>
       rawReminders
-        .filter((r) => r.remindAt)
-        .map((r) => ({
+        .filter(r => r.remindAt)
+        .map(r => ({
           id: r.id,
           title: r.title || "Reminder",
           remindAt: new Date(r.remindAt!),
@@ -159,8 +159,10 @@ export default function CalendarShell({
     if (focusEventId) {
       const occ =
         occurrences.find(
-          (o) => o.eventId === focusEventId && (!focusAt || o.originalStartsAt.toISOString() === focusAt)
-        ) ?? occurrences.find((o) => o.eventId === focusEventId);
+          o =>
+            o.eventId === focusEventId &&
+            (!focusAt || o.originalStartsAt.toISOString() === focusAt)
+        ) ?? occurrences.find(o => o.eventId === focusEventId);
       setBootedFocus(true);
       if (occ) openOccurrence(occ);
     } else if (focusReminder?.remindAt) {
@@ -226,7 +228,7 @@ export default function CalendarShell({
   }
 
   function openReminder(id: string) {
-    const rem = rawReminders.find((r) => r.id === id);
+    const rem = rawReminders.find(r => r.id === id);
     if (!rem || !rem.remindAt) return;
     setReminderForm({
       mode: "edit",
@@ -256,7 +258,8 @@ export default function CalendarShell({
     if (view === "month") setView("day");
   }
 
-  const isCurrentWeek = toDateInputValue(weekStart) === toDateInputValue(startOfWeek(new Date()));
+  const isCurrentWeek =
+    toDateInputValue(weekStart) === toDateInputValue(startOfWeek(new Date()));
 
   function weekHref(d: Date) {
     return `/dashboard/calendar?view=week&day=${toDateInputValue(startOfWeek(d))}`;
@@ -283,10 +286,22 @@ export default function CalendarShell({
           ) : view === "week" ? (
             <StepNavigator
               label={`${formatDate(weekStart)} – ${formatDate(addDays(weekStart, 6))}`}
-              prev={{ href: weekHref(addDays(weekStart, -7)), label: "Previous week" }}
-              next={{ href: weekHref(addDays(weekStart, 7)), label: "Next week" }}
+              prev={{
+                href: weekHref(addDays(weekStart, -7)),
+                label: "Previous week",
+              }}
+              next={{
+                href: weekHref(addDays(weekStart, 7)),
+                label: "Next week",
+              }}
               reset={
-                isCurrentWeek ? undefined : { href: weekHref(new Date()), label: "Go to this week", text: "This week" }
+                isCurrentWeek
+                  ? undefined
+                  : {
+                      href: weekHref(new Date()),
+                      label: "Go to this week",
+                      text: "This week",
+                    }
               }
             />
           ) : view === "day" ? (
@@ -297,15 +312,25 @@ export default function CalendarShell({
               extraParams={{ view }}
             />
           ) : (
-            <p className="font-semibold text-slate-900 dark:text-slate-100">Next 60 days</p>
+            <p className="font-semibold text-slate-900 dark:text-slate-100">
+              Next 60 days
+            </p>
           )}
 
           <div className="flex w-full gap-2 sm:w-auto">
-            <button type="button" className="btn-ghost flex-1 sm:flex-none" onClick={openCreateReminder}>
+            <button
+              type="button"
+              className="btn-ghost flex-1 sm:flex-none"
+              onClick={openCreateReminder}
+            >
               <Icon name="bell" className="h-4 w-4" />
               Reminder
             </button>
-            <button type="button" className="btn-primary flex-1 sm:flex-none" onClick={() => openCreate()}>
+            <button
+              type="button"
+              className="btn-primary flex-1 sm:flex-none"
+              onClick={() => openCreate()}
+            >
               <Icon name="plus" className="h-4 w-4" />
               New event
             </button>
@@ -314,7 +339,7 @@ export default function CalendarShell({
 
         <SegmentedControl
           aria-label="Calendar view"
-          options={views.map((v) => ({ value: v.id, label: v.label }))}
+          options={views.map(v => ({ value: v.id, label: v.label }))}
           value={view}
           onChange={setViewAndUrl}
           fill

@@ -12,7 +12,13 @@ type Props = {
 };
 
 /** Labelled From/To date inputs with range validation. */
-export default function DateRangePicker({ from, to, onChange, summary, max }: Props) {
+export default function DateRangePicker({
+  from,
+  to,
+  onChange,
+  summary,
+  max,
+}: Props) {
   const id = useId();
   const [draftFrom, setDraftFrom] = useState(from);
   const [draftTo, setDraftTo] = useState(to);
@@ -41,7 +47,7 @@ export default function DateRangePicker({ from, to, onChange, summary, max }: Pr
           max={max}
           aria-invalid={invalid || undefined}
           aria-describedby={invalid ? `${id}-error` : undefined}
-          onChange={(e) => {
+          onChange={e => {
             setDraftFrom(e.target.value);
             commit(e.target.value, draftTo);
           }}
@@ -59,7 +65,7 @@ export default function DateRangePicker({ from, to, onChange, summary, max }: Pr
           max={max}
           aria-invalid={invalid || undefined}
           aria-describedby={invalid ? `${id}-error` : undefined}
-          onChange={(e) => {
+          onChange={e => {
             setDraftTo(e.target.value);
             commit(draftFrom, e.target.value);
           }}
@@ -71,7 +77,11 @@ export default function DateRangePicker({ from, to, onChange, summary, max }: Pr
           “From” must be on or before “To”.
         </p>
       ) : (
-        summary && <p className="pb-2.5 text-sm text-slate-600 dark:text-slate-400">{summary}</p>
+        summary && (
+          <p className="pb-2.5 text-sm text-slate-600 dark:text-slate-400">
+            {summary}
+          </p>
+        )
       )}
     </div>
   );

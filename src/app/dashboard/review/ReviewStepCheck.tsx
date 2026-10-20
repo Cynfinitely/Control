@@ -42,7 +42,9 @@ export default function ReviewStepCheck({ weekKey, step, title, done }: Props) {
         checked={optimisticDone}
         onChange={toggle}
         disabled={pending}
-        label={optimisticDone ? `Mark “${title}” not done` : `Mark “${title}” done`}
+        label={
+          optimisticDone ? `Mark “${title}” not done` : `Mark “${title}” done`
+        }
       />
       <span
         aria-hidden="true"

@@ -39,14 +39,19 @@ export function addDays(d: Date, n: number): Date {
   return x;
 }
 
-export function rangeFor(period: "daily" | "weekly" | "monthly", ref = new Date()) {
+export function rangeFor(
+  period: "daily" | "weekly" | "monthly",
+  ref = new Date()
+) {
   if (period === "daily") return { from: startOfDay(ref), to: endOfDay(ref) };
   if (period === "weekly") {
     const from = startOfWeek(ref);
     return { from, to: endOfDay(addDays(from, 6)) };
   }
   const from = startOfMonth(ref);
-  const to = endOfDay(addDays(new Date(ref.getFullYear(), ref.getMonth() + 1, 0), 0));
+  const to = endOfDay(
+    addDays(new Date(ref.getFullYear(), ref.getMonth() + 1, 0), 0)
+  );
   return { from, to };
 }
 
@@ -111,7 +116,8 @@ export function formatDaysAgo(d: Date | string | null | undefined): string {
   if (diff === 0) return "Today";
   if (diff === 1) return "Yesterday";
   if (diff < 7) return `${diff} days ago`;
-  if (diff < 30) return `${Math.floor(diff / 7)} week${Math.floor(diff / 7) === 1 ? "" : "s"} ago`;
+  if (diff < 30)
+    return `${Math.floor(diff / 7)} week${Math.floor(diff / 7) === 1 ? "" : "s"} ago`;
   return formatDate(day);
 }
 
@@ -125,7 +131,10 @@ export function endOfMonth(d: Date): Date {
   return endOfDay(new Date(d.getFullYear(), d.getMonth() + 1, 0));
 }
 
-export function parseMonthParam(value: string | undefined, fallback?: Date): Date {
+export function parseMonthParam(
+  value: string | undefined,
+  fallback?: Date
+): Date {
   if (value && /^\d{4}-\d{2}$/.test(value)) {
     const [y, m] = value.split("-").map(Number);
     return startOfMonth(new Date(y, m - 1, 1));

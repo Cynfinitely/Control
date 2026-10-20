@@ -10,7 +10,10 @@ type Props = {
 };
 
 /** Moves every open todo from previous days into the backlog (after a confirm). */
-export default function StaleBacklogButton({ count, className = "btn-ghost btn-sm min-h-[40px]" }: Props) {
+export default function StaleBacklogButton({
+  count,
+  className = "btn-ghost btn-sm min-h-[40px]",
+}: Props) {
   const noun = count === 1 ? "todo" : "todos";
   return (
     <ActionForm

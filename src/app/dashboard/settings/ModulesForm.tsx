@@ -30,25 +30,43 @@ export default function ModulesForm({ disabled }: { disabled: ModuleId[] }) {
   }
 
   return (
-    <section id="modules" className="card scroll-mt-20 space-y-4" aria-labelledby="modules-title">
+    <section
+      id="modules"
+      className="card scroll-mt-20 space-y-4"
+      aria-labelledby="modules-title"
+    >
       <div>
         <h2 id="modules-title" className="section-title">
           Modules
         </h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Switch off the parts of Control you don&apos;t use. A module that is off disappears from the menu, search,
-          Home, Review and Reports. Its data is kept, so you can switch it back on at any time and carry on where you
-          left off.
+          Switch off the parts of Control you don&apos;t use. A module that is
+          off disappears from the menu, search, Home, Review and Reports. Its
+          data is kept, so you can switch it back on at any time and carry on
+          where you left off.
         </p>
       </div>
-      <ModulePicker disabled={selection} onChange={setSelection} busy={pending} />
+      <ModulePicker
+        disabled={selection}
+        onChange={setSelection}
+        busy={pending}
+      />
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className="btn-primary" onClick={save} disabled={!dirty || pending}>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={save}
+          disabled={!dirty || pending}
+        >
           {pending && <Spinner />}
           {pending ? "Saving…" : "Save modules"}
         </button>
         {dirty && !pending && (
-          <button type="button" className="btn-ghost" onClick={() => setSelection(disabled)}>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => setSelection(disabled)}
+          >
             Discard changes
           </button>
         )}

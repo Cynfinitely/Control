@@ -8,14 +8,25 @@ import Spinner from "@/components/Spinner";
 import FormField from "@/components/FormField";
 import PasswordInput from "@/components/PasswordInput";
 
-export default function RegisterForm({ inviteCode, lockedEmail }: { inviteCode: string; lockedEmail: string | null }) {
+export default function RegisterForm({
+  inviteCode,
+  lockedEmail,
+}: {
+  inviteCode: string;
+  lockedEmail: string | null;
+}) {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: lockedEmail ?? "", password: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: lockedEmail ?? "",
+    password: "",
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   function update(key: keyof typeof form) {
-    return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm(f => ({ ...f, [key]: e.target.value }));
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -34,7 +45,11 @@ export default function RegisterForm({ inviteCode, lockedEmail }: { inviteCode: 
         setLoading(false);
         return;
       }
-      const signedIn = await signIn("credentials", { email: form.email, password: form.password, redirect: false });
+      const signedIn = await signIn("credentials", {
+        email: form.email,
+        password: form.password,
+        redirect: false,
+      });
       if (signedIn?.error) {
         router.push("/login");
         return;
@@ -43,7 +58,9 @@ export default function RegisterForm({ inviteCode, lockedEmail }: { inviteCode: 
       router.push("/dashboard");
       router.refresh();
     } catch {
-      setError("Couldn't reach the server. Check your connection and try again.");
+      setError(
+        "Couldn't reach the server. Check your connection and try again."
+      );
       setLoading(false);
     }
   }
@@ -52,20 +69,37 @@ export default function RegisterForm({ inviteCode, lockedEmail }: { inviteCode: 
     <div className="card">
       <h1 className="section-title">Create account</h1>
       <p className="mb-4 mt-1 text-sm text-slate-600 dark:text-slate-400">
-        You have been invited to Control. Your account starts empty and everything you add is visible only to you.
+        You have been invited to Control. Your account starts empty and
+        everything you add is visible only to you.
       </p>
       {error && (
-        <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p
+          role="alert"
+          className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
+        >
           {error}
         </p>
       )}
       <form onSubmit={onSubmit} className="space-y-4">
         <FormField label="Name">
-          {(id) => (
-            <input id={id} className="input" value={form.name} onChange={update("name")} required autoComplete="name" autoFocus />
+          {id => (
+            <input
+              id={id}
+              className="input"
+              value={form.name}
+              onChange={update("name")}
+              required
+              autoComplete="name"
+              autoFocus
+            />
           )}
         </FormField>
-        <FormField label="Email" hint={lockedEmail ? "This invite was made for this address." : undefined}>
+        <FormField
+          label="Email"
+          hint={
+            lockedEmail ? "This invite was made for this address." : undefined
+          }
+        >
           {(id, aria) => (
             <input
               {...aria}

@@ -19,7 +19,11 @@ const UNIT_OPTIONS = [
   { value: "imperial", label: "Imperial (°F, mph)" },
 ] as const;
 
-export default function WeatherLocationForm({ current }: { current: WeatherPreferenceView | null }) {
+export default function WeatherLocationForm({
+  current,
+}: {
+  current: WeatherPreferenceView | null;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [query, setQuery] = useState("");
@@ -83,7 +87,7 @@ export default function WeatherLocationForm({ current }: { current: WeatherPrefe
     }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      pos => {
         setLocating(false);
         save({
           locationName: "Current location",
@@ -114,27 +118,39 @@ export default function WeatherLocationForm({ current }: { current: WeatherPrefe
   }
 
   return (
-    <section className="card flex flex-col gap-4" aria-labelledby="weather-settings-title">
+    <section
+      className="card flex flex-col gap-4"
+      aria-labelledby="weather-settings-title"
+    >
       <h2 id="weather-settings-title" className="section-title">
         Weather
       </h2>
 
       <div className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2.5 dark:bg-slate-900/60">
         <div className="flex min-w-0 items-start gap-2.5">
-          <Icon name="cloud-sun" className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" />
+          <Icon
+            name="cloud-sun"
+            className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400"
+          />
           <div className="min-w-0">
             <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
               {current ? current.locationName : "No location set"}
             </p>
             <p className="text-xs text-muted">
               {current
-                ? current.region ?? `${current.latitude.toFixed(2)}, ${current.longitude.toFixed(2)}`
+                ? (current.region ??
+                  `${current.latitude.toFixed(2)}, ${current.longitude.toFixed(2)}`)
                 : "Pick a location to see the forecast on Home and the Weather page."}
             </p>
           </div>
         </div>
         {current && (
-          <button type="button" className="btn-ghost btn-sm shrink-0" onClick={clear} disabled={pending}>
+          <button
+            type="button"
+            className="btn-ghost btn-sm shrink-0"
+            onClick={clear}
+            disabled={pending}
+          >
             Clear
           </button>
         )}
@@ -151,7 +167,7 @@ export default function WeatherLocationForm({ current }: { current: WeatherPrefe
             className="input"
             placeholder="City name, e.g. Helsinki"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             autoComplete="off"
             aria-describedby="weather-search-hint"
             aria-controls="weather-search-results"
@@ -175,20 +191,37 @@ export default function WeatherLocationForm({ current }: { current: WeatherPrefe
                 : "Type at least 2 characters.")}
         </p>
         {results.length > 0 && (
-          <ul id="weather-search-results" className="mt-2 divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
-            {results.map((r) => (
+          <ul
+            id="weather-search-results"
+            className="mt-2 divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700"
+          >
+            {results.map(r => (
               <li key={`${r.latitude},${r.longitude}`}>
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => save({ locationName: r.name, region: r.region, latitude: r.latitude, longitude: r.longitude, units })}
+                  onClick={() =>
+                    save({
+                      locationName: r.name,
+                      region: r.region,
+                      latitude: r.latitude,
+                      longitude: r.longitude,
+                      units,
+                    })
+                  }
                   className="flex min-h-[44px] w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-slate-50 disabled:opacity-50 dark:hover:bg-slate-800/60"
                 >
                   <span className="min-w-0">
-                    <span className="font-medium text-slate-900 dark:text-slate-100">{r.name}</span>
-                    {r.region && <span className="text-muted"> · {r.region}</span>}
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                      {r.name}
+                    </span>
+                    {r.region && (
+                      <span className="text-muted"> · {r.region}</span>
+                    )}
                   </span>
-                  <span className="shrink-0 text-xs text-brand-600 dark:text-brand-400">Select</span>
+                  <span className="shrink-0 text-xs text-brand-600 dark:text-brand-400">
+                    Select
+                  </span>
                 </button>
               </li>
             ))}
@@ -197,9 +230,7 @@ export default function WeatherLocationForm({ current }: { current: WeatherPrefe
       </div>
 
       <div>
-        <span className="label">
-          Units
-        </span>
+        <span className="label">Units</span>
         <SegmentedControl
           options={UNIT_OPTIONS}
           value={units}

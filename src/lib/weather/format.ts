@@ -18,7 +18,9 @@ export function formatWind(value: number, units: WeatherUnits) {
 }
 
 export function formatPrecip(value: number, units: WeatherUnits) {
-  return units === "imperial" ? `${value.toFixed(2)} in` : `${value.toFixed(1)} mm`;
+  return units === "imperial"
+    ? `${value.toFixed(2)} in`
+    : `${value.toFixed(1)} mm`;
 }
 
 export function tempUnitLabel(units: WeatherUnits) {
@@ -33,7 +35,8 @@ export function formatHour(time: string) {
 /** "Today", "Tomorrow", or "Fri" relative to `today` (YYYY-MM-DD). */
 export function formatDayShort(date: string, today: string) {
   if (date === today) return "Today";
-  if (date === wallClock(today).plus({ days: 1 }).toISODate()) return "Tomorrow";
+  if (date === wallClock(today).plus({ days: 1 }).toISODate())
+    return "Tomorrow";
   return wallClock(date).toFormat("ccc");
 }
 

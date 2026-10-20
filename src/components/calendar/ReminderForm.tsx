@@ -7,7 +7,11 @@ import Modal from "@/components/Modal";
 import Spinner from "@/components/Spinner";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/components/Toast";
-import { createReminder, updateReminder, deleteReminder } from "@/app/dashboard/calendar/actions";
+import {
+  createReminder,
+  updateReminder,
+  deleteReminder,
+} from "@/app/dashboard/calendar/actions";
 
 export type ReminderFormValues = {
   id?: string;
@@ -24,13 +28,21 @@ type Props = {
   onSaved: () => void;
 };
 
-export default function ReminderForm({ open, mode, initial, onClose, onSaved }: Props) {
+export default function ReminderForm({
+  open,
+  mode,
+  initial,
+  onClose,
+  onSaved,
+}: Props) {
   const toast = useToast();
   const [title, setTitle] = useState(initial.title);
-  const [remindAt, setRemindAt] = useState(toDatetimeLocalValue(initial.remindAt));
-  const [freq, setFreq] = useState<"NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY">(
-    () => parseRruleParts(initial.rrule).freq
+  const [remindAt, setRemindAt] = useState(
+    toDatetimeLocalValue(initial.remindAt)
   );
+  const [freq, setFreq] = useState<
+    "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY"
+  >(() => parseRruleParts(initial.rrule).freq);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -53,7 +65,8 @@ export default function ReminderForm({ open, mode, initial, onClose, onSaved }: 
     if (rrule) fd.set("rrule", rrule);
 
     try {
-      const result = mode === "create" ? await createReminder(fd) : await updateReminder(fd);
+      const result =
+        mode === "create" ? await createReminder(fd) : await updateReminder(fd);
       if (result && "error" in result && result.error) {
         setError(result.error);
         return;
@@ -108,7 +121,12 @@ export default function ReminderForm({ open, mode, initial, onClose, onSaved }: 
             <button type="button" className="btn-ghost" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" form={formId} className="btn-primary" disabled={pending}>
+            <button
+              type="submit"
+              form={formId}
+              className="btn-primary"
+              disabled={pending}
+            >
               {pending && <Spinner />}
               {mode === "create" ? "Create reminder" : "Save changes"}
             </button>
@@ -117,7 +135,10 @@ export default function ReminderForm({ open, mode, initial, onClose, onSaved }: 
       >
         <form id={formId} onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+            <p
+              role="alert"
+              className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
+            >
               {error}
             </p>
           )}
@@ -129,7 +150,7 @@ export default function ReminderForm({ open, mode, initial, onClose, onSaved }: 
               id="rem-title"
               className="input"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={e => setTitle(e.target.value)}
               required
               data-autofocus
             />
@@ -143,7 +164,7 @@ export default function ReminderForm({ open, mode, initial, onClose, onSaved }: 
               type="datetime-local"
               className="input"
               value={remindAt}
-              onChange={(e) => setRemindAt(e.target.value)}
+              onChange={e => setRemindAt(e.target.value)}
               required
             />
           </div>
@@ -155,7 +176,7 @@ export default function ReminderForm({ open, mode, initial, onClose, onSaved }: 
               id="rem-freq"
               className="input"
               value={freq}
-              onChange={(e) => setFreq(e.target.value as typeof freq)}
+              onChange={e => setFreq(e.target.value as typeof freq)}
             >
               <option value="NONE">Does not repeat</option>
               <option value="DAILY">Daily</option>

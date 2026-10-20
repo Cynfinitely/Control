@@ -9,7 +9,10 @@ import { addDays } from "@/lib/date";
  * Scan due reminders for all users (or one user) and insert Notifications.
  * Safe to run repeatedly — uses unique dedupeKey.
  */
-export async function processDueReminders(opts?: { userId?: string; now?: Date }) {
+export async function processDueReminders(opts?: {
+  userId?: string;
+  now?: Date;
+}) {
   const now = opts?.now ?? new Date();
   const lookback = addDays(now, -2);
   const lookahead = addDays(now, 2);
@@ -23,7 +26,8 @@ export async function processDueReminders(opts?: { userId?: string; now?: Date }
 
   for (const user of users) {
     // No calendar notifications for people who switched the Calendar module off.
-    if (parseDisabledModules(user.disabledModules).includes("calendar")) continue;
+    if (parseDisabledModules(user.disabledModules).includes("calendar"))
+      continue;
 
     const [standalone, attachedReminders, events] = await Promise.all([
       prisma.reminder.findMany({
@@ -69,9 +73,12 @@ export async function processDueReminders(opts?: { userId?: string; now?: Date }
       }),
     ]);
 
-    const eventById = new Map(events.map((e) => [e.id, e]));
+    const eventById = new Map(events.map(e => [e.id, e]));
 
-    const attached: Array<{ reminder: ReminderForDue; occurrences: EventOccurrence[] }> = [];
+    const attached: Array<{
+      reminder: ReminderForDue;
+      occurrences: EventOccurrence[];
+    }> = [];
 
     for (const reminder of attachedReminders) {
       const event = reminder.eventId ? eventById.get(reminder.eventId) : null;
@@ -90,7 +97,7 @@ export async function processDueReminders(opts?: { userId?: string; now?: Date }
           rruleUntil: event.rruleUntil,
           status: event.status,
         },
-        event.exceptions.map((ex) => ({
+        event.exceptions.map(ex => ({
           originalStartsAt: ex.originalStartsAt,
           cancelled: ex.cancelled,
           title: ex.title,
@@ -120,7 +127,7 @@ export async function processDueReminders(opts?: { userId?: string; now?: Date }
     const candidates = computeDueReminders({
       now,
       timezone: user.timezone,
-      standalone: standalone.map((r) => ({
+      standalone: standalone.map(r => ({
         id: r.id,
         title: r.title,
         eventId: r.eventId,
@@ -139,7 +146,8 @@ export async function processDueReminders(opts?: { userId?: string; now?: Date }
           data: {
             userId: user.id,
             title: c.title,
-            body: c.sourceType === "event" ? "Upcoming event reminder" : "Reminder",
+            body:
+              c.sourceType === "event" ? "Upcoming event reminder" : "Reminder",
             dueAt: c.dueAt,
             sourceType: c.sourceType,
             sourceId: c.sourceId,

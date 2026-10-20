@@ -20,13 +20,21 @@ const OPTIONS: { value: ActivityType; label: string }[] = [
 const STORAGE_KEY = "control:exercise:last-activity";
 
 function isActivityType(value: unknown): value is ActivityType {
-  return OPTIONS.some((o) => o.value === value);
+  return OPTIONS.some(o => o.value === value);
 }
 
 function DateField({ defaultValue }: { defaultValue: string }) {
   return (
     <FormField label="Date">
-      {(_id, aria) => <input {...aria} name="date" type="date" className="input" defaultValue={defaultValue} />}
+      {(_id, aria) => (
+        <input
+          {...aria}
+          name="date"
+          type="date"
+          className="input"
+          defaultValue={defaultValue}
+        />
+      )}
     </FormField>
   );
 }
@@ -50,7 +58,15 @@ function DurationField({ placeholder }: { placeholder: string }) {
   return (
     <FormField label="Duration (min)">
       {(_id, aria) => (
-        <input {...aria} name="durationMin" type="number" min={0} inputMode="numeric" className="input" placeholder={placeholder} />
+        <input
+          {...aria}
+          name="durationMin"
+          type="number"
+          min={0}
+          inputMode="numeric"
+          className="input"
+          placeholder={placeholder}
+        />
       )}
     </FormField>
   );
@@ -60,7 +76,13 @@ function DurationField({ placeholder }: { placeholder: string }) {
  * One card for logging any activity: a type switcher plus the matching fields.
  * Each type posts the same field names to the same server action as before.
  */
-export default function LogActivityCard({ todayValue, userId }: { todayValue: string; userId: string }) {
+export default function LogActivityCard({
+  todayValue,
+  userId,
+}: {
+  todayValue: string;
+  userId: string;
+}) {
   // Per user, so a shared browser does not carry one person's choice to the next.
   const storageKey = `${STORAGE_KEY}:${userId}`;
   const [type, setType] = useState<ActivityType>("gym");
@@ -91,51 +113,92 @@ export default function LogActivityCard({ todayValue, userId }: { todayValue: st
         <h2 id="log-activity-title" className="section-title">
           Log activity
         </h2>
-        <SegmentedControl options={OPTIONS} value={type} onChange={choose} aria-label="Activity type" />
+        <SegmentedControl
+          options={OPTIONS}
+          value={type}
+          onChange={choose}
+          aria-label="Activity type"
+        />
       </div>
 
       {type === "gym" && (
         <ActionForm key="gym" action={createGymWorkout} className={grid}>
           <FormField label="Session name" className="sm:col-span-2" required>
             {(_id, aria) => (
-              <input {...aria} name="name" className="input" placeholder="e.g. Push day" required />
+              <input
+                {...aria}
+                name="name"
+                className="input"
+                placeholder="e.g. Push day"
+                required
+              />
             )}
           </FormField>
           <DateField defaultValue={todayValue} />
           <NotesField />
           <p className="hint sm:col-span-2">
-            Creates the session and opens it so you can add exercises and sets. To reuse a saved routine, use
-            “Start workout” on a program above.
+            Creates the session and opens it so you can add exercises and sets.
+            To reuse a saved routine, use “Start workout” on a program above.
           </p>
           <div className="sm:col-span-2">
-            <SubmitButton className="btn-primary touch-target">Create &amp; add exercises</SubmitButton>
+            <SubmitButton className="btn-primary touch-target">
+              Create &amp; add exercises
+            </SubmitButton>
           </div>
         </ActionForm>
       )}
 
       {type === "run" && (
-        <ActionForm key="run" action={createCardioWorkout} successMessage="Run logged" resetOnSuccess className={grid}>
+        <ActionForm
+          key="run"
+          action={createCardioWorkout}
+          successMessage="Run logged"
+          resetOnSuccess
+          className={grid}
+        >
           <input type="hidden" name="activityType" value="run" />
           <FormField label="Distance (km)">
             {(_id, aria) => (
-              <input {...aria} name="distanceKm" type="number" step="any" min={0} inputMode="decimal" className="input" placeholder="5" />
+              <input
+                {...aria}
+                name="distanceKm"
+                type="number"
+                step="any"
+                min={0}
+                inputMode="decimal"
+                className="input"
+                placeholder="5"
+              />
             )}
           </FormField>
           <DurationField placeholder="28" />
           <DateField defaultValue={todayValue} />
           <NotesField />
           <div className="sm:col-span-2">
-            <SubmitButton className="btn-primary touch-target">Log run</SubmitButton>
+            <SubmitButton className="btn-primary touch-target">
+              Log run
+            </SubmitButton>
           </div>
         </ActionForm>
       )}
 
       {type === "walk" && (
-        <ActionForm key="walk" action={createCardioWorkout} successMessage="Walk logged" resetOnSuccess className={grid}>
+        <ActionForm
+          key="walk"
+          action={createCardioWorkout}
+          successMessage="Walk logged"
+          resetOnSuccess
+          className={grid}
+        >
           <input type="hidden" name="activityType" value="walk" />
           <FormField label="Type">
             {(_id, aria) => (
-              <select {...aria} name="walkKind" className="input" defaultValue="outdoor">
+              <select
+                {...aria}
+                name="walkKind"
+                className="input"
+                defaultValue="outdoor"
+              >
                 <option value="outdoor">Outdoor</option>
                 <option value="indoor">Indoor</option>
               </select>
@@ -145,51 +208,93 @@ export default function LogActivityCard({ todayValue, userId }: { todayValue: st
           <FormField
             label={
               <>
-                Distance (km) <span className="font-normal text-muted">(optional)</span>
+                Distance (km){" "}
+                <span className="font-normal text-muted">(optional)</span>
               </>
             }
           >
             {(_id, aria) => (
-              <input {...aria} name="distanceKm" type="number" step="any" min={0} inputMode="decimal" className="input" placeholder="3" />
+              <input
+                {...aria}
+                name="distanceKm"
+                type="number"
+                step="any"
+                min={0}
+                inputMode="decimal"
+                className="input"
+                placeholder="3"
+              />
             )}
           </FormField>
           <DateField defaultValue={todayValue} />
           <NotesField className="sm:col-span-2" />
           <div className="sm:col-span-2">
-            <SubmitButton className="btn-primary touch-target">Log walk</SubmitButton>
+            <SubmitButton className="btn-primary touch-target">
+              Log walk
+            </SubmitButton>
           </div>
         </ActionForm>
       )}
 
       {type === "swim" && (
-        <ActionForm key="swim" action={createCardioWorkout} successMessage="Swim logged" resetOnSuccess className={grid}>
+        <ActionForm
+          key="swim"
+          action={createCardioWorkout}
+          successMessage="Swim logged"
+          resetOnSuccess
+          className={grid}
+        >
           <input type="hidden" name="activityType" value="swim" />
           <FormField label="Distance (m)">
             {(_id, aria) => (
-              <input {...aria} name="distanceM" type="number" min={0} inputMode="numeric" className="input" placeholder="1500" />
+              <input
+                {...aria}
+                name="distanceM"
+                type="number"
+                min={0}
+                inputMode="numeric"
+                className="input"
+                placeholder="1500"
+              />
             )}
           </FormField>
           <DurationField placeholder="35" />
           <DateField defaultValue={todayValue} />
           <NotesField />
           <div className="sm:col-span-2">
-            <SubmitButton className="btn-primary touch-target">Log swim</SubmitButton>
+            <SubmitButton className="btn-primary touch-target">
+              Log swim
+            </SubmitButton>
           </div>
         </ActionForm>
       )}
 
       {type === "other" && (
-        <ActionForm key="other" action={createCardioWorkout} successMessage="Activity logged" resetOnSuccess className={grid}>
+        <ActionForm
+          key="other"
+          action={createCardioWorkout}
+          successMessage="Activity logged"
+          resetOnSuccess
+          className={grid}
+        >
           <input type="hidden" name="activityType" value="other" />
           <FormField label="Activity" className="sm:col-span-2" required>
             {(_id, aria) => (
-              <input {...aria} name="description" className="input" placeholder="e.g. Yoga" required />
+              <input
+                {...aria}
+                name="description"
+                className="input"
+                placeholder="e.g. Yoga"
+                required
+              />
             )}
           </FormField>
           <DurationField placeholder="45" />
           <DateField defaultValue={todayValue} />
           <div className="sm:col-span-2">
-            <SubmitButton className="btn-primary touch-target">Log activity</SubmitButton>
+            <SubmitButton className="btn-primary touch-target">
+              Log activity
+            </SubmitButton>
           </div>
         </ActionForm>
       )}

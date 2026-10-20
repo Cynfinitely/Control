@@ -7,7 +7,13 @@ import FormField from "@/components/FormField";
 import { useModules } from "@/components/ModulesProvider";
 import { createGoal } from "./actions";
 
-export default function AddGoalForm({ period, periodKey }: { period: string; periodKey: string }) {
+export default function AddGoalForm({
+  period,
+  periodKey,
+}: {
+  period: string;
+  periodKey: string;
+}) {
   const modules = useModules();
   const [type, setType] = useState<"boolean" | "numeric">("boolean");
   const isCounter = type === "numeric";
@@ -24,7 +30,13 @@ export default function AddGoalForm({ period, periodKey }: { period: string; per
       <input type="hidden" name="periodKey" value={periodKey} />
       <FormField label="Title" className="sm:col-span-2" required>
         {(_id, aria) => (
-          <input {...aria} name="title" className="input" placeholder="e.g. Gym 12 times" required />
+          <input
+            {...aria}
+            name="title"
+            className="input"
+            placeholder="e.g. Gym 12 times"
+            required
+          />
         )}
       </FormField>
       <FormField label="Type">
@@ -34,7 +46,9 @@ export default function AddGoalForm({ period, periodKey }: { period: string; per
             name="type"
             className="input"
             value={type}
-            onChange={(e) => setType(e.target.value === "numeric" ? "numeric" : "boolean")}
+            onChange={e =>
+              setType(e.target.value === "numeric" ? "numeric" : "boolean")
+            }
           >
             <option value="boolean">Checkbox (done / not done)</option>
             <option value="numeric">Counter (+1 each time)</option>
@@ -43,7 +57,10 @@ export default function AddGoalForm({ period, periodKey }: { period: string; per
       </FormField>
       {isCounter && (
         <>
-          <FormField label="Target" hint="How many times this period (defaults to 1)">
+          <FormField
+            label="Target"
+            hint="How many times this period (defaults to 1)"
+          >
             {(_id, aria) => (
               <input
                 {...aria}
@@ -61,11 +78,22 @@ export default function AddGoalForm({ period, periodKey }: { period: string; per
             hint="Linked goals count up automatically when you log the activity."
           >
             {(_id, aria) => (
-              <select {...aria} name="linkType" className="input" defaultValue="">
+              <select
+                {...aria}
+                name="linkType"
+                className="input"
+                defaultValue=""
+              >
                 <option value="">Manual only</option>
-                {modules.has("exercise") && <option value="workout">Workouts logged</option>}
-                {modules.has("career") && <option value="learning">Learning hours logged</option>}
-                {modules.has("religious") && <option value="quran">Quran pages read</option>}
+                {modules.has("exercise") && (
+                  <option value="workout">Workouts logged</option>
+                )}
+                {modules.has("career") && (
+                  <option value="learning">Learning hours logged</option>
+                )}
+                {modules.has("religious") && (
+                  <option value="quran">Quran pages read</option>
+                )}
               </select>
             )}
           </FormField>

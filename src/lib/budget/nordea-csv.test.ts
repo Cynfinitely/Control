@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { importFingerprint, normalizeMerchantKey, merchantKeyFromParts } from "./merchant";
+import {
+  importFingerprint,
+  normalizeMerchantKey,
+  merchantKeyFromParts,
+} from "./merchant";
 import {
   parseNordeaAmount,
   parseNordeaCsv,
@@ -52,13 +56,17 @@ describe("nordea csv parser", () => {
       "15.07.2026;-3,50;Cafe Regatta",
       "15.07.2026;-3,50;Cafe Regatta",
     ].join("\n");
-    const first = parseNordeaCsv(content).transactions.map((t) => t.fingerprint);
+    const first = parseNordeaCsv(content).transactions.map(t => t.fingerprint);
     expect(first).toHaveLength(3);
     expect(new Set(first).size).toBe(3);
     // First occurrence keeps the legacy fingerprint so earlier imports still dedupe.
-    expect(first[0]).toBe(importFingerprint(new Date(2026, 6, 15), -350, "Cafe Regatta"));
+    expect(first[0]).toBe(
+      importFingerprint(new Date(2026, 6, 15), -350, "Cafe Regatta")
+    );
     // Re-importing the same file yields the same fingerprints.
-    expect(parseNordeaCsv(content).transactions.map((t) => t.fingerprint)).toEqual(first);
+    expect(
+      parseNordeaCsv(content).transactions.map(t => t.fingerprint)
+    ).toEqual(first);
   });
 
   it("parses Finnish TSV fixture", () => {
@@ -73,15 +81,24 @@ describe("nordea csv parser", () => {
   });
 
   it("prefers Name over Message for Current Account semicolon CSV", () => {
-    const content = readFileSync(join(fixtures, "nordea-fi-current-account.csv"), "utf8");
+    const content = readFileSync(
+      join(fixtures, "nordea-fi-current-account.csv"),
+      "utf8"
+    );
     const result = parseNordeaCsv(content);
     expect(result.transactions).toHaveLength(3);
-    expect(result.transactions[0].rawDescription).toBe("VFI*LIDA OY SUN MARKET LA");
-    expect(result.transactions[0].merchantKey).toBe("VFI*LIDA OY SUN MARKET LA");
+    expect(result.transactions[0].rawDescription).toBe(
+      "VFI*LIDA OY SUN MARKET LA"
+    );
+    expect(result.transactions[0].merchantKey).toBe(
+      "VFI*LIDA OY SUN MARKET LA"
+    );
     expect(result.transactions[0].rawDescription).not.toContain("ESPOO");
     expect(result.transactions[1].rawDescription).toBe("HM FI0023");
     expect(result.transactions[2].type).toBe("income");
-    expect(result.transactions[2].rawDescription).toBe("NARI CELAL tai KUMCU NARI NIHA");
+    expect(result.transactions[2].rawDescription).toBe(
+      "NARI CELAL tai KUMCU NARI NIHA"
+    );
   });
 
   it("skips preamble and parses English CSV", () => {
@@ -141,12 +158,16 @@ describe("budget analysis helpers", () => {
       new Date("2026-07-01"),
       new Date("2026-07-31")
     );
-    expect(rows.find((r) => r.name === "Uncategorized")?.totalCents).toBe(2000);
-    expect(rows.find((r) => r.name === "Food")?.totalCents).toBe(3000);
+    expect(rows.find(r => r.name === "Uncategorized")?.totalCents).toBe(2000);
+    expect(rows.find(r => r.name === "Food")?.totalCents).toBe(3000);
   });
 
   it("ranks top merchants", () => {
-    const top = topMerchantsBySpend(txs, new Date("2026-07-01"), new Date("2026-07-31"));
+    const top = topMerchantsBySpend(
+      txs,
+      new Date("2026-07-01"),
+      new Date("2026-07-31")
+    );
     expect(top[0].merchantKey).toBe("K-MARKET");
     expect(top[0].totalCents).toBe(3000);
   });

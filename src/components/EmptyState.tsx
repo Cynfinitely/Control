@@ -37,7 +37,9 @@ export default function EmptyState({
     <div
       className={clsx(
         "flex flex-col items-center text-center",
-        inline ? "rounded-lg border border-dashed border-slate-200 px-4 py-6 dark:border-slate-700" : "card py-10",
+        inline
+          ? "rounded-lg border border-dashed border-slate-200 px-4 py-6 dark:border-slate-700"
+          : "card py-10",
         className
       )}
     >
@@ -58,10 +60,17 @@ export default function EmptyState({
         {title}
       </Heading>
       {description && (
-        <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">{description}</p>
+        <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+          {description}
+        </p>
       )}
       {actionLabel && actionHref && (
-        <Link href={actionHref} className={clsx(inline ? "btn-ghost btn-sm mt-3" : "btn-primary touch-target mt-4")}>
+        <Link
+          href={actionHref}
+          className={clsx(
+            inline ? "btn-ghost btn-sm mt-3" : "btn-primary touch-target mt-4"
+          )}
+        >
           {actionLabel}
         </Link>
       )}
@@ -69,13 +78,19 @@ export default function EmptyState({
         <button
           type="button"
           onClick={onAction}
-          className={clsx(inline ? "btn-ghost btn-sm mt-3" : "btn-primary touch-target mt-4")}
+          className={clsx(
+            inline ? "btn-ghost btn-sm mt-3" : "btn-primary touch-target mt-4"
+          )}
         >
           {actionLabel}
         </button>
       )}
       {children && <div className="mt-4">{children}</div>}
-      {tip && <p className="mt-4 max-w-sm text-xs text-slate-500 dark:text-slate-400">{tip}</p>}
+      {tip && (
+        <p className="mt-4 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+          {tip}
+        </p>
+      )}
     </div>
   );
 }

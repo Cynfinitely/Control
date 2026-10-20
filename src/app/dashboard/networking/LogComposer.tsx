@@ -4,7 +4,11 @@ import { useEffect, useId, useMemo, useState, useTransition } from "react";
 import { useFormState } from "react-dom";
 import clsx from "clsx";
 import { addDays, toDateInputValue } from "@/lib/date";
-import { RELATIONSHIPS, RELATIONSHIP_LABELS, relationshipLabel } from "@/lib/contacts";
+import {
+  RELATIONSHIPS,
+  RELATIONSHIP_LABELS,
+  relationshipLabel,
+} from "@/lib/contacts";
 import {
   INTERACTION_TYPES,
   INTERACTION_TYPE_LABELS,
@@ -27,9 +31,17 @@ type Props = {
   initialContactId?: string;
 };
 
-type Option = { kind: "contact"; contact: ComposerContact } | { kind: "create"; name: string };
+type Option =
+  | { kind: "contact"; contact: ComposerContact }
+  | { kind: "create"; name: string };
 
-export default function LogComposer({ contacts, suggestedTopics, action, lockedContact, initialContactId }: Props) {
+export default function LogComposer({
+  contacts,
+  suggestedTopics,
+  action,
+  lockedContact,
+  initialContactId,
+}: Props) {
   const { success, error } = useToast();
   const [state, formAction] = useFormState(action, null);
   const [, startTransition] = useTransition();
@@ -38,7 +50,8 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
   const personHintId = `${uid}-person-hint`;
   const optionId = (i: number) => `${uid}-opt-${i}`;
 
-  const initialContact = lockedContact ?? contacts.find((c) => c.id === initialContactId);
+  const initialContact =
+    lockedContact ?? contacts.find(c => c.id === initialContactId);
   const [query, setQuery] = useState(initialContact?.name ?? "");
   const [selectedId, setSelectedId] = useState(initialContact?.id ?? "");
   const [open, setOpen] = useState(false);
@@ -54,7 +67,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
   // `?person=` may change while the composer stays mounted (toast action).
   useEffect(() => {
     if (lockedContact || !initialContactId) return;
-    const c = contacts.find((x) => x.id === initialContactId);
+    const c = contacts.find(x => x.id === initialContactId);
     if (c) {
       setSelectedId(c.id);
       setQuery(c.name);
@@ -90,16 +103,21 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return contacts.slice(0, 8);
-    return contacts.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8);
+    return contacts.filter(c => c.name.toLowerCase().includes(q)).slice(0, 8);
   }, [contacts, query]);
 
-  const exactMatch = contacts.find((c) => c.name.toLowerCase() === query.trim().toLowerCase());
-  const createName = !lockedContact && query.trim() && !selectedId && !exactMatch ? query.trim() : "";
+  const exactMatch = contacts.find(
+    c => c.name.toLowerCase() === query.trim().toLowerCase()
+  );
+  const createName =
+    !lockedContact && query.trim() && !selectedId && !exactMatch
+      ? query.trim()
+      : "";
   const resolvedId = selectedId || exactMatch?.id || "";
   const hasPerson = Boolean(lockedContact || resolvedId || createName);
 
   const options: Option[] = [
-    ...matches.map((contact) => ({ kind: "contact" as const, contact })),
+    ...matches.map(contact => ({ kind: "contact" as const, contact })),
     ...(createName ? [{ kind: "create" as const, name: createName }] : []),
   ];
 
@@ -125,11 +143,15 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
     if (e.key === "ArrowDown") {
       e.preventDefault();
       if (!open) setOpen(true);
-      setActiveIndex((i) => (options.length === 0 ? -1 : (i + 1) % options.length));
+      setActiveIndex(i =>
+        options.length === 0 ? -1 : (i + 1) % options.length
+      );
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (!open) setOpen(true);
-      setActiveIndex((i) => (options.length === 0 ? -1 : i <= 0 ? options.length - 1 : i - 1));
+      setActiveIndex(i =>
+        options.length === 0 ? -1 : i <= 0 ? options.length - 1 : i - 1
+      );
     } else if (e.key === "Enter") {
       if (open && activeIndex >= 0 && options[activeIndex]) {
         e.preventDefault();
@@ -147,11 +169,11 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
   function addTopic(raw: string) {
     const topic = raw.trim();
     if (!topic) return;
-    if (topics.some((t) => t.toLowerCase() === topic.toLowerCase())) {
+    if (topics.some(t => t.toLowerCase() === topic.toLowerCase())) {
       setTopicDraft("");
       return;
     }
-    setTopics((prev) => [...prev, topic]);
+    setTopics(prev => [...prev, topic]);
     setTopicDraft("");
   }
 
@@ -160,28 +182,36 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
       e.preventDefault();
       addTopic(topicDraft.replace(/,/g, ""));
     } else if (e.key === "Backspace" && !topicDraft && topics.length > 0) {
-      setTopics((prev) => prev.slice(0, -1));
+      setTopics(prev => prev.slice(0, -1));
     }
   }
 
   const unusedSuggestions = suggestedTopics.filter(
-    (t) => !topics.some((x) => x.toLowerCase() === t.toLowerCase())
+    t => !topics.some(x => x.toLowerCase() === t.toLowerCase())
   );
 
   const showList = open && !lockedContact;
 
   return (
     <form
-      action={(fd) => startTransition(() => formAction(fd))}
+      action={fd => startTransition(() => formAction(fd))}
       className="card mb-6 space-y-5"
       onSubmit={() => setOpen(false)}
-      aria-label={lockedContact ? `Log an interaction with ${lockedContact.name}` : "Log an interaction"}
+      aria-label={
+        lockedContact
+          ? `Log an interaction with ${lockedContact.name}`
+          : "Log an interaction"
+      }
     >
       <input type="hidden" name="contactId" value={resolvedId} />
       <input type="hidden" name="name" value={createName} />
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="date" value={dateValue} />
-      <input type="hidden" name="topics" value={serializeTopics(topics) ?? ""} />
+      <input
+        type="hidden"
+        name="topics"
+        value={serializeTopics(topics) ?? ""}
+      />
 
       {!lockedContact && (
         <div className="relative">
@@ -194,13 +224,15 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
             aria-expanded={showList}
             aria-controls={listboxId}
             aria-autocomplete="list"
-            aria-activedescendant={showList && activeIndex >= 0 ? optionId(activeIndex) : undefined}
+            aria-activedescendant={
+              showList && activeIndex >= 0 ? optionId(activeIndex) : undefined
+            }
             aria-describedby={personHintId}
             className="input"
             placeholder="Who did you talk to?"
             autoComplete="off"
             value={query}
-            onChange={(e) => {
+            onChange={e => {
               setQuery(e.target.value);
               setSelectedId("");
               setOpen(true);
@@ -231,9 +263,11 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
                     aria-selected={active}
                     className={clsx(
                       "cursor-pointer border-t border-slate-100 px-3 py-2.5 text-sm font-medium text-brand-700 dark:border-slate-700 dark:text-brand-400",
-                      active ? "bg-brand-50 dark:bg-slate-700" : "hover:bg-brand-50 dark:hover:bg-slate-700"
+                      active
+                        ? "bg-brand-50 dark:bg-slate-700"
+                        : "hover:bg-brand-50 dark:hover:bg-slate-700"
                     )}
-                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseDown={e => e.preventDefault()}
                     onClick={() => chooseOption(opt)}
                   >
                     + New person “{opt.name}”
@@ -249,12 +283,16 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
                   aria-selected={active}
                   className={clsx(
                     "flex cursor-pointer items-center justify-between gap-2 px-3 py-2.5 text-sm",
-                    active ? "bg-slate-100 dark:bg-slate-700" : "hover:bg-slate-50 dark:hover:bg-slate-700"
+                    active
+                      ? "bg-slate-100 dark:bg-slate-700"
+                      : "hover:bg-slate-50 dark:hover:bg-slate-700"
                   )}
-                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseDown={e => e.preventDefault()}
                   onClick={() => chooseOption(opt)}
                 >
-                  <span className="font-medium text-slate-800 dark:text-slate-100">{opt.contact.name}</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-100">
+                    {opt.contact.name}
+                  </span>
                   {rel && <span className="text-xs text-muted">{rel}</span>}
                 </li>
               );
@@ -266,7 +304,9 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
             )}
           </ul>
           <p id={personHintId} className="hint" aria-live="polite">
-            {createName ? `“${createName}” will be added as a new person when you log.` : null}
+            {createName
+              ? `“${createName}” will be added as a new person when you log.`
+              : null}
           </p>
           {createName && (
             <div className="mt-3 max-w-xs">
@@ -278,9 +318,9 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
                 name="relationship"
                 className="input"
                 value={newRelationship}
-                onChange={(e) => setNewRelationship(e.target.value)}
+                onChange={e => setNewRelationship(e.target.value)}
               >
-                {RELATIONSHIPS.map((r) => (
+                {RELATIONSHIPS.map(r => (
                   <option key={r} value={r}>
                     {RELATIONSHIP_LABELS[r]}
                   </option>
@@ -294,7 +334,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
       <fieldset>
         <legend className="label">Type</legend>
         <div className="flex flex-wrap gap-2">
-          {INTERACTION_TYPES.map((t) => (
+          {INTERACTION_TYPES.map(t => (
             <button
               key={t}
               type="button"
@@ -311,13 +351,16 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
       <fieldset>
         <legend className="label">When</legend>
         <div className="flex flex-wrap items-center gap-2">
-          {(["today", "yesterday"] as const).map((chip) => (
+          {(["today", "yesterday"] as const).map(chip => (
             <button
               key={chip}
               type="button"
               aria-pressed={dateChip === chip}
               onClick={() => setDateChip(chip)}
-              className={clsx("chip capitalize", dateChip === chip ? "chip-active" : "chip-idle")}
+              className={clsx(
+                "chip capitalize",
+                dateChip === chip ? "chip-active" : "chip-idle"
+              )}
             >
               {chip}
             </button>
@@ -330,7 +373,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
             type="date"
             className="input w-full sm:w-auto"
             value={dateChip === "custom" ? customDate : dateValue}
-            onChange={(e) => {
+            onChange={e => {
               setDateChip("custom");
               setCustomDate(e.target.value);
             }}
@@ -343,7 +386,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
           Topics <span className="font-normal text-muted">(optional)</span>
         </label>
         <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2 py-1 shadow-sm focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 dark:border-slate-600 dark:bg-slate-800 dark:focus-within:ring-brand-700/30">
-          {topics.map((topic) => (
+          {topics.map(topic => (
             <span key={topic} className="badge-brand py-0 pr-0">
               {topic}
               <IconButton
@@ -351,16 +394,18 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
                 aria-label={`Remove topic ${topic}`}
                 className="h-7 w-7 text-brand-700 dark:text-brand-300"
                 iconClassName="h-3.5 w-3.5"
-                onClick={() => setTopics((prev) => prev.filter((t) => t !== topic))}
+                onClick={() => setTopics(prev => prev.filter(t => t !== topic))}
               />
             </span>
           ))}
           <input
             id={`${uid}-topic`}
             className="min-w-[8rem] flex-1 border-0 bg-transparent px-1 py-1.5 text-sm text-slate-800 outline-none focus-visible:outline-none dark:text-slate-100"
-            placeholder={topics.length === 0 ? "health, kids, work…" : "Add topic"}
+            placeholder={
+              topics.length === 0 ? "health, kids, work…" : "Add topic"
+            }
             value={topicDraft}
-            onChange={(e) => setTopicDraft(e.target.value)}
+            onChange={e => setTopicDraft(e.target.value)}
             onKeyDown={onTopicKeyDown}
             onBlur={() => addTopic(topicDraft)}
             aria-describedby={`${uid}-topic-hint`}
@@ -370,8 +415,12 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
           Press Enter or comma to add a topic.
         </p>
         {unusedSuggestions.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Suggested topics">
-            {unusedSuggestions.slice(0, 8).map((topic) => (
+          <div
+            className="mt-2 flex flex-wrap gap-1.5"
+            role="group"
+            aria-label="Suggested topics"
+          >
+            {unusedSuggestions.slice(0, 8).map(topic => (
               <button
                 key={topic}
                 type="button"
@@ -397,7 +446,7 @@ export default function LogComposer({ contacts, suggestedTopics, action, lockedC
           rows={2}
           placeholder="What did you talk about?"
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={e => setNote(e.target.value)}
         />
       </div>
 

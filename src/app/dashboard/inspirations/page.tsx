@@ -15,7 +15,8 @@ export default async function InspirationsPage() {
 
   return (
     <div>
-      <PageHeader help="inspirations"
+      <PageHeader
+        help="inspirations"
         title="Inspirations"
         description="Quotes, wise words, and personal notes to revisit when you need motivation."
       />
@@ -65,11 +66,19 @@ export default async function InspirationsPage() {
       ) : (
         <section aria-labelledby="inspirations-list-title">
           <h2 id="inspirations-list-title" className="section-title mb-3">
-            Your library <span className="text-base font-normal text-muted">({inspirations.length})</span>
+            Your library{" "}
+            <span className="text-base font-normal text-muted">
+              ({inspirations.length})
+            </span>
           </h2>
           <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
-            {inspirations.map((item) => (
-              <InspirationRow key={item.id} id={item.id} text={item.text} author={item.author} />
+            {inspirations.map(item => (
+              <InspirationRow
+                key={item.id}
+                id={item.id}
+                text={item.text}
+                author={item.author}
+              />
             ))}
           </ul>
         </section>

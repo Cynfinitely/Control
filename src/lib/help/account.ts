@@ -7,9 +7,9 @@ export const accountHelp = {
       "Settings is where you manage your own account: your name and timezone, which modules you use, your weather location, your password and how the app looks.",
     steps: [
       "Check that your name and timezone are right, and save your profile.",
-      "Under \"Modules\", switch off the parts of Control you do not use, then select \"Save modules\".",
+      'Under "Modules", switch off the parts of Control you do not use, then select "Save modules".',
       "Set a weather location if you use the Weather module.",
-      "Choose a light, dark or system theme under \"Appearance\".",
+      'Choose a light, dark or system theme under "Appearance".',
     ],
     capabilities: [
       "Profile: change your display name and timezone. Your email address is shown but cannot be changed here.",
@@ -20,7 +20,7 @@ export const accountHelp = {
     ],
     tips: [
       "Switching a module off never deletes its data. Switch it back on and everything is where you left it.",
-      "Your timezone decides what counts as \"today\" on Home, in the calendar and in reminders.",
+      'Your timezone decides what counts as "today" on Home, in the calendar and in reminders.',
       "The theme is remembered per browser, so each device can have its own.",
       "The weather location section is only shown while the Weather module is on.",
     ],
@@ -31,9 +31,9 @@ export const accountHelp = {
     purpose:
       "Admin is only visible to the administrator. It is where you invite new people to Control and see who has an account.",
     steps: [
-      "Open \"Invite a person\".",
+      'Open "Invite a person".',
       "Optionally enter the email address the invite is for, and adjust how many people may use it and how long it is valid.",
-      "Select \"Create invite\".",
+      'Select "Create invite".',
       "Use the copy button next to the new invite to copy its link.",
       "Send the link to the person yourself, for example by message or email.",
     ],

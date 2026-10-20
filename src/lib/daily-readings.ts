@@ -14,7 +14,10 @@ export const SUGGESTED_DAILY_READINGS: SuggestedDailyReading[] = [
   { name: "Gülen", unit: "pages", dailyTarget: 5, linkKind: null },
 ];
 
-export function readingProgress(logged: number, target: number): { pct: number; done: boolean } {
+export function readingProgress(
+  logged: number,
+  target: number
+): { pct: number; done: boolean } {
   if (target <= 0) return { pct: 0, done: false };
   const pct = Math.min(100, Math.round((logged / target) * 100));
   return { pct, done: logged >= target };

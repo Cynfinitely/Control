@@ -21,9 +21,12 @@ const NXN_RE =
   /^\s*(?:\d+[.)]\s+|\d+\s*[-–—]\s+)?(.+?)\s+(\d+)\s*[x×]\s*(\d+)\s*$/i;
 const NUMBERED_NAME_RE = /^\s*\d+[.)]\s+(.+?)\s*$/;
 
-function parseExerciseLine(
-  raw: string
-): { name: string; plannedSets: number; plannedReps: number | null; missingSets: boolean } | null {
+function parseExerciseLine(raw: string): {
+  name: string;
+  plannedSets: number;
+  plannedReps: number | null;
+  missingSets: boolean;
+} | null {
   const setsMatch = raw.match(SETS_RE);
   if (setsMatch) {
     const name = setsMatch[1].trim();
@@ -78,7 +81,9 @@ export function parseProgramText(text: string): ParseProgramTextResult {
     const parsed = parseExerciseLine(raw);
     if (parsed) {
       if (parsed.missingSets) {
-        warnings.push(`Line ${lineNumber}: no set count found, defaulting to ${DEFAULT_PLANNED_SETS} sets`);
+        warnings.push(
+          `Line ${lineNumber}: no set count found, defaulting to ${DEFAULT_PLANNED_SETS} sets`
+        );
       }
       exercises.push({
         lineNumber,
@@ -104,7 +109,9 @@ export function parseProgramText(text: string): ParseProgramTextResult {
       name: resolvedName,
       exercises,
       warnings,
-      error: text.trim() ? "No exercises found in pasted text." : "Paste a program to import.",
+      error: text.trim()
+        ? "No exercises found in pasted text."
+        : "Paste a program to import.",
     };
   }
 

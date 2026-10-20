@@ -7,7 +7,15 @@ import SubmitButton from "@/components/SubmitButton";
 import { deleteWorkout } from "../actions";
 
 /** Delete the whole workout from its detail page, then go back to the list. */
-export default function DeleteWorkoutButton({ id, name, isGym }: { id: string; name: string; isGym: boolean }) {
+export default function DeleteWorkoutButton({
+  id,
+  name,
+  isGym,
+}: {
+  id: string;
+  name: string;
+  isGym: boolean;
+}) {
   const router = useRouter();
   return (
     <ActionForm

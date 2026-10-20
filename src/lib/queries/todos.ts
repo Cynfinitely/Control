@@ -13,10 +13,16 @@ export type TodoItem = {
 
 /** cachedQuery JSON-serializes results, so revive dates after the await. */
 function reviveTodos(rows: TodoItem[]): TodoItem[] {
-  return rows.map((t) => ({ ...t, dueDate: t.dueDate ? coerceDate(t.dueDate) : null }));
+  return rows.map(t => ({
+    ...t,
+    dueDate: t.dueDate ? coerceDate(t.dueDate) : null,
+  }));
 }
 
-export async function getDayTodos(userId: string, dayKey: string): Promise<TodoItem[]> {
+export async function getDayTodos(
+  userId: string,
+  dayKey: string
+): Promise<TodoItem[]> {
   const day = new Date(dayKey + "T00:00:00");
   const rows = await cachedQuery(
     ["todos-day", userId, dayKey],
@@ -29,7 +35,11 @@ export async function getDayTodos(userId: string, dayKey: string): Promise<TodoI
           inBacklog: false,
           dayDate: { gte: startOfDay(day), lte: endOfDay(day) },
         },
-        orderBy: [{ status: "asc" }, { priority: "desc" }, { createdAt: "asc" }],
+        orderBy: [
+          { status: "asc" },
+          { priority: "desc" },
+          { createdAt: "asc" },
+        ],
         select: {
           id: true,
           title: true,

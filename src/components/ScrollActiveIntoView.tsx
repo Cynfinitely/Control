@@ -20,7 +20,10 @@ export default function ScrollActiveIntoView({
     const left = active.offsetLeft - row.offsetLeft;
     const right = left + active.offsetWidth;
     if (left < row.scrollLeft || right > row.scrollLeft + row.clientWidth) {
-      row.scrollLeft = Math.max(0, left - (row.clientWidth - active.offsetWidth) / 2);
+      row.scrollLeft = Math.max(
+        0,
+        left - (row.clientWidth - active.offsetWidth) / 2
+      );
     }
   });
 

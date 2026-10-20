@@ -13,13 +13,30 @@ export default function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
           const isLast = i === items.length - 1;
           return (
             <li key={i} className="flex items-center gap-1">
-              {i > 0 && <span aria-hidden="true" className="text-slate-400 dark:text-slate-600">/</span>}
+              {i > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="text-slate-400 dark:text-slate-600"
+                >
+                  /
+                </span>
+              )}
               {item.href && !isLast ? (
-                <Link href={item.href} className="rounded-sm hover:text-brand-700 hover:underline dark:hover:text-brand-300">
+                <Link
+                  href={item.href}
+                  className="rounded-sm hover:text-brand-700 hover:underline dark:hover:text-brand-300"
+                >
                   {item.label}
                 </Link>
               ) : (
-                <span aria-current={isLast ? "page" : undefined} className={isLast ? "font-medium text-slate-800 dark:text-slate-100" : undefined}>
+                <span
+                  aria-current={isLast ? "page" : undefined}
+                  className={
+                    isLast
+                      ? "font-medium text-slate-800 dark:text-slate-100"
+                      : undefined
+                  }
+                >
                   {item.label}
                 </span>
               )}

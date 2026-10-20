@@ -25,17 +25,25 @@ export default function InspirationRow({ id, text, author }: Props) {
     <li className="px-5 py-4">
       <div className="flex items-start gap-3">
         <figure className="min-w-0 flex-1">
-          <blockquote className="break-words text-slate-800 dark:text-slate-100">&ldquo;{text}&rdquo;</blockquote>
-          {author && <figcaption className="mt-1.5 text-sm text-muted">— {author}</figcaption>}
+          <blockquote className="break-words text-slate-800 dark:text-slate-100">
+            &ldquo;{text}&rdquo;
+          </blockquote>
+          {author && (
+            <figcaption className="mt-1.5 text-sm text-muted">
+              — {author}
+            </figcaption>
+          )}
         </figure>
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
-            onClick={() => setEditing((v) => !v)}
+            onClick={() => setEditing(v => !v)}
             className="btn-icon"
             aria-expanded={editing}
             aria-controls={`inspiration-edit-${id}`}
-            aria-label={editing ? `Close editor for “${short}”` : `Edit “${short}”`}
+            aria-label={
+              editing ? `Close editor for “${short}”` : `Edit “${short}”`
+            }
             title={editing ? "Close editor" : "Edit"}
           >
             <Icon name={editing ? "x" : "pencil"} className="h-4 w-4" />
@@ -94,7 +102,11 @@ export default function InspirationRow({ id, text, author }: Props) {
             <SubmitButton className="btn-primary" pendingLabel="Saving…">
               Save changes
             </SubmitButton>
-            <button type="button" className="btn-ghost" onClick={() => setEditing(false)}>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setEditing(false)}
+            >
               Cancel
             </button>
           </div>

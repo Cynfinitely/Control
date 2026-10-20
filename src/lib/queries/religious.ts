@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/db";
 import { cacheTag, cachedQuery } from "@/lib/cache";
-import { startOfDay, endOfDay, addDays, toDateInputValue, coerceDate } from "@/lib/date";
+import {
+  startOfDay,
+  endOfDay,
+  addDays,
+  toDateInputValue,
+  coerceDate,
+} from "@/lib/date";
 
 export async function getDayPrayers(userId: string, dayKey: string) {
   const day = new Date(dayKey + "T00:00:00");
@@ -52,7 +58,10 @@ function reviveOptionalDate(d: Date | string | null): Date | null {
   return d ? coerceDate(d) : null;
 }
 
-export async function getReligiousSidebarData(userId: string, todayKey: string) {
+export async function getReligiousSidebarData(
+  userId: string,
+  todayKey: string
+) {
   const today = new Date(todayKey + "T00:00:00");
   const now = new Date();
   // cachedQuery JSON-serializes results, so Dates come back as strings on cache
@@ -61,13 +70,25 @@ export async function getReligiousSidebarData(userId: string, todayKey: string) 
     ["religious-sidebar", userId, todayKey],
     [cacheTag("religious", userId)],
     async () => {
-      const [pendingQaza, prayerDebts, dhikr, quran, fasts, dhikrTargets, quranState, readingItems, readingEntries] =
-        await Promise.all([
+      const [
+        pendingQaza,
+        prayerDebts,
+        dhikr,
+        quran,
+        fasts,
+        dhikrTargets,
+        quranState,
+        readingItems,
+        readingEntries,
+      ] = await Promise.all([
         prisma.qazaPrayer.findMany({
           where: { userId, fulfilledAt: null },
           orderBy: [{ sourceDate: "asc" }, { prayer: "asc" }],
         }),
-        prisma.prayerDebt.findMany({ where: { userId }, orderBy: { prayer: "asc" } }),
+        prisma.prayerDebt.findMany({
+          where: { userId },
+          orderBy: { prayer: "asc" },
+        }),
         prisma.dhikrLog.findMany({
           where: { userId, date: { gte: today, lte: endOfDay(now) } },
           orderBy: { createdAt: "desc" },
@@ -82,9 +103,15 @@ export async function getReligiousSidebarData(userId: string, todayKey: string) 
           orderBy: { date: "desc" },
           take: 7,
         }),
-        prisma.dhikrTarget.findMany({ where: { userId }, orderBy: { name: "asc" } }),
+        prisma.dhikrTarget.findMany({
+          where: { userId },
+          orderBy: { name: "asc" },
+        }),
         prisma.quranState.findUnique({ where: { userId } }),
-        prisma.dailyReadingItem.findMany({ where: { userId }, orderBy: { sortOrder: "asc" } }),
+        prisma.dailyReadingItem.findMany({
+          where: { userId },
+          orderBy: { sortOrder: "asc" },
+        }),
         prisma.dailyReadingEntry.findMany({
           where: { userId, date: { gte: today, lte: endOfDay(now) } },
         }),
@@ -104,34 +131,61 @@ export async function getReligiousSidebarData(userId: string, todayKey: string) 
   );
   return {
     ...data,
-    pendingQaza: data.pendingQaza.map((q) => ({
+    pendingQaza: data.pendingQaza.map(q => ({
       ...q,
       sourceDate: reviveOptionalDate(q.sourceDate),
       fulfilledAt: reviveOptionalDate(q.fulfilledAt),
       createdAt: coerceDate(q.createdAt),
     })),
-    prayerDebts: data.prayerDebts.map((d) => ({
+    prayerDebts: data.prayerDebts.map(d => ({
       ...d,
       periodStart: reviveOptionalDate(d.periodStart),
       periodEnd: reviveOptionalDate(d.periodEnd),
       createdAt: coerceDate(d.createdAt),
       updatedAt: coerceDate(d.updatedAt),
     })),
-    dhikr: data.dhikr.map((d) => ({ ...d, date: coerceDate(d.date), createdAt: coerceDate(d.createdAt) })),
-    quran: data.quran.map((q) => ({ ...q, date: coerceDate(q.date), createdAt: coerceDate(q.createdAt) })),
-    fasts: data.fasts.map((f) => ({ ...f, date: coerceDate(f.date), createdAt: coerceDate(f.createdAt) })),
-    readingEntries: data.readingEntries.map((e) => ({ ...e, date: coerceDate(e.date), createdAt: coerceDate(e.createdAt) })),
+    dhikr: data.dhikr.map(d => ({
+      ...d,
+      date: coerceDate(d.date),
+      createdAt: coerceDate(d.createdAt),
+    })),
+    quran: data.quran.map(q => ({
+      ...q,
+      date: coerceDate(q.date),
+      createdAt: coerceDate(q.createdAt),
+    })),
+    fasts: data.fasts.map(f => ({
+      ...f,
+      date: coerceDate(f.date),
+      createdAt: coerceDate(f.createdAt),
+    })),
+    readingEntries: data.readingEntries.map(e => ({
+      ...e,
+      date: coerceDate(e.date),
+      createdAt: coerceDate(e.createdAt),
+    })),
   };
 }
 
 /** Prayers of this day that were marked missed and have since been made up. */
-export async function getDayMadeUpPrayers(userId: string, dayKey: string): Promise<string[]> {
+export async function getDayMadeUpPrayers(
+  userId: string,
+  dayKey: string
+): Promise<string[]> {
   const day = new Date(dayKey + "T00:00:00");
-  return cachedQuery(["prayers-made-up", userId, dayKey], [cacheTag("religious", userId)], async () => {
-    const rows = await prisma.qazaPrayer.findMany({
-      where: { userId, sourceDate: { gte: startOfDay(day), lte: endOfDay(day) }, fulfilledAt: { not: null } },
-      select: { prayer: true },
-    });
-    return rows.map((r) => r.prayer);
-  });
+  return cachedQuery(
+    ["prayers-made-up", userId, dayKey],
+    [cacheTag("religious", userId)],
+    async () => {
+      const rows = await prisma.qazaPrayer.findMany({
+        where: {
+          userId,
+          sourceDate: { gte: startOfDay(day), lte: endOfDay(day) },
+          fulfilledAt: { not: null },
+        },
+        select: { prayer: true },
+      });
+      return rows.map(r => r.prayer);
+    }
+  );
 }

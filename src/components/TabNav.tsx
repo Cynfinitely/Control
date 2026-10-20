@@ -23,18 +23,25 @@ type Props = {
  * Route-level section navigation (links, not ARIA tabs): the current page is
  * marked with aria-current="page". Scrolls horizontally on narrow screens.
  */
-export default function TabNav({ items, active, variant = "underline", className, ...rest }: Props) {
+export default function TabNav({
+  items,
+  active,
+  variant = "underline",
+  className,
+  ...rest
+}: Props) {
   return (
     <ScrollActiveIntoView
       aria-label={rest["aria-label"]}
       className={clsx(
         "-mx-4 flex flex-nowrap gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0",
-        variant === "underline" && "border-b border-slate-200 dark:border-slate-700",
+        variant === "underline" &&
+          "border-b border-slate-200 dark:border-slate-700",
         variant === "pills" && "pb-1",
         className ?? "mb-6"
       )}
     >
-      {items.map((item) => {
+      {items.map(item => {
         const isActive = (item.id ?? item.href) === active;
         return (
           <Link

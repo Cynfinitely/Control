@@ -14,7 +14,11 @@ import {
   PRINCIPLE_CATEGORY_ORDER,
   type PrincipleCategory,
 } from "@/lib/principles/seed";
-import { archivePrinciple, createPrincipleForm, updatePrincipleForm } from "./actions";
+import {
+  archivePrinciple,
+  createPrincipleForm,
+  updatePrincipleForm,
+} from "./actions";
 import PrinciplesReviewButton from "./PrinciplesReviewButton";
 
 type Props = {
@@ -34,9 +38,12 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
     const q = query.trim().toLowerCase();
     if (!q) return principles;
     return principles.filter(
-      (p) =>
+      p =>
         p.text.toLowerCase().includes(q) ||
-        (PRINCIPLE_CATEGORY_LABELS[p.category as PrincipleCategory] ?? p.category)
+        (
+          PRINCIPLE_CATEGORY_LABELS[p.category as PrincipleCategory] ??
+          p.category
+        )
           .toLowerCase()
           .includes(q)
     );
@@ -48,8 +55,12 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
     let lastCategory = "";
     let index = 0;
     const sorted = [...filtered].sort((a, b) => {
-      const ai = PRINCIPLE_CATEGORY_ORDER.indexOf(a.category as PrincipleCategory);
-      const bi = PRINCIPLE_CATEGORY_ORDER.indexOf(b.category as PrincipleCategory);
+      const ai = PRINCIPLE_CATEGORY_ORDER.indexOf(
+        a.category as PrincipleCategory
+      );
+      const bi = PRINCIPLE_CATEGORY_ORDER.indexOf(
+        b.category as PrincipleCategory
+      );
       const aCat = ai === -1 ? 99 : ai;
       const bCat = bi === -1 ? 99 : bi;
       if (aCat !== bCat) return aCat - bCat;
@@ -62,7 +73,8 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
           kind: "category",
           category: item.category,
           label:
-            PRINCIPLE_CATEGORY_LABELS[item.category as PrincipleCategory] ?? item.category,
+            PRINCIPLE_CATEGORY_LABELS[item.category as PrincipleCategory] ??
+            item.category,
         });
       }
       index += 1;
@@ -84,7 +96,7 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
             className="input"
             placeholder="Search principles…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -185,7 +197,7 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
                 required
                 defaultValue="environment"
               >
-                {PRINCIPLE_CATEGORY_ORDER.map((cat) => (
+                {PRINCIPLE_CATEGORY_ORDER.map(cat => (
                   <option key={cat} value={cat}>
                     {PRINCIPLE_CATEGORY_LABELS[cat]}
                   </option>
@@ -197,29 +209,51 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
 
           <section aria-labelledby="principles-manage-heading">
             <h2 id="principles-manage-heading" className="section-title mb-3">
-              Your principles <span className="text-sm font-normal text-muted">({principles.length})</span>
+              Your principles{" "}
+              <span className="text-sm font-normal text-muted">
+                ({principles.length})
+              </span>
             </h2>
             {filtered.length === 0 ? (
               <EmptyState
                 variant="inline"
                 headingLevel="h3"
                 icon={principles.length === 0 ? "flag" : "search"}
-                title={principles.length === 0 ? "No principles yet" : `No principles match “${query.trim()}”`}
-                description={principles.length === 0 ? "Add your first one above." : undefined}
-                actionLabel={principles.length === 0 ? undefined : "Clear search"}
-                onAction={principles.length === 0 ? undefined : () => setQuery("")}
+                title={
+                  principles.length === 0
+                    ? "No principles yet"
+                    : `No principles match “${query.trim()}”`
+                }
+                description={
+                  principles.length === 0
+                    ? "Add your first one above."
+                    : undefined
+                }
+                actionLabel={
+                  principles.length === 0 ? undefined : "Clear search"
+                }
+                onAction={
+                  principles.length === 0 ? undefined : () => setQuery("")
+                }
               />
             ) : (
               <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
-                {filtered.map((item) => {
+                {filtered.map(item => {
                   const categoryLabel =
-                    PRINCIPLE_CATEGORY_LABELS[item.category as PrincipleCategory] ?? item.category;
+                    PRINCIPLE_CATEGORY_LABELS[
+                      item.category as PrincipleCategory
+                    ] ?? item.category;
                   return (
                     <li key={item.id} className="px-4 py-3">
-                      <p className="text-sm text-slate-800 dark:text-slate-100">{item.text}</p>
+                      <p className="text-sm text-slate-800 dark:text-slate-100">
+                        {item.text}
+                      </p>
                       <p className="mt-1 text-xs text-muted">{categoryLabel}</p>
                       <div className="mt-1 flex flex-wrap items-start justify-between gap-2">
-                        <CollapsibleSection title="Edit" className="min-w-0 flex-1 text-sm">
+                        <CollapsibleSection
+                          title="Edit"
+                          className="min-w-0 flex-1 text-sm"
+                        >
                           <FormAction
                             action={updatePrincipleForm}
                             successMessage="Principle updated"
@@ -227,7 +261,10 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
                           >
                             <input type="hidden" name="id" value={item.id} />
                             <div>
-                              <label htmlFor={`principle-text-${item.id}`} className="label">
+                              <label
+                                htmlFor={`principle-text-${item.id}`}
+                                className="label"
+                              >
                                 Text
                               </label>
                               <textarea
@@ -240,7 +277,10 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
                               />
                             </div>
                             <div>
-                              <label htmlFor={`principle-category-${item.id}`} className="label">
+                              <label
+                                htmlFor={`principle-category-${item.id}`}
+                                className="label"
+                              >
                                 Category
                               </label>
                               <select
@@ -250,14 +290,16 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
                                 defaultValue={item.category}
                                 required
                               >
-                                {PRINCIPLE_CATEGORY_ORDER.map((cat) => (
+                                {PRINCIPLE_CATEGORY_ORDER.map(cat => (
                                   <option key={cat} value={cat}>
                                     {PRINCIPLE_CATEGORY_LABELS[cat]}
                                   </option>
                                 ))}
                               </select>
                             </div>
-                            <SubmitButton className="btn-primary">Save changes</SubmitButton>
+                            <SubmitButton className="btn-primary">
+                              Save changes
+                            </SubmitButton>
                           </FormAction>
                         </CollapsibleSection>
                         <ActionForm
@@ -265,7 +307,8 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
                           successMessage="Principle archived"
                           confirm={{
                             title: "Archive this principle?",
-                            message: "It will be hidden from your list. You can add it again later if needed.",
+                            message:
+                              "It will be hidden from your list. You can add it again later if needed.",
                             confirmLabel: "Archive",
                           }}
                         >
@@ -274,7 +317,8 @@ export default function PrinciplesView({ principles, reviewedToday }: Props) {
                             className="btn-danger btn-sm min-h-[36px]"
                             aria-label={`Archive principle: ${item.text.slice(0, 60)}`}
                           >
-                            <Icon name="trash" className="h-3.5 w-3.5" /> Archive
+                            <Icon name="trash" className="h-3.5 w-3.5" />{" "}
+                            Archive
                           </SubmitButton>
                         </ActionForm>
                       </div>

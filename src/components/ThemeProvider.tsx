@@ -21,7 +21,9 @@ export function useTheme() {
 
 function getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 function applyThemeClass(resolved: "light" | "dark") {
@@ -38,7 +40,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem("control-theme") as Theme | null;
-      if (stored === "light" || stored === "dark" || stored === "system") setThemeState(stored);
+      if (stored === "light" || stored === "dark" || stored === "system")
+        setThemeState(stored);
     } catch {
       // storage unavailable (private mode) — stay on system
     }
@@ -91,7 +94,7 @@ export function ThemeToggle() {
         id="theme-select"
         className="input w-full max-w-xs"
         value={theme}
-        onChange={(e) => setTheme(e.target.value as Theme)}
+        onChange={e => setTheme(e.target.value as Theme)}
       >
         <option value="system">System</option>
         <option value="light">Light</option>
@@ -102,13 +105,22 @@ export function ThemeToggle() {
 }
 
 const THEME_ORDER: Theme[] = ["system", "light", "dark"];
-const THEME_LABEL: Record<Theme, string> = { system: "System", light: "Light", dark: "Dark" };
-const THEME_ICON: Record<Theme, string> = { system: "settings", light: "sun", dark: "moon" };
+const THEME_LABEL: Record<Theme, string> = {
+  system: "System",
+  light: "Light",
+  dark: "Dark",
+};
+const THEME_ICON: Record<Theme, string> = {
+  system: "settings",
+  light: "sun",
+  dark: "moon",
+};
 
 /** Compact cycle button (System → Light → Dark) for the sidebar footer. */
 export function ThemeQuickToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
-  const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
+  const next =
+    THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
   return (
     <button
       type="button"

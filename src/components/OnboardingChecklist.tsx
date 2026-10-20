@@ -22,7 +22,11 @@ type Props = {
   userCreatedAt: string;
 };
 
-export default function OnboardingChecklist({ items, userId, userCreatedAt }: Props) {
+export default function OnboardingChecklist({
+  items,
+  userId,
+  userCreatedAt,
+}: Props) {
   const storageKey = `${STORAGE_KEY}:${userId}`;
   const [dismissed, setDismissed] = useState(true);
 
@@ -36,7 +40,7 @@ export default function OnboardingChecklist({ items, userId, userCreatedAt }: Pr
 
   const created = new Date(userCreatedAt);
   const daysSince = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
-  const doneCount = items.filter((i) => i.done).length;
+  const doneCount = items.filter(i => i.done).length;
   const allDone = doneCount === items.length;
 
   if (dismissed || daysSince > 7 || allDone) return null;
@@ -52,7 +56,8 @@ export default function OnboardingChecklist({ items, userId, userCreatedAt }: Pr
             Complete your setup
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            {doneCount} of {items.length} done — a few quick steps to get the most out of Control.
+            {doneCount} of {items.length} done — a few quick steps to get the
+            most out of Control.
           </p>
         </div>
         <button
@@ -72,7 +77,7 @@ export default function OnboardingChecklist({ items, userId, userCreatedAt }: Pr
         </button>
       </div>
       <ul className="mt-4 space-y-1">
-        {items.map((item) => (
+        {items.map(item => (
           <li key={item.id}>
             <Link
               href={item.href}
@@ -89,9 +94,17 @@ export default function OnboardingChecklist({ items, userId, userCreatedAt }: Pr
               >
                 {item.done && <Icon name="check" className="h-3 w-3" />}
               </span>
-              <span className={item.done ? "text-muted line-through" : "text-slate-800 dark:text-slate-200"}>
+              <span
+                className={
+                  item.done
+                    ? "text-muted line-through"
+                    : "text-slate-800 dark:text-slate-200"
+                }
+              >
                 {item.label}
-                <span className="sr-only">{item.done ? " (done)" : " (to do)"}</span>
+                <span className="sr-only">
+                  {item.done ? " (done)" : " (to do)"}
+                </span>
               </span>
             </Link>
           </li>

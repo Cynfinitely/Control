@@ -11,7 +11,11 @@ import {
 
 const TZ = "UTC";
 
-function entry(day: number, time: string | null, overrides: Partial<FoodInsightEntry> = {}): FoodInsightEntry {
+function entry(
+  day: number,
+  time: string | null,
+  overrides: Partial<FoodInsightEntry> = {}
+): FoodInsightEntry {
   const [h, m] = time ? time.split(":").map(Number) : [0, 0];
   return {
     name: "Office lunch",
@@ -37,9 +41,9 @@ describe("time zone helpers", () => {
   });
 
   it("builds an instant from a wall-clock day and time", () => {
-    expect(instantFromLocal("2026-09-21", "12:30", "Europe/Istanbul")?.toISOString()).toBe(
-      "2026-09-21T09:30:00.000Z"
-    );
+    expect(
+      instantFromLocal("2026-09-21", "12:30", "Europe/Istanbul")?.toISOString()
+    ).toBe("2026-09-21T09:30:00.000Z");
     expect(instantFromLocal("2026-09-21", "noon", "UTC")).toBeNull();
   });
 });
@@ -48,10 +52,19 @@ describe("weeklyFoodSummary", () => {
   const entries: FoodInsightEntry[] = [
     entry(21, "11:40", { items: "rye bread, turkey, banana" }),
     entry(21, "21:10", { name: "Chocolate", meal: "Snack" }),
-    entry(22, "12:10", { items: "Rye bread, skyr, banana", defaultMealId: "dm1" }),
+    entry(22, "12:10", {
+      items: "Rye bread, skyr, banana",
+      defaultMealId: "dm1",
+    }),
     entry(23, "12:25", { items: "rye bread, banana", defaultMealId: "dm1" }),
     entry(23, "20:30", { name: "Nuts", meal: "snack" }),
-    entry(24, null, { name: "Pasta", meal: "dinner", items: "rye bread", calories: 600, protein: 20 }),
+    entry(24, null, {
+      name: "Pasta",
+      meal: "dinner",
+      items: "rye bread",
+      calories: 600,
+      protein: 20,
+    }),
   ];
   const summary = weeklyFoodSummary(entries, {
     timeZone: TZ,
@@ -61,11 +74,19 @@ describe("weeklyFoodSummary", () => {
   it("counts days and meals", () => {
     expect(summary.daysLogged).toBe(4);
     expect(summary.totalMeals).toBe(6);
-    expect(summary.topMeals[0]).toEqual({ label: "Office lunch", count: 3, days: 3 });
+    expect(summary.topMeals[0]).toEqual({
+      label: "Office lunch",
+      count: 3,
+      days: 3,
+    });
   });
 
   it("counts foods by occasion and by day", () => {
-    expect(summary.topFoods[0]).toEqual({ label: "rye bread", count: 4, days: 4 });
+    expect(summary.topFoods[0]).toEqual({
+      label: "rye bread",
+      count: 4,
+      days: 4,
+    });
     expect(summary.topFoods[1]).toEqual({ label: "banana", count: 3, days: 3 });
   });
 
@@ -76,13 +97,22 @@ describe("weeklyFoodSummary", () => {
   });
 
   it("ignores entries without a time for timing stats", () => {
-    expect(summary.firstMealWindow).toEqual({ fromMin: 11 * 60 + 30, toMin: 12 * 60 + 30 });
+    expect(summary.firstMealWindow).toEqual({
+      fromMin: 11 * 60 + 30,
+      toMin: 12 * 60 + 30,
+    });
   });
 
   it("tracks Default Meal usage and nutrition only when present", () => {
     expect(summary.defaultMealUses).toBe(2);
     expect(summary.topDefaultMeals[0]?.label).toBe("Office Lunch");
-    expect(summary.nutrition).toEqual({ calories: 600, protein: 20, carbs: 0, fat: 0, daysWithData: 1 });
+    expect(summary.nutrition).toEqual({
+      calories: 600,
+      protein: 20,
+      carbs: 0,
+      fat: 0,
+      daysWithData: 1,
+    });
   });
 
   it("produces neutral observations", () => {
@@ -104,7 +134,9 @@ describe("weeklyFoodSummary", () => {
   });
 
   it("handles legacy rows with no meal and no time", () => {
-    const legacy = weeklyFoodSummary([entry(21, null, { meal: null })], { timeZone: TZ });
+    const legacy = weeklyFoodSummary([entry(21, null, { meal: null })], {
+      timeZone: TZ,
+    });
     expect(legacy.daysLogged).toBe(1);
     expect(legacy.snackCount).toBe(0);
     expect(legacy.firstMealWindow).toBeNull();
@@ -123,7 +155,12 @@ describe("repeatedMealCandidates", () => {
       entry(24, "19:00", { name: "Salmon", defaultMealId: "dm" }),
     ];
     expect(repeatedMealCandidates(entries, ["Salmon"])).toEqual([
-      { name: "Office lunch", count: 3, items: "chicken, salad", meal: "Meal 1" },
+      {
+        name: "Office lunch",
+        count: 3,
+        items: "chicken, salad",
+        meal: "Meal 1",
+      },
     ]);
   });
 });

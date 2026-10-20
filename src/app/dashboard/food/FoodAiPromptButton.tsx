@@ -1,6 +1,12 @@
 import AiPromptDialog from "@/components/AiPromptDialog";
 
-export default function FoodAiPromptButton({ label, prompt }: { label: string; prompt: string }) {
+export default function FoodAiPromptButton({
+  label,
+  prompt,
+}: {
+  label: string;
+  prompt: string;
+}) {
   return (
     <AiPromptDialog
       subject={label}

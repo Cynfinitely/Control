@@ -19,11 +19,21 @@ type Props = {
   hideLabel?: boolean;
 };
 
-export default function FormField({ label, children, className, hint, error, required, hideLabel }: Props) {
+export default function FormField({
+  label,
+  children,
+  className,
+  hint,
+  error,
+  required,
+  hideLabel,
+}: Props) {
   const id = useId();
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
-  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined;
+  const describedBy =
+    [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") ||
+    undefined;
 
   return (
     <div className={className}>
@@ -35,7 +45,11 @@ export default function FormField({ label, children, className, hint, error, req
           </span>
         )}
       </label>
-      {children(id, { id, "aria-describedby": describedBy, "aria-invalid": error ? true : undefined })}
+      {children(id, {
+        id,
+        "aria-describedby": describedBy,
+        "aria-invalid": error ? true : undefined,
+      })}
       {hint && !error && (
         <p id={hintId} className="hint">
           {hint}

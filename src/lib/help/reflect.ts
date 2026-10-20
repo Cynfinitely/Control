@@ -9,8 +9,8 @@ export const reflectHelp = {
       "Open the review once a week. Home reminds you when it is still open.",
       "Go through the steps in order. Each one shows live data and links to the page where you can act.",
       "Tick a step when you are done with it.",
-      "Write anything worth remembering under \"Notes\".",
-      "Select \"Complete review\" to close the week.",
+      'Write anything worth remembering under "Notes".',
+      'Select "Complete review" to close the week.',
     ],
     capabilities: [
       "Up to six steps: clear todos and backlog, check weekly goals, spiritual catch-up, review spending, relationships, and plan the week ahead.",
@@ -35,7 +35,7 @@ export const reflectHelp = {
     purpose:
       "Reports gives you the numbers for a day, a week or a month across the modules you use. It is read-only: a place to look back, not to enter anything.",
     steps: [
-      "Choose \"Daily\", \"Weekly\" or \"Monthly\" at the top.",
+      'Choose "Daily", "Weekly" or "Monthly" at the top.',
       "Check the date range shown under the title.",
       "Read the sections, one per module.",
       "Select a figure to open the page it comes from.",

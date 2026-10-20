@@ -12,7 +12,11 @@ import type { CalendarEventMaster } from "@/lib/calendar/types";
 
 describe("buildRruleString", () => {
   it("builds weekly on Mon/Wed", () => {
-    const s = buildRruleString({ freq: "WEEKLY", interval: 1, byweekday: [0, 2] });
+    const s = buildRruleString({
+      freq: "WEEKLY",
+      interval: 1,
+      byweekday: [0, 2],
+    });
     expect(s).toContain("FREQ=WEEKLY");
     expect(s).toMatch(/BYDAY=.*(MO|WE)/);
   });
@@ -28,7 +32,12 @@ describe("buildRruleString", () => {
 describe("parseRruleParts", () => {
   it("round-trips interval, weekdays and until from buildRruleString", () => {
     const until = new Date(Date.UTC(2026, 11, 31, 23, 59, 59));
-    const s = buildRruleString({ freq: "WEEKLY", interval: 2, byweekday: [0, 2], until });
+    const s = buildRruleString({
+      freq: "WEEKLY",
+      interval: 2,
+      byweekday: [0, 2],
+      until,
+    });
     const parts = parseRruleParts(s);
     expect(parts.freq).toBe("WEEKLY");
     expect(parts.interval).toBe(2);
@@ -38,7 +47,12 @@ describe("parseRruleParts", () => {
 
   it("accepts an RRULE: prefix and defaults missing fields", () => {
     const parts = parseRruleParts("RRULE:FREQ=MONTHLY");
-    expect(parts).toEqual({ freq: "MONTHLY", interval: 1, byweekday: [], until: null });
+    expect(parts).toEqual({
+      freq: "MONTHLY",
+      interval: 1,
+      byweekday: [],
+      until: null,
+    });
   });
 
   it("returns NONE for empty or invalid input", () => {
@@ -47,7 +61,9 @@ describe("parseRruleParts", () => {
   });
 
   it("describes a rule in plain language", () => {
-    expect(describeRrule("FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE")).toMatch(/every 2 weeks/i);
+    expect(describeRrule("FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE")).toMatch(
+      /every 2 weeks/i
+    );
     expect(describeRrule(null)).toBe("");
   });
 });
@@ -96,7 +112,11 @@ describe("expandEventOccurrences", () => {
       new Date("2026-07-10T23:59:59.000Z")
     );
     expect(occs).toHaveLength(4);
-    expect(occs.find((o) => o.originalStartsAt.toISOString() === "2026-07-02T09:00:00.000Z")).toBeUndefined();
+    expect(
+      occs.find(
+        o => o.originalStartsAt.toISOString() === "2026-07-02T09:00:00.000Z"
+      )
+    ).toBeUndefined();
   });
 
   it("applies time override exception", () => {
@@ -114,7 +134,9 @@ describe("expandEventOccurrences", () => {
       new Date("2026-07-01T00:00:00.000Z"),
       new Date("2026-07-10T23:59:59.000Z")
     );
-    const moved = occs.find((o) => o.originalStartsAt.toISOString() === "2026-07-03T09:00:00.000Z");
+    const moved = occs.find(
+      o => o.originalStartsAt.toISOString() === "2026-07-03T09:00:00.000Z"
+    );
     expect(moved?.startsAt.toISOString()).toBe("2026-07-03T11:00:00.000Z");
     expect(moved?.title).toBe("Moved standup");
     expect(moved?.isException).toBe(true);

@@ -3,10 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { getUserId, str, optStr, parseDate, parseOptionalDate } from "@/lib/actions";
+import {
+  getUserId,
+  str,
+  optStr,
+  parseDate,
+  parseOptionalDate,
+} from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
-import { parseTopics, serializeTopics, INTERACTION_TYPES } from "@/lib/networking";
-import { failure, success, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import {
+  parseTopics,
+  serializeTopics,
+  INTERACTION_TYPES,
+} from "@/lib/networking";
+import {
+  failure,
+  success,
+  wrapFormAction,
+  type ActionResult,
+} from "@/lib/action-result";
 import { RELATIONSHIPS } from "@/lib/contacts";
 
 function invalidateNetworking(userId: string, contactId?: string) {
@@ -22,13 +37,20 @@ function parseRelationship(value: FormDataEntryValue | null): string | null {
 
 function parseInteractionType(value: FormDataEntryValue | null): string {
   const type = str(value) || "call";
-  return INTERACTION_TYPES.includes(type as (typeof INTERACTION_TYPES)[number]) ? type : "call";
+  return INTERACTION_TYPES.includes(type as (typeof INTERACTION_TYPES)[number])
+    ? type
+    : "call";
 }
 
 /** createContact also returns the new contact so the UI can offer "Log interaction". */
-export type CreateContactResult = ActionResult & { contactId?: string; name?: string };
+export type CreateContactResult = ActionResult & {
+  contactId?: string;
+  name?: string;
+};
 
-export async function createContact(formData: FormData): Promise<CreateContactResult> {
+export async function createContact(
+  formData: FormData
+): Promise<CreateContactResult> {
   const userId = await getUserId();
   const name = str(formData.get("name"));
   if (!name) return failure("Name is required");
@@ -97,7 +119,11 @@ async function logTouch(formData: FormData) {
 
   if (!contactId && name) {
     const rel = str(formData.get("relationship"));
-    const relationship = RELATIONSHIPS.includes(rel as (typeof RELATIONSHIPS)[number]) ? rel : "other";
+    const relationship = RELATIONSHIPS.includes(
+      rel as (typeof RELATIONSHIPS)[number]
+    )
+      ? rel
+      : "other";
     const created = await prisma.contact.create({
       data: { userId, name, relationship },
     });
@@ -128,11 +154,15 @@ async function logTouch(formData: FormData) {
 
 export const logTouchForm = wrapFormAction(logTouch, "Logged");
 
-export async function deleteInteraction(formData: FormData): Promise<ActionResult> {
+export async function deleteInteraction(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const contactId = str(formData.get("contactId"));
-  const res = await prisma.interaction.deleteMany({ where: { id, userId, contactId } });
+  const res = await prisma.interaction.deleteMany({
+    where: { id, userId, contactId },
+  });
   if (res.count === 0) return failure("Log not found");
   invalidateNetworking(userId, contactId);
   return success("Log deleted");

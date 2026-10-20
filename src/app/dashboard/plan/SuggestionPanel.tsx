@@ -28,10 +28,15 @@ export default function SuggestionPanel({ suggestions, dayValue }: Props) {
 
   return (
     <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
-      {suggestions.map((s) => (
-        <li key={s.key} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+      {suggestions.map(s => (
+        <li
+          key={s.key}
+          className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+        >
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-slate-800 dark:text-slate-100">{s.title}</p>
+            <p className="font-medium text-slate-800 dark:text-slate-100">
+              {s.title}
+            </p>
             <p className="text-xs text-muted">
               <span className="tabular-nums">
                 {s.startTime} – {s.endTime}
@@ -46,17 +51,27 @@ export default function SuggestionPanel({ suggestions, dayValue }: Props) {
               <input type="hidden" name="startTime" value={s.startTime} />
               <input type="hidden" name="endTime" value={s.endTime} />
               <input type="hidden" name="kind" value={s.kind} />
-              {s.linkType && <input type="hidden" name="linkType" value={s.linkType} />}
-              {s.linkId && <input type="hidden" name="linkId" value={s.linkId} />}
+              {s.linkType && (
+                <input type="hidden" name="linkType" value={s.linkType} />
+              )}
+              {s.linkId && (
+                <input type="hidden" name="linkId" value={s.linkId} />
+              )}
               <input type="hidden" name="suggestionKey" value={s.key} />
-              <SubmitButton className="btn-ghost btn-sm min-h-[40px]" aria-label={`Add “${s.title}” to the plan`}>
+              <SubmitButton
+                className="btn-ghost btn-sm min-h-[40px]"
+                aria-label={`Add “${s.title}” to the plan`}
+              >
                 Add
               </SubmitButton>
             </ActionForm>
             <ActionForm action={dismissPlanSuggestion}>
               <input type="hidden" name="planDate" value={dayValue} />
               <input type="hidden" name="suggestionKey" value={s.key} />
-              <SubmitButton className="btn-ghost btn-sm min-h-[40px]" aria-label={`Dismiss suggestion “${s.title}”`}>
+              <SubmitButton
+                className="btn-ghost btn-sm min-h-[40px]"
+                aria-label={`Dismiss suggestion “${s.title}”`}
+              >
                 Dismiss
               </SubmitButton>
             </ActionForm>

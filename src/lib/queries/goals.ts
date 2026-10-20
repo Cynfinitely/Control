@@ -27,7 +27,11 @@ export type GoalItem = {
   checkIns: GoalCheckInItem[];
 };
 
-export async function getGoalsForPeriod(userId: string, period: GoalPeriod, periodKey: string) {
+export async function getGoalsForPeriod(
+  userId: string,
+  period: GoalPeriod,
+  periodKey: string
+) {
   return cachedQuery(
     ["goals", userId, period, periodKey],
     [cacheTag("goals", userId)],

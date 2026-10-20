@@ -10,7 +10,10 @@ const ROOT = path.resolve(__dirname, "../../..");
  * default). When the schema has been switched to PostgreSQL they are skipped.
  */
 export function sqliteClientAvailable(): boolean {
-  const schema = fs.readFileSync(path.join(ROOT, "prisma/schema.prisma"), "utf8");
+  const schema = fs.readFileSync(
+    path.join(ROOT, "prisma/schema.prisma"),
+    "utf8"
+  );
   return /provider = "sqlite"/.test(schema);
 }
 

@@ -45,20 +45,34 @@ export default function FoodRangeNavigator({
   const thisWeekStart = toDateInputValue(startOfWeek(today));
   const lastWeekStart = toDateInputValue(startOfWeek(addDays(today, -7)));
   const thisMonth = toMonthKey(today);
-  const lastMonth = toMonthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
-  const canShift = preset === "week" || preset === "last-week" || preset === "month" || preset === "last-month";
-  const onThisWeek = (preset === "week" || preset === "last-week") && fromValue === thisWeekStart;
-  const onLastWeek = (preset === "week" || preset === "last-week") && fromValue === lastWeekStart;
-  const onThisMonth = (preset === "month" || preset === "last-month") && anchor === thisMonth;
-  const onLastMonth = (preset === "month" || preset === "last-month") && anchor === lastMonth;
-  const showThisWeek = (preset === "week" || preset === "last-week") && !onThisWeek;
-  const showThisMonth = (preset === "month" || preset === "last-month") && !onThisMonth;
+  const lastMonth = toMonthKey(
+    new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  );
+  const canShift =
+    preset === "week" ||
+    preset === "last-week" ||
+    preset === "month" ||
+    preset === "last-month";
+  const onThisWeek =
+    (preset === "week" || preset === "last-week") &&
+    fromValue === thisWeekStart;
+  const onLastWeek =
+    (preset === "week" || preset === "last-week") &&
+    fromValue === lastWeekStart;
+  const onThisMonth =
+    (preset === "month" || preset === "last-month") && anchor === thisMonth;
+  const onLastMonth =
+    (preset === "month" || preset === "last-month") && anchor === lastMonth;
+  const showThisWeek =
+    (preset === "week" || preset === "last-week") && !onThisWeek;
+  const showThisMonth =
+    (preset === "month" || preset === "last-month") && !onThisMonth;
   const viewHint =
     preset === "week" || preset === "last-week"
       ? "Week"
       : preset === "month" || preset === "last-month"
         ? "Month"
-        : PRESETS.find((item) => item.value === preset)?.label;
+        : PRESETS.find(item => item.value === preset)?.label;
 
   function chipActive(value: FoodRangePreset): boolean {
     if (value === "week") return onThisWeek;
@@ -69,16 +83,29 @@ export default function FoodRangeNavigator({
   }
 
   function navigate(updates: Partial<FoodRangeSearchParams>) {
-    router.push(buildFoodReportUrl("/dashboard/food/report", searchParams, updates), { scroll: false });
+    router.push(
+      buildFoodReportUrl("/dashboard/food/report", searchParams, updates),
+      { scroll: false }
+    );
   }
 
   function setPreset(next: FoodRangePreset) {
     if (next === preset && next !== "week" && next !== "month") return;
     if (next === "custom") {
-      navigate({ range: "custom", from: fromValue, to: toValue, anchor: undefined });
+      navigate({
+        range: "custom",
+        from: fromValue,
+        to: toValue,
+        anchor: undefined,
+      });
       return;
     }
-    navigate({ range: next, anchor: undefined, from: undefined, to: undefined });
+    navigate({
+      range: next,
+      anchor: undefined,
+      from: undefined,
+      to: undefined,
+    });
   }
 
   function shift(offset: number) {
@@ -89,10 +116,15 @@ export default function FoodRangeNavigator({
       label,
       anchor,
     };
-    navigate({ ...shiftFoodRange(range, offset), from: undefined, to: undefined });
+    navigate({
+      ...shiftFoodRange(range, offset),
+      from: undefined,
+      to: undefined,
+    });
   }
 
-  const activePreset = PRESETS.find((item) => chipActive(item.value))?.value ?? null;
+  const activePreset =
+    PRESETS.find(item => chipActive(item.value))?.value ?? null;
 
   return (
     <div className="min-w-0 flex-1 space-y-3">
@@ -104,9 +136,9 @@ export default function FoodRangeNavigator({
           id="food-range-preset"
           className="input"
           value={activePreset ?? preset}
-          onChange={(e) => setPreset(e.target.value as FoodRangePreset)}
+          onChange={e => setPreset(e.target.value as FoodRangePreset)}
         >
-          {PRESETS.map((item) => (
+          {PRESETS.map(item => (
             <option key={item.value} value={item.value}>
               {item.label}
             </option>
@@ -137,14 +169,24 @@ export default function FoodRangeNavigator({
           next={{ onClick: () => shift(1), label: "Next range" }}
           reset={
             showThisWeek
-              ? { onClick: () => setPreset("week"), label: "Go to this week", text: "This week" }
+              ? {
+                  onClick: () => setPreset("week"),
+                  label: "Go to this week",
+                  text: "This week",
+                }
               : showThisMonth
-                ? { onClick: () => setPreset("month"), label: "Go to this month", text: "This month" }
+                ? {
+                    onClick: () => setPreset("month"),
+                    label: "Go to this month",
+                    text: "This month",
+                  }
                 : undefined
           }
         />
       ) : (
-        <p className="font-semibold text-slate-900 dark:text-slate-100">{label}</p>
+        <p className="font-semibold text-slate-900 dark:text-slate-100">
+          {label}
+        </p>
       )}
     </div>
   );

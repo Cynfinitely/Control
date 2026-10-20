@@ -21,8 +21,8 @@ function parseOffsets(formData: FormData): number[] {
   if (!raw) return [];
   return raw
     .split(",")
-    .map((x) => Number(x.trim()))
-    .filter((n) => !Number.isNaN(n) && n >= 0);
+    .map(x => Number(x.trim()))
+    .filter(n => !Number.isNaN(n) && n >= 0);
 }
 
 function parseDateTimeLocal(value: FormDataEntryValue | null): Date | null {
@@ -52,7 +52,8 @@ export async function createEvent(formData: FormData) {
   if (!startsAt || !endsAt) return { error: "Start and end are required." };
   if (endsAt < startsAt) return { error: "End must be after start." };
 
-  const timezone = optStr(formData.get("timezone")) ?? (await getUserTimezone(userId));
+  const timezone =
+    optStr(formData.get("timezone")) ?? (await getUserTimezone(userId));
   const description = optStr(formData.get("description"));
   const location = optStr(formData.get("location"));
   const rrule = optStr(formData.get("rrule"));
@@ -72,7 +73,7 @@ export async function createEvent(formData: FormData) {
       rrule,
       rruleUntil,
       reminders: {
-        create: offsets.map((offsetMinutes) => ({
+        create: offsets.map(offsetMinutes => ({
           userId,
           offsetMinutes,
           title: null,
@@ -112,7 +113,7 @@ export async function updateEvent(formData: FormData) {
 
   // Non-recurring or edit entire series
   if (!existing.rrule || scope === "all") {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       await tx.calendarEvent.update({
         where: { id },
         data: {
@@ -131,7 +132,7 @@ export async function updateEvent(formData: FormData) {
         await tx.reminder.deleteMany({ where: { eventId: id, userId } });
         if (offsets.length) {
           await tx.reminder.createMany({
-            data: offsets.map((offsetMinutes) => ({
+            data: offsets.map(offsetMinutes => ({
               userId,
               eventId: id,
               offsetMinutes,
@@ -179,8 +180,11 @@ export async function updateEvent(formData: FormData) {
   }
 
   // thisAndFuture: truncate old series, create new series from this occurrence
-  await prisma.$transaction(async (tx) => {
-    const truncatedRrule = truncateRrule(existing.rrule!, rruleUntilBefore(originalStartsAt));
+  await prisma.$transaction(async tx => {
+    const truncatedRrule = truncateRrule(
+      existing.rrule!,
+      rruleUntilBefore(originalStartsAt)
+    );
     await tx.calendarEvent.update({
       where: { id },
       data: {
@@ -202,7 +206,7 @@ export async function updateEvent(formData: FormData) {
         rrule,
         rruleUntil: rrule ? parseRruleUntil(rrule) : null,
         reminders: {
-          create: offsets.map((offsetMinutes) => ({
+          create: offsets.map(offsetMinutes => ({
             userId,
             offsetMinutes,
           })),
@@ -225,7 +229,9 @@ function formatUntil(d: Date): string {
 
 function truncateRrule(rrule: string, until: Date): string {
   const body = rrule.replace(/^RRULE:/, "");
-  const parts = body.split(";").filter((p) => !p.startsWith("UNTIL=") && !p.startsWith("COUNT="));
+  const parts = body
+    .split(";")
+    .filter(p => !p.startsWith("UNTIL=") && !p.startsWith("COUNT="));
   parts.push(`UNTIL=${formatUntil(until)}`);
   return parts.join(";");
 }
@@ -268,7 +274,10 @@ export async function deleteEvent(formData: FormData) {
   }
 
   // thisAndFuture
-  const truncated = truncateRrule(existing.rrule, rruleUntilBefore(originalStartsAt));
+  const truncated = truncateRrule(
+    existing.rrule,
+    rruleUntilBefore(originalStartsAt)
+  );
   await prisma.calendarEvent.update({
     where: { id },
     data: {
@@ -294,7 +303,11 @@ export async function createReminder(formData: FormData) {
   if (rawEventId && !eventId) return { error: "Event not found." };
   const offsetMinutesRaw = str(formData.get("offsetMinutes"));
   const offsetMinutes =
-    offsetMinutesRaw === "" ? null : Number.isNaN(Number(offsetMinutesRaw)) ? null : Number(offsetMinutesRaw);
+    offsetMinutesRaw === ""
+      ? null
+      : Number.isNaN(Number(offsetMinutesRaw))
+        ? null
+        : Number(offsetMinutesRaw);
 
   const reminder = await prisma.reminder.create({
     data: {

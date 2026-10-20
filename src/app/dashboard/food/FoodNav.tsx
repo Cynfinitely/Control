@@ -13,5 +13,12 @@ export type FoodNavHref = (typeof LINKS)[number]["href"];
 
 /** Food section navigation. Render it as PageHeader children. */
 export default function FoodNav({ active }: { active: FoodNavHref }) {
-  return <TabNav items={LINKS} active={active} aria-label="Food sections" className="mb-0" />;
+  return (
+    <TabNav
+      items={LINKS}
+      active={active}
+      aria-label="Food sections"
+      className="mb-0"
+    />
+  );
 }

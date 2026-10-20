@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getUserId, str, optStr, num } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
-import { success, failure, wrapFormAction, type ActionResult } from "@/lib/action-result";
+import {
+  success,
+  failure,
+  wrapFormAction,
+  type ActionResult,
+} from "@/lib/action-result";
 import { parseProgramText } from "@/lib/exercise/parse-program-text";
 
 function invalidateProgram(userId: string, programId?: string) {
@@ -15,7 +20,10 @@ function invalidateProgram(userId: string, programId?: string) {
   if (programId) revalidatePath(`/dashboard/exercise/programs/${programId}`);
 }
 
-function parsePositiveInt(value: FormDataEntryValue | null, fallback?: number): number | null {
+function parsePositiveInt(
+  value: FormDataEntryValue | null,
+  fallback?: number
+): number | null {
   if (value === null || String(value).trim() === "") {
     return fallback ?? null;
   }
@@ -32,7 +40,9 @@ async function nextSortOrder(userId: string): Promise<number> {
   return (max._max.sortOrder ?? 0) + 1;
 }
 
-export async function createProgram(formData: FormData): Promise<ActionResult | void> {
+export async function createProgram(
+  formData: FormData
+): Promise<ActionResult | void> {
   const userId = await getUserId();
   const name = str(formData.get("name"));
   if (!name) return failure("Enter a program name.");
@@ -52,11 +62,17 @@ export type ImportProgramFromTextResult =
   | { ok: true; programId: string; warnings: string[] }
   | { ok: false; error: string; warnings: string[] };
 
-export async function importProgramFromText(formData: FormData): Promise<ImportProgramFromTextResult> {
+export async function importProgramFromText(
+  formData: FormData
+): Promise<ImportProgramFromTextResult> {
   const userId = await getUserId();
   const parsed = parseProgramText(str(formData.get("text")));
   if (parsed.error || parsed.exercises.length === 0) {
-    return { ok: false, error: parsed.error ?? "No exercises found in pasted text.", warnings: parsed.warnings };
+    return {
+      ok: false,
+      error: parsed.error ?? "No exercises found in pasted text.",
+      warnings: parsed.warnings,
+    };
   }
 
   const program = await prisma.workoutProgram.create({
@@ -94,7 +110,9 @@ export async function updateProgram(formData: FormData): Promise<ActionResult> {
   return success("Program updated");
 }
 
-export async function addProgramExercise(formData: FormData): Promise<ActionResult> {
+export async function addProgramExercise(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const programId = str(formData.get("programId"));
   const name = str(formData.get("name"));
@@ -102,18 +120,29 @@ export async function addProgramExercise(formData: FormData): Promise<ActionResu
   if (!name) return failure("Exercise name is required");
 
   const plannedSets = parsePositiveInt(formData.get("plannedSets"), 3);
-  if (plannedSets === null) return failure("Sets must be a positive whole number");
+  if (plannedSets === null)
+    return failure("Sets must be a positive whole number");
   const repsRaw = formData.get("plannedReps");
   const plannedReps =
-    repsRaw === null || String(repsRaw).trim() === "" ? null : parsePositiveInt(repsRaw);
-  if (repsRaw !== null && String(repsRaw).trim() !== "" && plannedReps === null) {
+    repsRaw === null || String(repsRaw).trim() === ""
+      ? null
+      : parsePositiveInt(repsRaw);
+  if (
+    repsRaw !== null &&
+    String(repsRaw).trim() !== "" &&
+    plannedReps === null
+  ) {
     return failure("Reps must be a positive whole number");
   }
 
-  const owns = await prisma.workoutProgram.findFirst({ where: { id: programId, userId } });
+  const owns = await prisma.workoutProgram.findFirst({
+    where: { id: programId, userId },
+  });
   if (!owns) return failure("Program not found");
 
-  const count = await prisma.workoutProgramExercise.count({ where: { programId } });
+  const count = await prisma.workoutProgramExercise.count({
+    where: { programId },
+  });
   await prisma.workoutProgramExercise.create({
     data: { programId, name, plannedSets, plannedReps, order: count },
   });
@@ -121,7 +150,9 @@ export async function addProgramExercise(formData: FormData): Promise<ActionResu
   return success("Exercise added");
 }
 
-export async function updateProgramExercise(formData: FormData): Promise<ActionResult> {
+export async function updateProgramExercise(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const programId = str(formData.get("programId"));
@@ -130,11 +161,18 @@ export async function updateProgramExercise(formData: FormData): Promise<ActionR
   if (!name) return failure("Exercise name is required");
 
   const plannedSets = parsePositiveInt(formData.get("plannedSets"));
-  if (plannedSets === null) return failure("Sets must be a positive whole number");
+  if (plannedSets === null)
+    return failure("Sets must be a positive whole number");
   const repsRaw = formData.get("plannedReps");
   const plannedReps =
-    repsRaw === null || String(repsRaw).trim() === "" ? null : parsePositiveInt(repsRaw);
-  if (repsRaw !== null && String(repsRaw).trim() !== "" && plannedReps === null) {
+    repsRaw === null || String(repsRaw).trim() === ""
+      ? null
+      : parsePositiveInt(repsRaw);
+  if (
+    repsRaw !== null &&
+    String(repsRaw).trim() !== "" &&
+    plannedReps === null
+  ) {
     return failure("Reps must be a positive whole number");
   }
 
@@ -151,7 +189,9 @@ export async function updateProgramExercise(formData: FormData): Promise<ActionR
   return success("Exercise updated");
 }
 
-export async function deleteProgramExercise(formData: FormData): Promise<ActionResult> {
+export async function deleteProgramExercise(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const programId = str(formData.get("programId"));
@@ -167,22 +207,27 @@ export async function deleteProgramExercise(formData: FormData): Promise<ActionR
   return success("Exercise removed");
 }
 
-export async function reorderProgramExercise(formData: FormData): Promise<ActionResult> {
+export async function reorderProgramExercise(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   const programId = str(formData.get("programId"));
   const direction = str(formData.get("direction"));
   if (!id || !programId) return failure("Invalid exercise");
-  if (direction !== "up" && direction !== "down") return failure("Invalid direction");
+  if (direction !== "up" && direction !== "down")
+    return failure("Invalid direction");
 
-  const owns = await prisma.workoutProgram.findFirst({ where: { id: programId, userId } });
+  const owns = await prisma.workoutProgram.findFirst({
+    where: { id: programId, userId },
+  });
   if (!owns) return failure("Program not found");
 
   const exercises = await prisma.workoutProgramExercise.findMany({
     where: { programId },
     orderBy: { order: "asc" },
   });
-  const index = exercises.findIndex((ex) => ex.id === id);
+  const index = exercises.findIndex(ex => ex.id === id);
   if (index < 0) return failure("Exercise not found");
   const swapWith = direction === "up" ? index - 1 : index + 1;
   if (swapWith < 0 || swapWith >= exercises.length) {
@@ -205,7 +250,9 @@ export async function reorderProgramExercise(formData: FormData): Promise<Action
   return success(direction === "up" ? "Moved up" : "Moved down");
 }
 
-export async function archiveProgram(formData: FormData): Promise<ActionResult> {
+export async function archiveProgram(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid program");
@@ -219,7 +266,9 @@ export async function archiveProgram(formData: FormData): Promise<ActionResult> 
   return success("Program archived");
 }
 
-export async function restoreProgram(formData: FormData): Promise<ActionResult> {
+export async function restoreProgram(
+  formData: FormData
+): Promise<ActionResult> {
   const userId = await getUserId();
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid program");
@@ -233,6 +282,15 @@ export async function restoreProgram(formData: FormData): Promise<ActionResult> 
   return success("Program restored");
 }
 
-export const updateProgramForm = wrapFormAction(updateProgram, "Program updated");
-export const addProgramExerciseForm = wrapFormAction(addProgramExercise, "Exercise added");
-export const updateProgramExerciseForm = wrapFormAction(updateProgramExercise, "Exercise updated");
+export const updateProgramForm = wrapFormAction(
+  updateProgram,
+  "Program updated"
+);
+export const addProgramExerciseForm = wrapFormAction(
+  addProgramExercise,
+  "Exercise added"
+);
+export const updateProgramExerciseForm = wrapFormAction(
+  updateProgramExercise,
+  "Exercise updated"
+);

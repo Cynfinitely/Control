@@ -17,7 +17,10 @@ export default function PrincipleReviewCard({ reviewedToday }: Props) {
   if (reviewedToday) {
     return (
       <section className="card flex items-start gap-3" aria-label="Principles">
-        <Icon name="shield" className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+        <Icon
+          name="shield"
+          className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400"
+        />
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-100">
             Principles
@@ -26,7 +29,10 @@ export default function PrincipleReviewCard({ reviewedToday }: Props) {
               Reviewed today
             </span>
           </p>
-          <Link href="/dashboard/principles" className="btn-ghost btn-sm mt-3 min-h-[40px]">
+          <Link
+            href="/dashboard/principles"
+            className="btn-ghost btn-sm mt-3 min-h-[40px]"
+          >
             Open principles
           </Link>
         </div>
@@ -36,7 +42,10 @@ export default function PrincipleReviewCard({ reviewedToday }: Props) {
 
   return (
     <section className="card flex items-start gap-3" aria-label="Principles">
-      <Icon name="shield" className="mt-0.5 h-5 w-5 shrink-0 text-slate-500 dark:text-slate-400" />
+      <Icon
+        name="shield"
+        className="mt-0.5 h-5 w-5 shrink-0 text-slate-500 dark:text-slate-400"
+      />
       <div className="min-w-0 flex-1">
         <p className="text-sm text-slate-700 dark:text-slate-300">
           Review your principles when you can — one soft check for the day.
@@ -47,9 +56,14 @@ export default function PrincipleReviewCard({ reviewedToday }: Props) {
             successMessage="Marked as reviewed"
             onSuccess={() => router.refresh()}
           >
-            <SubmitButton className="btn-primary btn-sm min-h-[40px]">Mark reviewed</SubmitButton>
+            <SubmitButton className="btn-primary btn-sm min-h-[40px]">
+              Mark reviewed
+            </SubmitButton>
           </ActionForm>
-          <Link href="/dashboard/principles" className="btn-ghost btn-sm min-h-[40px]">
+          <Link
+            href="/dashboard/principles"
+            className="btn-ghost btn-sm min-h-[40px]"
+          >
             Read principles
           </Link>
         </div>

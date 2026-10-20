@@ -10,8 +10,14 @@ type Props = {
   items: InspirationItem[];
 };
 
-function pickRandom(items: InspirationItem[], excludeId?: string): InspirationItem {
-  const pool = excludeId && items.length > 1 ? items.filter((i) => i.id !== excludeId) : items;
+function pickRandom(
+  items: InspirationItem[],
+  excludeId?: string
+): InspirationItem {
+  const pool =
+    excludeId && items.length > 1
+      ? items.filter(i => i.id !== excludeId)
+      : items;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -25,7 +31,7 @@ export default function InspirationSpotlight({ items }: Props) {
 
   const shuffle = useCallback(() => {
     if (items.length === 0) return;
-    setCurrent((prev) => pickRandom(items, prev?.id));
+    setCurrent(prev => pickRandom(items, prev?.id));
   }, [items]);
 
   if (items.length === 0) {
@@ -45,15 +51,25 @@ export default function InspirationSpotlight({ items }: Props) {
   }
 
   return (
-    <section className="card flex min-h-[9.5rem] items-start gap-3" aria-label="Inspiration">
-      <Icon name="sparkles" className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
+    <section
+      className="card flex min-h-[9.5rem] items-start gap-3"
+      aria-label="Inspiration"
+    >
+      <Icon
+        name="sparkles"
+        className="mt-0.5 h-5 w-5 shrink-0 text-brand-500"
+      />
       <div className="flex min-w-0 flex-1 flex-col self-stretch">
         {current ? (
           <figure aria-live="polite">
             <blockquote className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
               &ldquo;{current.text}&rdquo;
             </blockquote>
-            {current.author && <figcaption className="mt-1 text-xs text-muted">— {current.author}</figcaption>}
+            {current.author && (
+              <figcaption className="mt-1 text-xs text-muted">
+                — {current.author}
+              </figcaption>
+            )}
           </figure>
         ) : (
           <div aria-hidden="true" className="space-y-2">
@@ -64,11 +80,18 @@ export default function InspirationSpotlight({ items }: Props) {
         )}
         <div className="mt-auto flex flex-wrap gap-2 pt-3">
           {items.length > 1 && (
-            <button type="button" onClick={shuffle} className="btn-ghost btn-sm min-h-[40px]">
+            <button
+              type="button"
+              onClick={shuffle}
+              className="btn-ghost btn-sm min-h-[40px]"
+            >
               Another
             </button>
           )}
-          <Link href="/dashboard/inspirations" className="btn-ghost btn-sm min-h-[40px]">
+          <Link
+            href="/dashboard/inspirations"
+            className="btn-ghost btn-sm min-h-[40px]"
+          >
             Manage
           </Link>
         </div>

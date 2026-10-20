@@ -4,7 +4,11 @@ import { useState, useTransition } from "react";
 import { useToast } from "@/components/Toast";
 import Icon from "@/components/Icon";
 import StatCard from "@/components/StatCard";
-import type { DefaultMealView, NutritionTargetView, RecentFood } from "@/lib/queries/food";
+import type {
+  DefaultMealView,
+  NutritionTargetView,
+  RecentFood,
+} from "@/lib/queries/food";
 import type { FoodMode } from "@/lib/food/meals";
 import type { ActionResult } from "@/lib/action-result";
 import { logWater, removeWater } from "./actions";
@@ -36,8 +40,10 @@ export default function FoodDiary(props: Props) {
 
   function openLog() {
     const now = new Date();
-    setInitialTime(`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
-    setLogKey((k) => k + 1);
+    setInitialTime(
+      `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+    );
+    setLogKey(k => k + 1);
     setForceFocus(false);
     setLogOpen(true);
   }
@@ -57,20 +63,33 @@ export default function FoodDiary(props: Props) {
             forceFocus={forceFocus}
             onLogged={() => setLogOpen(false)}
           />
-          <button type="button" onClick={() => setLogOpen(false)} className="btn-ghost touch-target">
+          <button
+            type="button"
+            onClick={() => setLogOpen(false)}
+            className="btn-ghost touch-target"
+          >
             <Icon name="x" className="h-4 w-4" />
             Close
           </button>
         </div>
       ) : (
-        <button type="button" onClick={openLog} className="btn-primary touch-target w-full py-3 text-base">
+        <button
+          type="button"
+          onClick={openLog}
+          className="btn-primary touch-target w-full py-3 text-base"
+        >
           <Icon name="plus" className="h-5 w-5" />
           Log food
         </button>
       )}
 
       {mode === "optimize" ? (
-        <NutritionSummary entries={entries} target={props.target} waterGlasses={props.waterGlasses} dayValue={dayValue} />
+        <NutritionSummary
+          entries={entries}
+          target={props.target}
+          waterGlasses={props.waterGlasses}
+          dayValue={dayValue}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
           <StatCard label="Meals logged" value={entries.length} size="sm" />
@@ -79,18 +98,34 @@ export default function FoodDiary(props: Props) {
       )}
 
       <section>
-        <h2 className="section-title mb-3">What did I eat {dayLabel === "Today" ? "today" : `on ${dayLabel}`}?</h2>
-        <FoodTimeline entries={entries} dayValue={dayValue} mode={mode} mealLabels={props.mealLabels} />
+        <h2 className="section-title mb-3">
+          What did I eat {dayLabel === "Today" ? "today" : `on ${dayLabel}`}?
+        </h2>
+        <FoodTimeline
+          entries={entries}
+          dayValue={dayValue}
+          mode={mode}
+          mealLabels={props.mealLabels}
+        />
       </section>
     </div>
   );
 }
 
-function WaterCard({ glasses, dayValue }: { glasses: number; dayValue: string }) {
+function WaterCard({
+  glasses,
+  dayValue,
+}: {
+  glasses: number;
+  dayValue: string;
+}) {
   const { success, error } = useToast();
   const [pending, startTransition] = useTransition();
 
-  function run(action: (fd: FormData) => Promise<ActionResult>, message: string) {
+  function run(
+    action: (fd: FormData) => Promise<ActionResult>,
+    message: string
+  ) {
     const fd = new FormData();
     fd.set("day", dayValue);
     fd.set("glasses", "1");
@@ -103,9 +138,14 @@ function WaterCard({ glasses, dayValue }: { glasses: number; dayValue: string })
 
   return (
     <div className="card min-w-0 p-4">
-      <p className="text-xs text-slate-600 dark:text-slate-400">Glasses of water</p>
+      <p className="text-xs text-slate-600 dark:text-slate-400">
+        Glasses of water
+      </p>
       <div className="mt-1 flex items-center justify-between gap-2">
-        <p className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100" aria-live="polite">
+        <p
+          className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100"
+          aria-live="polite"
+        >
           {glasses}
         </p>
         <div className="flex items-center gap-1">
@@ -125,8 +165,7 @@ function WaterCard({ glasses, dayValue }: { glasses: number; dayValue: string })
             onClick={() => run(logWater, "Added 1 glass")}
             className="btn-ghost touch-target"
           >
-            <Icon name="plus" className="h-4 w-4" />
-            1 glass
+            <Icon name="plus" className="h-4 w-4" />1 glass
           </button>
         </div>
       </div>
@@ -167,7 +206,11 @@ function NutritionSummary({
         hint={`of ${Math.round(target.calories)} kcal`}
         progress={calPct}
         tone={overCalories ? "bad" : "default"}
-        status={overCalories ? `Over by ${Math.round(totals.calories - target.calories)} kcal` : undefined}
+        status={
+          overCalories
+            ? `Over by ${Math.round(totals.calories - target.calories)} kcal`
+            : undefined
+        }
       />
       <StatCard
         label="Protein"

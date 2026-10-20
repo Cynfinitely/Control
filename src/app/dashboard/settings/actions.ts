@@ -9,7 +9,11 @@ import { isValidTimezone } from "@/lib/timezones";
 import { revalidateUserCache } from "@/lib/cache";
 import { failure, success, type ActionResult } from "@/lib/action-result";
 import { searchLocations, type LocationResult } from "@/lib/weather/client";
-import { MODULE_IDS, serializeDisabledModules, type ModuleId } from "@/lib/modules";
+import {
+  MODULE_IDS,
+  serializeDisabledModules,
+  type ModuleId,
+} from "@/lib/modules";
 
 export type ActionState = {
   ok?: boolean;
@@ -25,10 +29,13 @@ const profileSchema = z.object({
 const passwordSchema = z
   .object({
     currentPassword: z.string().min(1, "Current password is required."),
-    newPassword: z.string().min(8, "Password must be at least 8 characters.").max(100),
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters.")
+      .max(100),
     confirmPassword: z.string().min(1, "Please confirm your new password."),
   })
-  .refine((data) => data.newPassword === data.confirmPassword, {
+  .refine(data => data.newPassword === data.confirmPassword, {
     message: "New passwords do not match.",
     path: ["confirmPassword"],
   });
@@ -95,7 +102,9 @@ export async function changePassword(
 
     const samePassword = await bcrypt.compare(newPassword, user.passwordHash);
     if (samePassword) {
-      return { error: "New password must be different from your current password." };
+      return {
+        error: "New password must be different from your current password.",
+      };
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -128,16 +137,23 @@ function invalidateWeather(userId: string) {
 
 export async function searchWeatherLocations(
   query: string
-): Promise<{ ok: true; results: LocationResult[] } | { ok: false; error: string }> {
+): Promise<
+  { ok: true; results: LocationResult[] } | { ok: false; error: string }
+> {
   try {
     await getUserId();
-    return { ok: true, results: await searchLocations(String(query).slice(0, 100)) };
+    return {
+      ok: true,
+      results: await searchLocations(String(query).slice(0, 100)),
+    };
   } catch {
     return { ok: false, error: "Location search is unavailable right now." };
   }
 }
 
-export async function saveWeatherLocation(input: WeatherLocationInput): Promise<ActionResult> {
+export async function saveWeatherLocation(
+  input: WeatherLocationInput
+): Promise<ActionResult> {
   const parsed = weatherLocationSchema.safeParse(input);
   if (!parsed.success) {
     return failure(parsed.error.errors[0]?.message ?? "Invalid location.");
@@ -167,7 +183,9 @@ export async function clearWeatherLocation(): Promise<ActionResult> {
   }
 }
 
-const modulesSchema = z.array(z.enum(MODULE_IDS as [ModuleId, ...ModuleId[]])).max(MODULE_IDS.length);
+const modulesSchema = z
+  .array(z.enum(MODULE_IDS as [ModuleId, ...ModuleId[]]))
+  .max(MODULE_IDS.length);
 
 /** Saves which modules are switched off. Turning a module off only hides it; its data is kept. */
 export async function saveModules(disabled: ModuleId[]): Promise<ActionResult> {

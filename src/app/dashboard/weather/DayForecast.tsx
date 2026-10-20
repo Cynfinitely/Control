@@ -14,17 +14,26 @@ import {
 } from "@/lib/weather/format";
 
 /** Daily view: pick one of the forecast days, then see it hour by hour. */
-export default function DayForecast({ forecast, day }: { forecast: Forecast; day: string }) {
+export default function DayForecast({
+  forecast,
+  day,
+}: {
+  forecast: Forecast;
+  day: string;
+}) {
   const today = forecast.current.time.slice(0, 10);
-  const daily = forecast.daily.find((d) => d.date === day) ?? forecast.daily[0];
+  const daily = forecast.daily.find(d => d.date === day) ?? forecast.daily[0];
   if (!daily) return null;
   const hours = hoursForDay(forecast, daily.date);
   const condition = describeWeather(daily.code);
 
   return (
     <div className="space-y-6">
-      <nav aria-label="Forecast day" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
-        {forecast.daily.map((d) => {
+      <nav
+        aria-label="Forecast day"
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
+      >
+        {forecast.daily.map(d => {
           const active = d.date === daily.date;
           return (
             <Link
@@ -39,10 +48,13 @@ export default function DayForecast({ forecast, day }: { forecast: Forecast; day
                   : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-700"
               )}
             >
-              <span className="font-medium">{formatDayShort(d.date, today)}</span>
+              <span className="font-medium">
+                {formatDayShort(d.date, today)}
+              </span>
               <Icon name={describeWeather(d.code).icon} className="h-5 w-5" />
               <span className="tabular-nums">
-                {formatTemp(d.tempMax)} <span className="text-muted">{formatTemp(d.tempMin)}</span>
+                {formatTemp(d.tempMax)}{" "}
+                <span className="text-muted">{formatTemp(d.tempMin)}</span>
               </span>
             </Link>
           );
@@ -55,21 +67,30 @@ export default function DayForecast({ forecast, day }: { forecast: Forecast; day
             {formatDayLong(daily.date)}
           </h2>
           <p className="text-sm text-muted">
-            {condition.label} · H {formatTemp(daily.tempMax)} · L {formatTemp(daily.tempMin)}
+            {condition.label} · H {formatTemp(daily.tempMax)} · L{" "}
+            {formatTemp(daily.tempMin)}
           </p>
         </div>
 
         {hours.length > 0 ? (
-          <ol className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" aria-label="Hourly forecast">
-            {hours.map((h) => {
+          <ol
+            className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0"
+            aria-label="Hourly forecast"
+          >
+            {hours.map(h => {
               const c = describeWeather(h.code, h.isDay);
               return (
                 <li
                   key={h.time}
                   className="flex min-w-[60px] shrink-0 flex-col items-center gap-1.5 rounded-lg px-2 py-2 text-xs odd:bg-slate-50 dark:odd:bg-slate-900/50"
                 >
-                  <span className="text-muted tabular-nums">{formatHour(h.time)}</span>
-                  <Icon name={c.icon} className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+                  <span className="text-muted tabular-nums">
+                    {formatHour(h.time)}
+                  </span>
+                  <Icon
+                    name={c.icon}
+                    className="h-5 w-5 text-slate-700 dark:text-slate-300"
+                  />
                   <span className="sr-only">{c.label}</span>
                   <span className="text-sm font-semibold text-slate-900 tabular-nums dark:text-slate-100">
                     {formatTemp(h.temperature)}
@@ -77,7 +98,9 @@ export default function DayForecast({ forecast, day }: { forecast: Forecast; day
                   <span
                     className={clsx(
                       "flex items-center gap-0.5 tabular-nums",
-                      (h.precipitationProbability ?? 0) >= 40 ? "text-sky-600 dark:text-sky-400" : "text-muted"
+                      (h.precipitationProbability ?? 0) >= 40
+                        ? "text-sky-600 dark:text-sky-400"
+                        : "text-muted"
                     )}
                   >
                     <Icon name="droplet" className="h-3 w-3" />
@@ -96,11 +119,20 @@ export default function DayForecast({ forecast, day }: { forecast: Forecast; day
         <StatCard
           label="Precipitation"
           value={formatPrecip(daily.precipitationSum, forecast.units)}
-          hint={daily.precipitationProbability != null ? `${daily.precipitationProbability}% chance` : undefined}
+          hint={
+            daily.precipitationProbability != null
+              ? `${daily.precipitationProbability}% chance`
+              : undefined
+          }
           icon="cloud-rain"
           size="sm"
         />
-        <StatCard label="Max wind" value={formatWind(daily.windSpeedMax, forecast.units)} icon="wind" size="sm" />
+        <StatCard
+          label="Max wind"
+          value={formatWind(daily.windSpeedMax, forecast.units)}
+          icon="wind"
+          size="sm"
+        />
         <StatCard
           label="UV index"
           value={daily.uvIndexMax != null ? daily.uvIndexMax.toFixed(1) : "—"}

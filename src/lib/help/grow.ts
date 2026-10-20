@@ -11,7 +11,7 @@ export const growHelp = {
       'Fill in "Target" for a counter and, if you want it to count by itself, pick an option under "Auto-track from".',
       'Press "Add goal" to put the goal in the "Active" list for the period you are looking at.',
       'Tick the checkbox or press "+1" each time you make progress.',
-      'Come back when a new period starts and use the carry-over button to bring unfinished goals forward.',
+      "Come back when a new period starts and use the carry-over button to bring unfinished goals forward.",
     ],
     capabilities: [
       'Switch between "Weekly", "Monthly" and "Yearly" goals with the tabs at the top. Each period has its own separate list.',
@@ -33,7 +33,12 @@ export const growHelp = {
       "Auto-tracking adds 1 per workout, the number of hours per learning entry (nothing if the hours are 0) and the number of pages per Quran reading. It goes to the weekly, monthly and yearly goals that cover the date of the activity, and only while the goal is still active.",
       'Deleting a workout or learning entry later takes what it added back off the goal. Quran readings cannot be deleted, so use the minus button to correct those. The "Weekly goals" card on Home shows how many of this week\'s goals are completed.',
     ],
-    related: [{ label: "Settings (switch modules on or off)", href: "/dashboard/settings" }],
+    related: [
+      {
+        label: "Settings (switch modules on or off)",
+        href: "/dashboard/settings",
+      },
+    ],
   },
 
   "career:goals": {
@@ -84,12 +89,12 @@ export const growHelp = {
       "See your certifications with the most recently issued first, each showing its issuer, dates and credential ID.",
       'A certification shows an "Expiring soon" badge when it expires within the next 30 days, and an "Expired" badge once the expiry date has passed.',
       "Delete a certification with the bin button after confirming.",
-      "Skills you add here become choices for \"Related skill\" on the Learning tab.",
+      'Skills you add here become choices for "Related skill" on the Learning tab.',
     ],
     tips: [
       "Only a skill's level can be changed after it is added. To change a skill's name or anything on a certification, delete it and add it again.",
       'The "Notes" you type when adding a skill are shown on the skill\'s card under the level.',
-      "A level has to be saved with \"Set level\". Choosing a new level in the list without pressing the button changes nothing.",
+      'A level has to be saved with "Set level". Choosing a new level in the list without pressing the button changes nothing.',
       'The "Career" card on Home mentions certifications that are about to expire.',
     ],
     related: [
@@ -120,7 +125,10 @@ export const growHelp = {
       'More than one entry can be ticked as "Current role". The app does not untick the old one for you.',
     ],
     related: [
-      { label: "Career: Applications", href: "/dashboard/career?tab=applications" },
+      {
+        label: "Career: Applications",
+        href: "/dashboard/career?tab=applications",
+      },
       { label: "Career: Skills & Certs", href: "/dashboard/career?tab=skills" },
     ],
   },
@@ -139,7 +147,7 @@ export const growHelp = {
     capabilities: [
       'Add a learning entry with "Title", "Kind", "Status", "Hours", "Date" and an optional "Related skill".',
       'Choose the "Related skill" from the skills you added on the "Skills & Certs" tab.',
-      "Log a session on a past day by changing the \"Date\".",
+      'Log a session on a past day by changing the "Date".',
       "See your entries with the most recent date first, each showing its kind, its status, the date, the hours and the related skill.",
       'The list shows your latest 20 entries. When you have more, the heading says "Showing latest 20" together with the total.',
       "Delete an entry with the bin button after confirming.",
@@ -185,7 +193,10 @@ export const growHelp = {
     ],
     related: [
       { label: "Career: Work History", href: "/dashboard/career?tab=work" },
-      { label: "Settings (switch modules on or off)", href: "/dashboard/settings" },
+      {
+        label: "Settings (switch modules on or off)",
+        href: "/dashboard/settings",
+      },
     ],
   },
 
@@ -205,22 +216,25 @@ export const growHelp = {
       'Add a new person while logging: type a name that is not in your list, choose a "Relationship" ("Family", "Friend", "Professional" or "Other"), and the button then reads like "Add Sam & log".',
       'Choose the type of contact. "Call" is selected to start with.',
       'Set the date with the "Today" and "Yesterday" buttons or pick any date in the date box.',
-      'Add topics by typing and pressing Enter or comma. Remove a topic with its x, or press Backspace in an empty topic box to remove the last one.',
+      "Add topics by typing and pressing Enter or comma. Remove a topic with its x, or press Backspace in an empty topic box to remove the last one.",
       "Tap a suggested topic below the box to add it. Suggestions come from topics you used on earlier logs.",
       'Write a free-text "Note" about the conversation.',
       'See your latest 40 logs under "Recent", each with its type, the person, the note, the topics and the date.',
       'Click a name under "Recent" to open that person\'s page.',
-      'Delete a log with its bin button after confirming.',
+      "Delete a log with its bin button after confirming.",
     ],
     tips: [
       "Deleting a log is permanent. There is no undo.",
       "A log cannot be edited. If something is wrong, delete it and log it again.",
       "If the name you type exactly matches someone already in your list, the log goes to that person and no second person is created.",
-      "After you log, the form clears and goes back to \"Call\" and \"Today\", so check the date each time you log several past contacts in a row.",
+      'After you log, the form clears and goes back to "Call" and "Today", so check the date each time you log several past contacts in a row.',
     ],
     related: [
       { label: "Networking: People", href: "/dashboard/networking?tab=people" },
-      { label: "Networking: Insights", href: "/dashboard/networking?tab=insights" },
+      {
+        label: "Networking: Insights",
+        href: "/dashboard/networking?tab=insights",
+      },
     ],
   },
 
@@ -253,7 +267,10 @@ export const growHelp = {
     ],
     related: [
       { label: "Networking: Log", href: "/dashboard/networking" },
-      { label: "Networking: Insights", href: "/dashboard/networking?tab=insights" },
+      {
+        label: "Networking: Insights",
+        href: "/dashboard/networking?tab=insights",
+      },
     ],
   },
 
@@ -280,7 +297,7 @@ export const growHelp = {
     ],
     tips: [
       '"Overdue" always shows who is overdue today. It does not change when you change the period.',
-      "Logs cannot be deleted from this tab. Delete them on the \"Log\" tab or on the person's page.",
+      'Logs cannot be deleted from this tab. Delete them on the "Log" tab or on the person\'s page.',
       'The "Activity" filters only change that list. The totals and charts above always cover the whole period.',
       '"Topics" stays empty until you add topics when you log.',
     ],
@@ -305,7 +322,7 @@ export const growHelp = {
       'See "Last contact" as a date and how long ago it was, or "Never". If the last contact was not a call, the date of your last call is shown as well.',
       'See a yellow badge when the person is overdue: "no contact" if nothing is logged, or the number of days followed by "d+ silent".',
       'Press "Call" or "Email" at the top to start a phone call or an email. Each button only appears once you have saved a phone number or an email address.',
-      "Log a contact with this person using the same form as the \"Log\" tab, without having to pick the person.",
+      'Log a contact with this person using the same form as the "Log" tab, without having to pick the person.',
       'See every log with this person under "Timeline", newest first, with type, note, topics and date.',
       "Delete a log from the timeline with its bin button after confirming.",
       'Open "Edit person" to change "Name", "Relationship", "Organization", "Role", "Email", "Phone", "Tags" and "Notes", then press "Save changes".',
@@ -322,7 +339,10 @@ export const growHelp = {
     related: [
       { label: "Networking: People", href: "/dashboard/networking?tab=people" },
       { label: "Networking: Log", href: "/dashboard/networking" },
-      { label: "Networking: Insights", href: "/dashboard/networking?tab=insights" },
+      {
+        label: "Networking: Insights",
+        href: "/dashboard/networking?tab=insights",
+      },
     ],
   },
 } satisfies Record<string, HelpEntry>;

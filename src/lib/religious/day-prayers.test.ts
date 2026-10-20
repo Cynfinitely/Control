@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { groupPendingQaza, prayerLabel, prayersToMarkOnTime, summarizeDayPrayers } from "./day-prayers";
+import {
+  groupPendingQaza,
+  prayerLabel,
+  prayersToMarkOnTime,
+  summarizeDayPrayers,
+} from "./day-prayers";
 
 describe("summarizeDayPrayers", () => {
   it("treats unlogged prayers as not on time", () => {
@@ -12,12 +17,14 @@ describe("summarizeDayPrayers", () => {
   });
 
   it("counts one missed and four unlogged as 0 on time", () => {
-    expect(summarizeDayPrayers([{ prayer: "fajr", status: "missed" }])).toEqual({
-      onTime: 0,
-      missed: 1,
-      unlogged: 4,
-      total: 5,
-    });
+    expect(summarizeDayPrayers([{ prayer: "fajr", status: "missed" }])).toEqual(
+      {
+        onTime: 0,
+        missed: 1,
+        unlogged: 4,
+        total: 5,
+      }
+    );
   });
 
   it("counts only canonical prayers as on time", () => {
@@ -72,10 +79,26 @@ describe("prayerLabel", () => {
 
 describe("prayersToMarkOnTime", () => {
   it("only fills prayers without a status and never overwrites missed", () => {
-    expect(prayersToMarkOnTime({ fajr: "missed", dhuhr: "ontime" })).toEqual(["asr", "maghrib", "isha"]);
-    expect(prayersToMarkOnTime({})).toEqual(["fajr", "dhuhr", "asr", "maghrib", "isha"]);
+    expect(prayersToMarkOnTime({ fajr: "missed", dhuhr: "ontime" })).toEqual([
+      "asr",
+      "maghrib",
+      "isha",
+    ]);
+    expect(prayersToMarkOnTime({})).toEqual([
+      "fajr",
+      "dhuhr",
+      "asr",
+      "maghrib",
+      "isha",
+    ]);
     expect(
-      prayersToMarkOnTime({ fajr: "ontime", dhuhr: "ontime", asr: "missed", maghrib: "ontime", isha: "ontime" })
+      prayersToMarkOnTime({
+        fajr: "ontime",
+        dhuhr: "ontime",
+        asr: "missed",
+        maghrib: "ontime",
+        isha: "ontime",
+      })
     ).toEqual([]);
   });
 });
@@ -87,11 +110,11 @@ describe("groupPendingQaza", () => {
       { id: "b", prayer: "fajr", sourceDate: new Date("2026-09-05T00:00:00Z") },
       { id: "c", prayer: "fajr", sourceDate: new Date("2026-09-01T00:00:00Z") },
     ]);
-    expect(groups.map((g) => [g.prayer, g.count])).toEqual([
+    expect(groups.map(g => [g.prayer, g.count])).toEqual([
       ["fajr", 2],
       ["isha", 1],
     ]);
-    expect(groups[0]!.items.map((q) => q.id)).toEqual(["c", "b"]);
+    expect(groups[0]!.items.map(q => q.id)).toEqual(["c", "b"]);
     expect(groups[0]!.oldest).toEqual(new Date("2026-09-01T00:00:00Z"));
     expect(groups[0]!.newest).toEqual(new Date("2026-09-05T00:00:00Z"));
   });

@@ -7,7 +7,12 @@ export function toDatetimeLocalValue(d: Date, timezone?: string): string {
   return dt.toFormat("yyyy-MM-dd'T'HH:mm");
 }
 
-export function formatOccurrenceTime(startsAt: Date, endsAt: Date, allDay: boolean, timezone: string): string {
+export function formatOccurrenceTime(
+  startsAt: Date,
+  endsAt: Date,
+  allDay: boolean,
+  timezone: string
+): string {
   if (allDay) return "All day";
   const s = DateTime.fromJSDate(startsAt, { zone: "utc" }).setZone(timezone);
   const e = DateTime.fromJSDate(endsAt, { zone: "utc" }).setZone(timezone);
@@ -15,7 +20,9 @@ export function formatOccurrenceTime(startsAt: Date, endsAt: Date, allDay: boole
 }
 
 export function formatOccurrenceDay(d: Date, timezone: string): string {
-  return DateTime.fromJSDate(d, { zone: "utc" }).setZone(timezone).toFormat("ccc d MMM");
+  return DateTime.fromJSDate(d, { zone: "utc" })
+    .setZone(timezone)
+    .toFormat("ccc d MMM");
 }
 
 export function monthGridDays(monthKey: string): Date[] {
@@ -25,7 +32,9 @@ export function monthGridDays(monthKey: string): Date[] {
   const start = new Date(y!, m! - 1, 1 - startPad);
   const days: Date[] = [];
   for (let i = 0; i < 42; i++) {
-    days.push(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
+    days.push(
+      new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)
+    );
   }
   return days;
 }
@@ -46,5 +55,7 @@ export function dayKey(d: Date): string {
 }
 
 export function occurrenceDayKey(startsAt: Date, timezone: string): string {
-  return DateTime.fromJSDate(startsAt, { zone: "utc" }).setZone(timezone).toFormat("yyyy-MM-dd");
+  return DateTime.fromJSDate(startsAt, { zone: "utc" })
+    .setZone(timezone)
+    .toFormat("yyyy-MM-dd");
 }

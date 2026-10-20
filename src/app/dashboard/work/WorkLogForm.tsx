@@ -45,14 +45,20 @@ export default function WorkLogForm({ dayValue, initialNote }: Props) {
           placeholder="Shipped X, blocked on Y, next step Z…"
           aria-describedby="work-log-hint"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={e => setValue(e.target.value)}
         />
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <SubmitButton className="btn-primary touch-target" pendingLabel="Saving…">
+        <SubmitButton
+          className="btn-primary touch-target"
+          pendingLabel="Saving…"
+        >
           Save log
         </SubmitButton>
-        <p className="text-sm text-amber-800 dark:text-amber-300" aria-live="polite">
+        <p
+          className="text-sm text-amber-800 dark:text-amber-300"
+          aria-live="polite"
+        >
           {dirty ? "Unsaved changes" : ""}
         </p>
       </div>

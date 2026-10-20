@@ -43,16 +43,19 @@ type OptimisticAction =
   | { type: "decrement"; id: string }
   | { type: "delete"; id: string };
 
-function applyOptimistic(goals: GoalItem[], action: OptimisticAction): GoalItem[] {
+function applyOptimistic(
+  goals: GoalItem[],
+  action: OptimisticAction
+): GoalItem[] {
   switch (action.type) {
     case "toggle":
-      return goals.map((g) =>
+      return goals.map(g =>
         g.id === action.id
           ? { ...g, status: g.status === "completed" ? "active" : "completed" }
           : g
       );
     case "increment":
-      return goals.map((g) => {
+      return goals.map(g => {
         if (g.id !== action.id) return g;
         const next = g.currentValue + 1;
         const target = g.targetValue ?? 1;
@@ -63,20 +66,24 @@ function applyOptimistic(goals: GoalItem[], action: OptimisticAction): GoalItem[
         };
       });
     case "decrement":
-      return goals.map((g) => {
+      return goals.map(g => {
         if (g.id !== action.id) return g;
         const latest = g.checkIns[0]?.value;
-        const next = Math.max(0, g.currentValue - (latest && latest > 0 ? latest : 1));
+        const next = Math.max(
+          0,
+          g.currentValue - (latest && latest > 0 ? latest : 1)
+        );
         const target = g.targetValue ?? 1;
         return {
           ...g,
           currentValue: next,
           checkIns: g.checkIns.slice(1),
-          status: g.status === "completed" && next < target ? "active" : g.status,
+          status:
+            g.status === "completed" && next < target ? "active" : g.status,
         };
       });
     case "delete":
-      return goals.filter((g) => g.id !== action.id);
+      return goals.filter(g => g.id !== action.id);
   }
 }
 
@@ -85,29 +92,43 @@ function formatValue(n: number) {
 }
 
 function GoalMilestones({ goal }: { goal: GoalItem }) {
-  const done = goal.milestones.filter((m) => m.done).length;
+  const done = goal.milestones.filter(m => m.done).length;
   return (
     <CollapsibleSection
-      title={goal.milestones.length ? `Milestones (${done}/${goal.milestones.length})` : "Add milestones"}
+      title={
+        goal.milestones.length
+          ? `Milestones (${done}/${goal.milestones.length})`
+          : "Add milestones"
+      }
       className="mt-2 border-t border-slate-100 pt-1 text-sm dark:border-slate-700"
     >
       <ul className="space-y-0.5">
-        {goal.milestones.map((m) => (
+        {goal.milestones.map(m => (
           <li key={m.id} className="flex items-center gap-3">
-            <ActionForm action={toggleMilestone} successMessage={false} className="flex">
+            <ActionForm
+              action={toggleMilestone}
+              successMessage={false}
+              className="flex"
+            >
               <input type="hidden" name="id" value={m.id} />
               <input type="hidden" name="goalId" value={goal.id} />
               <CheckButton
                 type="submit"
                 size="sm"
                 checked={m.done}
-                label={m.done ? `Mark milestone “${m.title}” open` : `Mark milestone “${m.title}” done`}
+                label={
+                  m.done
+                    ? `Mark milestone “${m.title}” open`
+                    : `Mark milestone “${m.title}” done`
+                }
               />
             </ActionForm>
             <span
               className={clsx(
                 "min-w-0 flex-1",
-                m.done ? "text-muted line-through" : "text-slate-700 dark:text-slate-200"
+                m.done
+                  ? "text-muted line-through"
+                  : "text-slate-700 dark:text-slate-200"
               )}
             >
               {m.title}
@@ -128,7 +149,12 @@ function GoalMilestones({ goal }: { goal: GoalItem }) {
           </li>
         ))}
       </ul>
-      <ActionForm action={addMilestone} resetOnSuccess successMessage="Milestone added" className="mt-2 flex gap-2">
+      <ActionForm
+        action={addMilestone}
+        resetOnSuccess
+        successMessage="Milestone added"
+        className="mt-2 flex gap-2"
+      >
         <input type="hidden" name="goalId" value={goal.id} />
         <label htmlFor={`milestone-${goal.id}`} className="sr-only">
           New milestone for {goal.title}
@@ -155,7 +181,7 @@ function GoalCheckIns({ goal }: { goal: GoalItem }) {
       className="mt-2 border-t border-slate-100 pt-1 text-sm dark:border-slate-700"
     >
       <ul className="space-y-0.5">
-        {goal.checkIns.map((c) => (
+        {goal.checkIns.map(c => (
           <li key={c.id} className="text-xs text-muted">
             +{formatValue(c.value)} · {formatDate(c.date)}
             {c.note && ` · ${c.note}`}
@@ -168,13 +194,19 @@ function GoalCheckIns({ goal }: { goal: GoalItem }) {
 
 function GoalProgress({ goal }: { goal: GoalItem }) {
   const target = goal.targetValue ?? 1;
-  const pct = Math.round(Math.min(100, Math.max(0, (goal.currentValue / target) * 100)));
+  const pct = Math.round(
+    Math.min(100, Math.max(0, (goal.currentValue / target) * 100))
+  );
   const text = `${formatValue(goal.currentValue)} of ${formatValue(target)}`;
   return (
     <div className="mt-1.5">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <span className="font-medium tabular-nums text-slate-700 dark:text-slate-200">{text}</span>
-        {goal.linkType && <span className="badge-brand">Auto: {goal.linkType}</span>}
+        <span className="font-medium tabular-nums text-slate-700 dark:text-slate-200">
+          {text}
+        </span>
+        {goal.linkType && (
+          <span className="badge-brand">Auto: {goal.linkType}</span>
+        )}
       </div>
       <div
         className="progress-track mt-1.5 h-2 w-full overflow-hidden rounded-full"
@@ -212,7 +244,12 @@ function IncrementWithNote({
 
   if (!open) {
     return (
-      <button type="button" className="link text-xs" onClick={() => setOpen(true)} disabled={pending}>
+      <button
+        type="button"
+        className="link text-xs"
+        onClick={() => setOpen(true)}
+        disabled={pending}
+      >
         +1 with a note
       </button>
     );
@@ -221,7 +258,7 @@ function IncrementWithNote({
   return (
     <form
       className="mt-2 flex flex-wrap items-end gap-2"
-      onSubmit={(e) => {
+      onSubmit={e => {
         e.preventDefault();
         onIncrement(goal.id, note.trim() || undefined);
         setNote("");
@@ -236,7 +273,7 @@ function IncrementWithNote({
           id={inputId}
           className="input"
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={e => setNote(e.target.value)}
           placeholder="e.g. 5 km easy run"
           autoFocus
           maxLength={200}
@@ -245,7 +282,11 @@ function IncrementWithNote({
       <button type="submit" className="btn-primary" disabled={pending}>
         +1
       </button>
-      <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>
+      <button
+        type="button"
+        className="btn-ghost"
+        onClick={() => setOpen(false)}
+      >
         Cancel
       </button>
     </form>
@@ -270,7 +311,10 @@ function GoalRow({
   compact: boolean;
 }) {
   const isDone = goal.status === "completed";
-  const rowClass = clsx(compact ? "px-4 py-3" : "card py-3", pending && "opacity-70");
+  const rowClass = clsx(
+    compact ? "px-4 py-3" : "card py-3",
+    pending && "opacity-70"
+  );
 
   if (goal.type === "numeric") {
     return (
@@ -281,7 +325,9 @@ function GoalRow({
               <p
                 className={clsx(
                   "font-medium",
-                  isDone ? "text-muted line-through" : "text-slate-800 dark:text-slate-100"
+                  isDone
+                    ? "text-muted line-through"
+                    : "text-slate-800 dark:text-slate-100"
                 )}
               >
                 {goal.title}
@@ -323,7 +369,11 @@ function GoalRow({
         <GoalProgress goal={goal} />
         {!isDone && !compact && (
           <div className="mt-1">
-            <IncrementWithNote goal={goal} pending={pending} onIncrement={onIncrement} />
+            <IncrementWithNote
+              goal={goal}
+              pending={pending}
+              onIncrement={onIncrement}
+            />
           </div>
         )}
         {!compact && (
@@ -343,12 +393,18 @@ function GoalRow({
           checked={isDone}
           disabled={pending}
           onChange={() => onToggle(goal.id)}
-          label={isDone ? `Mark “${goal.title}” active` : `Mark “${goal.title}” complete`}
+          label={
+            isDone
+              ? `Mark “${goal.title}” active`
+              : `Mark “${goal.title}” complete`
+          }
         />
         <p
           className={clsx(
             "min-w-0 flex-1",
-            isDone ? "text-muted line-through" : "font-medium text-slate-800 dark:text-slate-100"
+            isDone
+              ? "text-muted line-through"
+              : "font-medium text-slate-800 dark:text-slate-100"
           )}
         >
           {goal.title}
@@ -369,15 +425,22 @@ function GoalRow({
   );
 }
 
-export default function GoalList({ initialGoals, addHref = "/dashboard/goals?focus=add", compact = false }: Props) {
+export default function GoalList({
+  initialGoals,
+  addHref = "/dashboard/goals?focus=add",
+  compact = false,
+}: Props) {
   const [, startTransition] = useTransition();
-  const [optimisticGoals, updateOptimistic] = useOptimistic(initialGoals, applyOptimistic);
+  const [optimisticGoals, updateOptimistic] = useOptimistic(
+    initialGoals,
+    applyOptimistic
+  );
   const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(new Set());
   const router = useRouter();
   const { success, error } = useToast();
 
   function setPending(id: string, on: boolean) {
-    setPendingIds((prev) => {
+    setPendingIds(prev => {
       const next = new Set(prev);
       if (on) next.add(id);
       else next.delete(id);
@@ -445,8 +508,8 @@ export default function GoalList({ initialGoals, addHref = "/dashboard/goals?foc
     );
   }
 
-  const active = optimisticGoals.filter((g) => g.status === "active");
-  const completed = optimisticGoals.filter((g) => g.status === "completed");
+  const active = optimisticGoals.filter(g => g.status === "active");
+  const completed = optimisticGoals.filter(g => g.status === "completed");
 
   const renderRow = (g: GoalItem) => (
     <GoalRow
@@ -482,12 +545,22 @@ export default function GoalList({ initialGoals, addHref = "/dashboard/goals?foc
       )}
       <div className="space-y-2">
         {active.length > 0 && (
-          <CollapsibleSection title="Active" as="h2" count={active.length} defaultOpen>
+          <CollapsibleSection
+            title="Active"
+            as="h2"
+            count={active.length}
+            defaultOpen
+          >
             <div className="space-y-2">{active.map(renderRow)}</div>
           </CollapsibleSection>
         )}
         {completed.length > 0 && (
-          <CollapsibleSection title="Completed" as="h2" count={completed.length} className="mt-4">
+          <CollapsibleSection
+            title="Completed"
+            as="h2"
+            count={completed.length}
+            className="mt-4"
+          >
             <div className="space-y-2">{completed.map(renderRow)}</div>
           </CollapsibleSection>
         )}

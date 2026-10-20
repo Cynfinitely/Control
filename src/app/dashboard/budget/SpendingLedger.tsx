@@ -58,14 +58,19 @@ export default function SpendingLedger({
   const basePath = "/dashboard/budget";
   const groups = groupTransactionsByDay(rangeData.entries);
   const chipCategories = (type: string) =>
-    categories.filter((c) => (type === "income" ? c.kind === "income" : c.kind === "expense"));
+    categories.filter(c =>
+      type === "income" ? c.kind === "income" : c.kind === "expense"
+    );
   const visibleCategories = chipCategories(ledger.typeFilter);
   const filtered = ledger.typeFilter !== "all" || Boolean(ledger.categoryId);
   // Category chips are per type; drop a selected category that doesn't belong to the new type.
   const categoryForType = (type: string): string | undefined => {
     const current = ledger.categoryId;
-    if (!current || current === UNCATEGORIZED || type === "all") return current ?? undefined;
-    return chipCategories(type).some((c) => c.id === current) ? current : undefined;
+    if (!current || current === UNCATEGORIZED || type === "all")
+      return current ?? undefined;
+    return chipCategories(type).some(c => c.id === current)
+      ? current
+      : undefined;
   };
 
   return (
@@ -84,17 +89,33 @@ export default function SpendingLedger({
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard size="sm" label="Income" value={formatEuro(rangeData.incomeCents)} />
-        <StatCard size="sm" label="Expenses" value={formatEuro(rangeData.expenseCents)} />
-        <StatCard size="sm" label="Net" value={formatEuroSigned(rangeData.netCents)} />
-        <StatCard size="sm" label="Transactions" value={rangeData.transactionCount} />
+        <StatCard
+          size="sm"
+          label="Income"
+          value={formatEuro(rangeData.incomeCents)}
+        />
+        <StatCard
+          size="sm"
+          label="Expenses"
+          value={formatEuro(rangeData.expenseCents)}
+        />
+        <StatCard
+          size="sm"
+          label="Net"
+          value={formatEuroSigned(rangeData.netCents)}
+        />
+        <StatCard
+          size="sm"
+          label="Transactions"
+          value={rangeData.transactionCount}
+        />
       </div>
 
       <div className="mb-4 space-y-3">
         <SegmentedControl
           aria-label="Transaction type"
           value={ledger.typeFilter}
-          options={TYPE_FILTERS.map((f) => ({
+          options={TYPE_FILTERS.map(f => ({
             value: f.value,
             label: f.label,
             href: buildBudgetUrl(basePath, searchParams, {
@@ -109,19 +130,25 @@ export default function SpendingLedger({
           className="-mx-4 flex flex-nowrap gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
         >
           <CategoryChip
-            href={buildBudgetUrl(basePath, searchParams, { category: undefined })}
+            href={buildBudgetUrl(basePath, searchParams, {
+              category: undefined,
+            })}
             active={!ledger.categoryId}
             label="All categories"
           />
           <CategoryChip
-            href={buildBudgetUrl(basePath, searchParams, { category: UNCATEGORIZED })}
+            href={buildBudgetUrl(basePath, searchParams, {
+              category: UNCATEGORIZED,
+            })}
             active={ledger.categoryId === UNCATEGORIZED}
             label="Uncategorized"
           />
-          {visibleCategories.map((cat) => (
+          {visibleCategories.map(cat => (
             <CategoryChip
               key={cat.id}
-              href={buildBudgetUrl(basePath, searchParams, { category: cat.id })}
+              href={buildBudgetUrl(basePath, searchParams, {
+                category: cat.id,
+              })}
               active={ledger.categoryId === cat.id}
               label={cat.name}
             />
@@ -134,20 +161,32 @@ export default function SpendingLedger({
           variant="inline"
           icon="wallet"
           headingLevel="h3"
-          title={filtered ? "No transactions match these filters" : "No transactions in this range"}
+          title={
+            filtered
+              ? "No transactions match these filters"
+              : "No transactions in this range"
+          }
           description={
-            filtered ? `Nothing in ${ledger.label} with the current type or category.` : "Pick another range above."
+            filtered
+              ? `Nothing in ${ledger.label} with the current type or category.`
+              : "Pick another range above."
           }
           actionLabel={filtered ? "Clear filters" : undefined}
           actionHref={
-            filtered ? buildBudgetUrl(basePath, searchParams, { filter: "all", category: undefined }) : undefined
+            filtered
+              ? buildBudgetUrl(basePath, searchParams, {
+                  filter: "all",
+                  category: undefined,
+                })
+              : undefined
           }
         />
       ) : (
         <div className="space-y-5">
-          {groups.map((group) => {
+          {groups.map(group => {
             const dayTotal = group.entries.reduce(
-              (sum, e) => sum + (e.type === "income" ? e.amountCents : -e.amountCents),
+              (sum, e) =>
+                sum + (e.type === "income" ? e.amountCents : -e.amountCents),
               0
             );
             return (
@@ -156,7 +195,9 @@ export default function SpendingLedger({
                   <h3 className="subsection-title">{group.dayLabel}</h3>
                   <span
                     className={`text-xs font-medium tabular-nums ${
-                      dayTotal >= 0 ? "text-green-700 dark:text-green-400" : "text-slate-600 dark:text-slate-300"
+                      dayTotal >= 0
+                        ? "text-green-700 dark:text-green-400"
+                        : "text-slate-600 dark:text-slate-300"
                     }`}
                   >
                     <span className="sr-only">Day total </span>
@@ -164,8 +205,12 @@ export default function SpendingLedger({
                   </span>
                 </div>
                 <div className="space-y-2">
-                  {group.entries.map((e) => (
-                    <BudgetTransactionRow key={e.id} entry={e} categories={categories} />
+                  {group.entries.map(e => (
+                    <BudgetTransactionRow
+                      key={e.id}
+                      entry={e}
+                      categories={categories}
+                    />
                   ))}
                 </div>
               </div>
@@ -177,7 +222,15 @@ export default function SpendingLedger({
   );
 }
 
-function CategoryChip({ href, active, label }: { href: string; active: boolean; label: string }) {
+function CategoryChip({
+  href,
+  active,
+  label,
+}: {
+  href: string;
+  active: boolean;
+  label: string;
+}) {
   return (
     <Link
       href={href}

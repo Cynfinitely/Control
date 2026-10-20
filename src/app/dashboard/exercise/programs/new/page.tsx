@@ -12,7 +12,8 @@ export default async function NewWorkoutProgramPage() {
   await requireModule("exercise");
   return (
     <div>
-      <PageHeader help="exercise:program-new"
+      <PageHeader
+        help="exercise:program-new"
         breadcrumb={
           <Breadcrumb
             items={[
@@ -29,12 +30,21 @@ export default async function NewWorkoutProgramPage() {
         <h2 id="create-program-title" className="section-title">
           Create empty program
         </h2>
-        <ActionForm action={createProgram} className="mt-3 grid grid-cols-1 gap-3">
+        <ActionForm
+          action={createProgram}
+          className="mt-3 grid grid-cols-1 gap-3"
+        >
           <div>
             <label className="label" htmlFor="program-name">
               Name
             </label>
-            <input id="program-name" name="name" className="input" placeholder="e.g. Full Body" required />
+            <input
+              id="program-name"
+              name="name"
+              className="input"
+              placeholder="e.g. Full Body"
+              required
+            />
           </div>
           <div>
             <label className="label" htmlFor="program-notes">
@@ -43,7 +53,9 @@ export default async function NewWorkoutProgramPage() {
             <input id="program-notes" name="notes" className="input" />
           </div>
           <div>
-            <SubmitButton className="btn-primary touch-target w-full sm:w-auto">Create program</SubmitButton>
+            <SubmitButton className="btn-primary touch-target w-full sm:w-auto">
+              Create program
+            </SubmitButton>
           </div>
         </ActionForm>
       </section>

@@ -8,7 +8,9 @@ export type LifePriorityItem = {
   sortOrder: number;
 };
 
-export async function getLifePriorities(userId: string): Promise<LifePriorityItem[]> {
+export async function getLifePriorities(
+  userId: string
+): Promise<LifePriorityItem[]> {
   return cachedQuery(
     ["life-priorities", userId],
     [cacheTag("priorities", userId)],

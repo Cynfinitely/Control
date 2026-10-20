@@ -1,5 +1,9 @@
 import { addDays, coerceDate, startOfDay, toDateInputValue } from "@/lib/date";
-import type { FoodPromptDay, FoodPromptEntry, FoodPromptTargets } from "@/lib/food/prompt";
+import type {
+  FoodPromptDay,
+  FoodPromptEntry,
+  FoodPromptTargets,
+} from "@/lib/food/prompt";
 
 export const DEFAULT_NUTRITION_TARGETS: FoodPromptTargets = {
   calories: 2000,
@@ -98,7 +102,7 @@ export function summarizeFoodRange(
       logged,
       overCalories: logged && calories > targets.calories,
       underProtein: logged && protein < targets.protein,
-      entries: dayEntries.map((entry) => ({
+      entries: dayEntries.map(entry => ({
         date: coerceDate(entry.date),
         name: entry.name,
         meal: entry.meal,
@@ -111,7 +115,7 @@ export function summarizeFoodRange(
     cursor = startOfDay(addDays(cursor, 1));
   }
 
-  const loggedDays = days.filter((day) => day.logged);
+  const loggedDays = days.filter(day => day.logged);
   const totals = {
     calories: days.reduce((sum, day) => sum + day.calories, 0),
     protein: days.reduce((sum, day) => sum + day.protein, 0),
