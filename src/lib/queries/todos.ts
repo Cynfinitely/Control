@@ -9,6 +9,8 @@ export type TodoItem = {
   priority: string;
   category: string | null;
   dueDate: Date | null;
+  createdAt: Date;
+  position: number;
 };
 
 /** cachedQuery JSON-serializes results, so revive dates after the await. */
@@ -16,6 +18,7 @@ function reviveTodos(rows: TodoItem[]): TodoItem[] {
   return rows.map(t => ({
     ...t,
     dueDate: t.dueDate ? coerceDate(t.dueDate) : null,
+    createdAt: coerceDate(t.createdAt),
   }));
 }
 
@@ -47,6 +50,8 @@ export async function getDayTodos(
           priority: true,
           category: true,
           dueDate: true,
+          createdAt: true,
+          position: true,
         },
       })
   );
@@ -68,6 +73,8 @@ export async function getBacklogTodos(userId: string): Promise<TodoItem[]> {
           priority: true,
           category: true,
           dueDate: true,
+          createdAt: true,
+          position: true,
         },
       })
   );

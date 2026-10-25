@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Todo" ADD COLUMN     "position" INTEGER NOT NULL DEFAULT 0;

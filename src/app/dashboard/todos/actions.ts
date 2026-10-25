@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getUserId, str, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
-import { startOfDay, formatDate } from "@/lib/date";
+import { startOfDay, endOfDay, formatDate } from "@/lib/date";
 import {
   success,
   failure,
@@ -18,6 +19,21 @@ function invalidate(userId: string) {
   revalidatePath("/dashboard");
 }
 
+/** Custom order slot after the day's last todo, so new arrivals go to the end. */
+async function nextPosition(userId: string, dayDate: Date) {
+  const last = await prisma.todo.findFirst({
+    where: {
+      userId,
+      deletedAt: null,
+      inBacklog: false,
+      dayDate: { gte: startOfDay(dayDate), lte: endOfDay(dayDate) },
+    },
+    orderBy: { position: "desc" },
+    select: { position: true },
+  });
+  return (last?.position ?? -1) + 1;
+}
+
 export async function createTodo(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
   const title = str(formData.get("title"));
@@ -27,8 +43,18 @@ export async function createTodo(formData: FormData): Promise<ActionResult> {
   const category = str(formData.get("category")) || null;
   const dueDate = parseOptionalDate(formData.get("dueDate"));
   const inBacklog = str(formData.get("destination")) === "backlog";
+  const position = inBacklog ? 0 : await nextPosition(userId, dayDate);
   await prisma.todo.create({
-    data: { userId, title, dayDate, inBacklog, priority, category, dueDate },
+    data: {
+      userId,
+      title,
+      dayDate,
+      inBacklog,
+      priority,
+      category,
+      dueDate,
+      position,
+    },
   });
   invalidate(userId);
   return success(inBacklog ? "Added to backlog" : "Todo added");
@@ -73,15 +99,32 @@ export async function pullFromBacklog(
   const id = str(formData.get("id"));
   if (!id) return failure("Invalid todo");
   const dayDate = startOfDay(parseDate(formData.get("dayDate")));
+  const position = await nextPosition(userId, dayDate);
   await prisma.todo.updateMany({
     where: { id, userId, inBacklog: true },
-    data: { inBacklog: false, dayDate, status: "open" },
+    data: { inBacklog: false, dayDate, status: "open", position },
   });
   invalidate(userId);
   const isToday = dayDate.getTime() === startOfDay(new Date()).getTime();
   return success(
     isToday ? "Added to today" : `Added to ${formatDate(dayDate)}`
   );
+}
+
+const reorderSchema = z.array(z.string().min(1).max(64)).min(1).max(500);
+
+/** Saves a custom order: each id's position becomes its index in `ids`. */
+export async function reorderTodos(formData: FormData): Promise<ActionResult> {
+  const userId = await getUserId();
+  const parsed = reorderSchema.safeParse(formData.getAll("ids"));
+  if (!parsed.success) return failure("Invalid order");
+  await prisma.$transaction(
+    parsed.data.map((id, position) =>
+      prisma.todo.updateMany({ where: { id, userId }, data: { position } })
+    )
+  );
+  invalidate(userId);
+  return success();
 }
 
 export async function deleteTodo(formData: FormData): Promise<ActionResult> {
