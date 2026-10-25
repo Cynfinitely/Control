@@ -50,7 +50,7 @@ export async function updateProfile(
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "Invalid input." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
   const { name, timezone } = parsed.data;
@@ -83,7 +83,7 @@ export async function changePassword(
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "Invalid input." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
   const { currentPassword, newPassword } = parsed.data;
@@ -156,7 +156,7 @@ export async function saveWeatherLocation(
 ): Promise<ActionResult> {
   const parsed = weatherLocationSchema.safeParse(input);
   if (!parsed.success) {
-    return failure(parsed.error.errors[0]?.message ?? "Invalid location.");
+    return failure(parsed.error.issues[0]?.message ?? "Invalid location.");
   }
   try {
     const userId = await getUserId();
