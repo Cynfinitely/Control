@@ -9,8 +9,22 @@ import CheckButton from "@/components/CheckButton";
 import IconButton from "@/components/IconButton";
 import { useToast } from "@/components/Toast";
 import { formatDate, startOfDay } from "@/lib/date";
+import { useLocalStorage } from "@/lib/use-client-store";
+import {
+  TODO_SORTS,
+  moveId,
+  parseTodoSort,
+  sortTodos,
+  type TodoSort,
+} from "@/lib/todo-sort";
 import CollapsibleSection from "@/components/CollapsibleSection";
-import { toggleTodo, deleteTodo, moveToBacklog, restoreTodo } from "./actions";
+import {
+  toggleTodo,
+  deleteTodo,
+  moveToBacklog,
+  restoreTodo,
+  reorderTodos,
+} from "./actions";
 import type { TodoItem } from "@/lib/queries/todos";
 
 type Props = {
@@ -21,7 +35,8 @@ type Props = {
 type OptimisticAction =
   | { type: "toggle"; id: string }
   | { type: "delete"; id: string }
-  | { type: "backlog"; id: string };
+  | { type: "backlog"; id: string }
+  | { type: "reorder"; ids: string[] };
 
 const PRIORITY: Record<string, { label: string; className: string }> = {
   high: { label: "High", className: "badge-danger" },
@@ -43,6 +58,11 @@ function applyOptimistic(
     case "delete":
     case "backlog":
       return todos.filter(t => t.id !== action.id);
+    case "reorder":
+      return todos.map(t => {
+        const position = action.ids.indexOf(t.id);
+        return position === -1 ? t : { ...t, position };
+      });
   }
 }
 
@@ -53,6 +73,7 @@ function TodoRow({
   onToggle,
   onDelete,
   onBacklog,
+  reorder,
   pending,
 }: {
   todo: TodoItem;
@@ -61,6 +82,13 @@ function TodoRow({
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
   onBacklog: (id: string) => void;
+  /** Set in custom order: the row's 1-based rank and its move controls. */
+  reorder?: {
+    rank: number;
+    isFirst: boolean;
+    isLast: boolean;
+    onMove: (id: string, delta: -1 | 1) => void;
+  };
   pending: boolean;
 }) {
   const isDone = todo.status === "done";
@@ -83,6 +111,11 @@ function TodoRow({
           isDone ? `Mark “${todo.title}” not done` : `Mark “${todo.title}” done`
         }
       />
+      {reorder && (
+        <span className="w-6 shrink-0 text-right text-sm font-semibold tabular-nums text-muted">
+          {reorder.rank}.
+        </span>
+      )}
       <div className="min-w-0 flex-1">
         <p
           className={clsx(
@@ -121,6 +154,22 @@ function TodoRow({
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
+        {reorder && (
+          <>
+            <IconButton
+              icon="chevronUp"
+              disabled={pending || reorder.isFirst}
+              onClick={() => reorder.onMove(todo.id, -1)}
+              aria-label={`Move “${todo.title}” up`}
+            />
+            <IconButton
+              icon="chevronDown"
+              disabled={pending || reorder.isLast}
+              onClick={() => reorder.onMove(todo.id, 1)}
+              aria-label={`Move “${todo.title}” down`}
+            />
+          </>
+        )}
         {showBacklog && !isDone && (
           <button
             type="button"
@@ -154,6 +203,8 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   );
   const router = useRouter();
   const { success, error } = useToast();
+  const [storedSort, setSort] = useLocalStorage("control-todo-sort");
+  const sort = parseTodoSort(storedSort);
 
   function runAction(
     action: OptimisticAction,
@@ -214,11 +265,26 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
     });
   }
 
-  const open = optimisticTodos.filter(t => t.status === "open");
-  const done = optimisticTodos.filter(t => t.status === "done");
+  const sorted = sortTodos(optimisticTodos, sort);
+  const open = sorted.filter(t => t.status === "open");
+  const done = sorted.filter(t => t.status === "done");
 
-  const renderRows = (items: TodoItem[]) =>
-    items.map(t => (
+  function handleMove(id: string, delta: -1 | 1) {
+    const ids = moveId(
+      open.map(t => t.id),
+      id,
+      delta
+    );
+    const fd = new FormData();
+    ids.forEach(todoId => fd.append("ids", todoId));
+    runAction({ type: "reorder", ids }, () => reorderTodos(fd));
+  }
+
+  // Only open todos are reorderable; done ones keep their custom order.
+  const canReorder = sort === "custom" && !compact && open.length > 1;
+
+  const renderRows = (items: TodoItem[], reorderable = false) =>
+    items.map((t, i) => (
       <TodoRow
         key={t.id}
         todo={t}
@@ -227,6 +293,16 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
         onToggle={handleToggle}
         onDelete={handleDelete}
         onBacklog={handleBacklog}
+        reorder={
+          reorderable
+            ? {
+                rank: i + 1,
+                isFirst: i === 0,
+                isLast: i === items.length - 1,
+                onMove: handleMove,
+              }
+            : undefined
+        }
         pending={isPending}
       />
     ));
@@ -253,6 +329,25 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
           description="No todos for this day. Add one above to get started."
         />
       )}
+      {optimisticTodos.length > 1 && (
+        <div className="mb-3 flex items-center justify-end gap-2">
+          <label htmlFor="todo-sort" className="text-sm text-muted">
+            Sort by
+          </label>
+          <select
+            id="todo-sort"
+            className="input w-auto"
+            value={sort}
+            onChange={e => setSort(e.target.value as TodoSort)}
+          >
+            {Object.entries(TODO_SORTS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="space-y-4">
         {open.length > 0 && (
           <CollapsibleSection
@@ -262,7 +357,7 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
             as="h2"
           >
             <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
-              {renderRows(open)}
+              {renderRows(open, canReorder)}
             </ul>
           </CollapsibleSection>
         )}
