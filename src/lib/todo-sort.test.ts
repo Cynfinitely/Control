@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moveIdTo, parseTodoSort, sortTodos } from "./todo-sort";
+import { applyOrder, moveIdTo, parseTodoSort, sortTodos } from "./todo-sort";
 
 function todo(
   title: string,
@@ -112,5 +112,32 @@ describe("moveIdTo", () => {
   it("returns the original list for no-op moves or unknown ids", () => {
     expect(moveIdTo(ids, "c", 2)).toBe(ids);
     expect(moveIdTo(ids, "z", 0)).toBe(ids);
+  });
+});
+
+describe("applyOrder", () => {
+  const items = ["a", "b", "c", "d"].map(id => ({ id }));
+  const idsOf = (list: { id: string }[]) => list.map(t => t.id);
+
+  it("orders todos by the given ids", () => {
+    expect(idsOf(applyOrder(items, ["d", "b", "a", "c"]))).toEqual([
+      "d",
+      "b",
+      "a",
+      "c",
+    ]);
+  });
+
+  it("appends todos missing from ids and ignores unknown ids", () => {
+    expect(idsOf(applyOrder(items, ["c", "zz", "a"]))).toEqual([
+      "c",
+      "a",
+      "b",
+      "d",
+    ]);
+  });
+
+  it("returns the input unchanged without ids", () => {
+    expect(applyOrder(items, null)).toBe(items);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import EmptyState from "@/components/EmptyState";
@@ -9,6 +9,7 @@ import { useToast } from "@/components/Toast";
 import { useLocalStorage } from "@/lib/use-client-store";
 import {
   TODO_SORTS,
+  applyOrder,
   moveIdTo,
   parseTodoSort,
   sortTodos,
@@ -25,6 +26,7 @@ import {
 import type { TodoItem } from "@/lib/queries/todos";
 import TodoRow, { type MoveTarget } from "./TodoRow";
 import SortableTodoList from "./SortableTodoList";
+import OrderSaveBar from "./OrderSaveBar";
 
 type Props = {
   initialTodos: TodoItem[];
@@ -34,8 +36,7 @@ type Props = {
 type OptimisticAction =
   | { type: "toggle"; id: string }
   | { type: "delete"; id: string }
-  | { type: "backlog"; id: string }
-  | { type: "reorder"; ids: string[] };
+  | { type: "backlog"; id: string };
 
 function applyOptimistic(
   todos: TodoItem[],
@@ -51,11 +52,6 @@ function applyOptimistic(
     case "delete":
     case "backlog":
       return todos.filter(t => t.id !== action.id);
-    case "reorder":
-      return todos.map(t => {
-        const position = action.ids.indexOf(t.id);
-        return position === -1 ? t : { ...t, position };
-      });
   }
 }
 
@@ -69,6 +65,9 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   const { success, error } = useToast();
   const [storedSort, setSort] = useLocalStorage("control-todo-sort");
   const sort = parseTodoSort(storedSort);
+  // Custom order being edited: open todo ids, local until saved.
+  const [draft, setDraft] = useState<string[] | null>(null);
+  const [isSaving, startSaving] = useTransition();
 
   function runAction(
     action: OptimisticAction,
@@ -130,25 +129,30 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   }
 
   const sorted = sortTodos(optimisticTodos, sort);
-  const open = sorted.filter(t => t.status === "open");
+  const savedOpen = sorted.filter(t => t.status === "open");
+  const open = sort === "custom" ? applyOrder(savedOpen, draft) : savedOpen;
   const done = sorted.filter(t => t.status === "done");
-
-  function handleReorder(
-    ids: string[],
-    after?: { message: string; undo?: () => void }
-  ) {
-    const fd = new FormData();
-    ids.forEach(todoId => fd.append("ids", todoId));
-    runAction({ type: "reorder", ids }, () => reorderTodos(fd), after);
-  }
+  // After a save the refreshed server order matches the draft, so this turns
+  // false on its own without flashing back to the old order.
+  const isOrderDirty = open.some((t, i) => t.id !== savedOpen[i].id);
 
   function handleMoveTo(id: string, target: MoveTarget) {
-    const before = open.map(t => t.id);
-    const ids = moveIdTo(before, id, target === "top" ? 0 : before.length - 1);
-    if (ids === before) return;
-    handleReorder(ids, {
-      message: target === "top" ? "Moved to top" : "Moved to bottom",
-      undo: () => handleReorder(before),
+    const ids = open.map(t => t.id);
+    setDraft(moveIdTo(ids, id, target === "top" ? 0 : ids.length - 1));
+  }
+
+  function handleSaveOrder() {
+    const fd = new FormData();
+    open.forEach(t => fd.append("ids", t.id));
+    startSaving(async () => {
+      let result: { ok: boolean; error?: string };
+      try {
+        result = await reorderTodos(fd);
+      } catch {
+        result = { ok: false };
+      }
+      if (result.ok) success("Order saved");
+      else error(result.error ?? "Couldn't save order — try again");
     });
   }
 
@@ -200,7 +204,10 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
             id="todo-sort"
             className="input w-auto"
             value={sort}
-            onChange={e => setSort(e.target.value as TodoSort)}
+            onChange={e => {
+              setDraft(null);
+              setSort(e.target.value as TodoSort);
+            }}
           >
             {Object.entries(TODO_SORTS).map(([value, label]) => (
               <option key={value} value={value}>
@@ -209,6 +216,13 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
             ))}
           </select>
         </div>
+      )}
+      {canReorder && isOrderDirty && (
+        <OrderSaveBar
+          saving={isSaving}
+          onSave={handleSaveOrder}
+          onCancel={() => setDraft(null)}
+        />
       )}
       <div className="space-y-4">
         {open.length > 0 && (
@@ -221,7 +235,7 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
             {canReorder ? (
               <SortableTodoList
                 todos={open}
-                onReorder={handleReorder}
+                onReorder={setDraft}
                 onMoveTo={handleMoveTo}
                 onToggle={handleToggle}
                 onDelete={handleDelete}

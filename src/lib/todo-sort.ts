@@ -75,3 +75,19 @@ export function moveIdTo(ids: string[], id: string, toIndex: number): string[] {
   next.splice(to, 0, id);
   return next;
 }
+
+/**
+ * Puts todos listed in `ids` first, in that order. Todos not in `ids` (added or
+ * reopened since the order was set) keep their incoming order after them.
+ * Returns the input unchanged when `ids` is null.
+ */
+export function applyOrder<T extends { id: string }>(
+  todos: T[],
+  ids: string[] | null
+): T[] {
+  if (!ids) return todos;
+  const rank = new Map(ids.map((id, index) => [id, index]));
+  const ranked = todos.filter(t => rank.has(t.id));
+  ranked.sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
+  return [...ranked, ...todos.filter(t => !rank.has(t.id))];
+}
