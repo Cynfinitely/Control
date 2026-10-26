@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moveId, parseTodoSort, sortTodos } from "./todo-sort";
+import { moveIdTo, parseTodoSort, sortTodos } from "./todo-sort";
 
 function todo(
   title: string,
@@ -94,17 +94,23 @@ describe("parseTodoSort", () => {
   });
 });
 
-describe("moveId", () => {
-  const ids = ["a", "b", "c"];
+describe("moveIdTo", () => {
+  const ids = ["a", "b", "c", "d", "e"];
 
-  it("swaps with the neighbour in the given direction", () => {
-    expect(moveId(ids, "b", -1)).toEqual(["b", "a", "c"]);
-    expect(moveId(ids, "b", 1)).toEqual(["a", "c", "b"]);
+  it("moves an id any distance in one step", () => {
+    expect(moveIdTo(ids, "e", 0)).toEqual(["e", "a", "b", "c", "d"]);
+    expect(moveIdTo(ids, "a", 4)).toEqual(["b", "c", "d", "e", "a"]);
+    expect(moveIdTo(ids, "d", 1)).toEqual(["a", "d", "b", "c", "e"]);
+    expect(moveIdTo(ids, "b", 3)).toEqual(["a", "c", "d", "b", "e"]);
   });
 
-  it("leaves the list unchanged at the edges or for unknown ids", () => {
-    expect(moveId(ids, "a", -1)).toBe(ids);
-    expect(moveId(ids, "c", 1)).toBe(ids);
-    expect(moveId(ids, "z", 1)).toBe(ids);
+  it("clamps out-of-range targets to the ends", () => {
+    expect(moveIdTo(ids, "c", -5)).toEqual(["c", "a", "b", "d", "e"]);
+    expect(moveIdTo(ids, "c", 99)).toEqual(["a", "b", "d", "e", "c"]);
+  });
+
+  it("returns the original list for no-op moves or unknown ids", () => {
+    expect(moveIdTo(ids, "c", 2)).toBe(ids);
+    expect(moveIdTo(ids, "z", 0)).toBe(ids);
   });
 });

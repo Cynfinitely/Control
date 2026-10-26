@@ -5,14 +5,11 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import EmptyState from "@/components/EmptyState";
 import PendingIndicator from "@/components/PendingIndicator";
-import CheckButton from "@/components/CheckButton";
-import IconButton from "@/components/IconButton";
 import { useToast } from "@/components/Toast";
-import { formatDate, startOfDay } from "@/lib/date";
 import { useLocalStorage } from "@/lib/use-client-store";
 import {
   TODO_SORTS,
-  moveId,
+  moveIdTo,
   parseTodoSort,
   sortTodos,
   type TodoSort,
@@ -26,6 +23,8 @@ import {
   reorderTodos,
 } from "./actions";
 import type { TodoItem } from "@/lib/queries/todos";
+import TodoRow, { type MoveTarget } from "./TodoRow";
+import SortableTodoList from "./SortableTodoList";
 
 type Props = {
   initialTodos: TodoItem[];
@@ -37,12 +36,6 @@ type OptimisticAction =
   | { type: "delete"; id: string }
   | { type: "backlog"; id: string }
   | { type: "reorder"; ids: string[] };
-
-const PRIORITY: Record<string, { label: string; className: string }> = {
-  high: { label: "High", className: "badge-danger" },
-  medium: { label: "Medium", className: "badge-muted" },
-  low: { label: "Low", className: "badge-muted" },
-};
 
 function applyOptimistic(
   todos: TodoItem[],
@@ -64,135 +57,6 @@ function applyOptimistic(
         return position === -1 ? t : { ...t, position };
       });
   }
-}
-
-function TodoRow({
-  todo,
-  showBacklog,
-  compact,
-  onToggle,
-  onDelete,
-  onBacklog,
-  reorder,
-  pending,
-}: {
-  todo: TodoItem;
-  showBacklog?: boolean;
-  compact?: boolean;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
-  onBacklog: (id: string) => void;
-  /** Set in custom order: the row's 1-based rank and its move controls. */
-  reorder?: {
-    rank: number;
-    isFirst: boolean;
-    isLast: boolean;
-    onMove: (id: string, delta: -1 | 1) => void;
-  };
-  pending: boolean;
-}) {
-  const isDone = todo.status === "done";
-  const isOverdue =
-    !isDone && todo.dueDate && new Date(todo.dueDate) < startOfDay(new Date());
-  const priority = PRIORITY[todo.priority] ?? PRIORITY.medium;
-
-  return (
-    <li
-      className={clsx(
-        "flex items-center gap-3",
-        compact ? "py-2" : "px-4 py-3"
-      )}
-    >
-      <CheckButton
-        checked={isDone}
-        disabled={pending}
-        onChange={() => onToggle(todo.id)}
-        label={
-          isDone ? `Mark “${todo.title}” not done` : `Mark “${todo.title}” done`
-        }
-      />
-      {reorder && (
-        <span className="w-6 shrink-0 text-right text-sm font-semibold tabular-nums text-muted">
-          {reorder.rank}.
-        </span>
-      )}
-      <div className="min-w-0 flex-1">
-        <p
-          className={clsx(
-            "break-words",
-            compact && "text-sm",
-            isDone
-              ? "text-muted line-through"
-              : "font-medium text-slate-800 dark:text-slate-100"
-          )}
-        >
-          {todo.title}
-        </p>
-        {!compact && (
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <span className={priority.className}>
-              <span className="sr-only">Priority: </span>
-              {priority.label}
-            </span>
-            {todo.category && (
-              <span className="badge-brand">{todo.category}</span>
-            )}
-            {todo.dueDate && (
-              <span
-                className={clsx(
-                  "text-xs",
-                  isOverdue
-                    ? "font-medium text-red-700 dark:text-red-400"
-                    : "text-muted"
-                )}
-              >
-                Due {formatDate(todo.dueDate)}
-                {isOverdue ? " · overdue" : ""}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {reorder && (
-          <>
-            <IconButton
-              icon="chevronUp"
-              disabled={pending || reorder.isFirst}
-              onClick={() => reorder.onMove(todo.id, -1)}
-              aria-label={`Move “${todo.title}” up`}
-            />
-            <IconButton
-              icon="chevronDown"
-              disabled={pending || reorder.isLast}
-              onClick={() => reorder.onMove(todo.id, 1)}
-              aria-label={`Move “${todo.title}” down`}
-            />
-          </>
-        )}
-        {showBacklog && !isDone && (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => onBacklog(todo.id)}
-            className="btn-ghost btn-sm min-h-[40px]"
-            aria-label={`Move “${todo.title}” to backlog`}
-          >
-            Backlog
-          </button>
-        )}
-        {!compact && (
-          <IconButton
-            icon="trash"
-            tone="danger"
-            disabled={pending}
-            onClick={() => onDelete(todo.id)}
-            aria-label={`Delete “${todo.title}”`}
-          />
-        )}
-      </div>
-    </li>
-  );
 }
 
 export default function TodoList({ initialTodos, compact = false }: Props) {
@@ -269,22 +133,30 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   const open = sorted.filter(t => t.status === "open");
   const done = sorted.filter(t => t.status === "done");
 
-  function handleMove(id: string, delta: -1 | 1) {
-    const ids = moveId(
-      open.map(t => t.id),
-      id,
-      delta
-    );
+  function handleReorder(
+    ids: string[],
+    after?: { message: string; undo?: () => void }
+  ) {
     const fd = new FormData();
     ids.forEach(todoId => fd.append("ids", todoId));
-    runAction({ type: "reorder", ids }, () => reorderTodos(fd));
+    runAction({ type: "reorder", ids }, () => reorderTodos(fd), after);
+  }
+
+  function handleMoveTo(id: string, target: MoveTarget) {
+    const before = open.map(t => t.id);
+    const ids = moveIdTo(before, id, target === "top" ? 0 : before.length - 1);
+    if (ids === before) return;
+    handleReorder(ids, {
+      message: target === "top" ? "Moved to top" : "Moved to bottom",
+      undo: () => handleReorder(before),
+    });
   }
 
   // Only open todos are reorderable; done ones keep their custom order.
   const canReorder = sort === "custom" && !compact && open.length > 1;
 
-  const renderRows = (items: TodoItem[], reorderable = false) =>
-    items.map((t, i) => (
+  const renderRows = (items: TodoItem[]) =>
+    items.map(t => (
       <TodoRow
         key={t.id}
         todo={t}
@@ -293,16 +165,6 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
         onToggle={handleToggle}
         onDelete={handleDelete}
         onBacklog={handleBacklog}
-        reorder={
-          reorderable
-            ? {
-                rank: i + 1,
-                isFirst: i === 0,
-                isLast: i === items.length - 1,
-                onMove: handleMove,
-              }
-            : undefined
-        }
         pending={isPending}
       />
     ));
@@ -356,9 +218,21 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
             defaultOpen
             as="h2"
           >
-            <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
-              {renderRows(open, canReorder)}
-            </ul>
+            {canReorder ? (
+              <SortableTodoList
+                todos={open}
+                onReorder={handleReorder}
+                onMoveTo={handleMoveTo}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+                onBacklog={handleBacklog}
+                pending={isPending}
+              />
+            ) : (
+              <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
+                {renderRows(open)}
+              </ul>
+            )}
           </CollapsibleSection>
         )}
         {done.length > 0 && (

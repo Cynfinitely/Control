@@ -113,6 +113,15 @@ const paths: Record<string, React.ReactNode> = {
   ),
   chevronUp: <path d="M6 15l6-6 6 6" />,
   chevronDown: <path d="M6 9l6 6 6-6" />,
+  grip: (
+    <path
+      strokeWidth="3"
+      d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"
+    />
+  ),
+  moreVertical: <path strokeWidth="3" d="M12 5h.01M12 12h.01M12 19h.01" />,
+  arrowUpToLine: <path d="M5 4h14M12 20V9M7 13l5-5 5 5" />,
+  arrowDownToLine: <path d="M5 20h14M12 4v11M7 11l5 5 5-5" />,
   heart: (
     <path d="M19.5 12.6 12 20l-7.5-7.4a4.5 4.5 0 0 1 6.4-6.4l1.1 1.1 1.1-1.1a4.5 4.5 0 1 1 6.4 6.4z" />
   ),

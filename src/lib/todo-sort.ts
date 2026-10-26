@@ -64,14 +64,14 @@ export function sortTodos<T extends Sortable>(todos: T[], sort: TodoSort): T[] {
 }
 
 /**
- * Moves `id` one step up (-1) or down (1) in `ids`. Returns a new array, or
- * the original when the move would leave the list.
+ * Moves `id` to `toIndex` in `ids` (clamped to the list), shifting the rest.
+ * Returns a new array, or the original for an unknown id or a no-op move.
  */
-export function moveId(ids: string[], id: string, delta: -1 | 1): string[] {
+export function moveIdTo(ids: string[], id: string, toIndex: number): string[] {
   const from = ids.indexOf(id);
-  const to = from + delta;
-  if (from === -1 || to < 0 || to >= ids.length) return ids;
-  const next = [...ids];
-  [next[from], next[to]] = [next[to], next[from]];
+  const to = Math.min(Math.max(toIndex, 0), ids.length - 1);
+  if (from === -1 || from === to) return ids;
+  const next = ids.filter(other => other !== id);
+  next.splice(to, 0, id);
   return next;
 }
