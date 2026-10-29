@@ -295,10 +295,9 @@ export default async function WorkoutDetail(props: {
                         <input
                           {...aria}
                           name="weightKg"
-                          type="number"
-                          step="any"
-                          min={0}
+                          type="text"
                           inputMode="decimal"
+                          pattern="[0-9]*[.,]?[0-9]*"
                           className="input sm:w-24"
                           defaultValue={prefill.weightKg}
                         />

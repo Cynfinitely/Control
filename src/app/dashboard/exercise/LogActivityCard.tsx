@@ -149,10 +149,9 @@ export default function LogActivityCard({
               <input
                 {...aria}
                 name="distanceKm"
-                type="number"
-                step="any"
-                min={0}
+                type="text"
                 inputMode="decimal"
+                pattern="[0-9]*[.,]?[0-9]*"
                 className="input"
                 placeholder="5"
               />
@@ -204,10 +203,9 @@ export default function LogActivityCard({
               <input
                 {...aria}
                 name="distanceKm"
-                type="number"
-                step="any"
-                min={0}
+                type="text"
                 inputMode="decimal"
+                pattern="[0-9]*[.,]?[0-9]*"
                 className="input"
                 placeholder="3"
               />

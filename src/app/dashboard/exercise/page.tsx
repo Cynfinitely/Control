@@ -183,10 +183,9 @@ export default async function ExercisePage() {
                 <input
                   {...aria}
                   name="weightKg"
-                  type="number"
-                  step="any"
-                  min={0}
+                  type="text"
                   inputMode="decimal"
+                  pattern="[0-9]*[.,]?[0-9]*"
                   className="input sm:w-28"
                   required
                 />
@@ -268,10 +267,9 @@ export default async function ExercisePage() {
                 <input
                   {...aria}
                   name="valueCm"
-                  type="number"
-                  step="any"
-                  min={0}
+                  type="text"
                   inputMode="decimal"
+                  pattern="[0-9]*[.,]?[0-9]*"
                   className="input sm:w-24"
                   required
                 />

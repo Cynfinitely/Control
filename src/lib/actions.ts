@@ -24,7 +24,7 @@ export function parseOptionalDate(
 
 export function num(value: FormDataEntryValue | null, fallback = 0): number {
   if (value === null || String(value).trim() === "") return fallback;
-  const n = Number(value);
+  const n = Number(String(value).trim().replace(",", "."));
   return isNaN(n) ? fallback : n;
 }
 
