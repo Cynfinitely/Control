@@ -23,7 +23,11 @@ export function sqliteClientAvailable(): boolean {
  */
 export function createTestDatabase(name: string): { cleanup: () => void } {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `control-${name}-`));
-  const url = `file:${path.join(dir, "test.db")}`;
+  const databasePath = path.join(dir, "test.db");
+  // Prisma 5 can fail its connection check before db push creates a missing
+  // SQLite file. Create only this test's new file; Prisma still owns the schema.
+  fs.writeFileSync(databasePath, "", { flag: "wx" });
+  const url = `file:${databasePath}`;
   process.env.DATABASE_URL = url;
   execSync("npx prisma db push --skip-generate --accept-data-loss", {
     cwd: ROOT,
