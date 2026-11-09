@@ -1,6 +1,6 @@
 # AGENTS.md — Workspace Facts
 
-<!-- dev-standards: v1.0.0 -->
+<!-- dev-standards: v1.1.0 -->
 
 Shared project knowledge for AI assistants. Commit this file.
 
@@ -25,6 +25,8 @@ Shared project knowledge for AI assistants. Commit this file.
 - Dependency audit: `npm run audit:ci` (`scripts/npm-audit-ci.sh`), never bare `npm audit`. Waivers: `scripts/npm-audit-allowlist.json`.
 - CI: `.github/workflows/pr-checks.yml` runs the same checks as the hooks.
 
+- Issue workflow: `/issue <number>` in Claude Code (`.claude/commands/issue.md`) plans, waits for approval, then implements, commits, pushes, and opens the PR. Other agents: "follow `.claude/commands/issue.md` for issue N". It learns the repo from this file, so keep the PR base branch, branch naming, and run-the-app commands in _Learned Workspace Facts_.
+
 ## Learned Workspace Facts
 
 <!-- Repo-specific facts agents keep getting wrong: architecture, domain rules,
@@ -39,3 +41,5 @@ Shared project knowledge for AI assistants. Commit this file.
 - **Audit waiver:** `braces` (GHSA-vfj7-8cjw-p6xm) has no patched release and is reached only through dev tooling. It is waived in `scripts/npm-audit-allowlist.json` until 2027-01-20. Tailwind 3's `postcss-selector-parser`/`postcss-nested` are overridden to v7 in `package.json`; CSS output was verified byte-identical.
 - **Codebase map:** `graphify-out/GRAPH_REPORT.md` (gitignored, local only).
 - **Old history:** commits before dev-standards adoption contain AI `Co-Authored-By` trailers. Leave them; the gate only checks new commits.
+
+- **Run the app:** `npm run dev`, then open http://localhost:3000 (configure `.env` as described in `README.md` first).
