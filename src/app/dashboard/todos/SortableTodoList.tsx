@@ -28,7 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 import Icon from "@/components/Icon";
 import { moveIdTo } from "@/lib/todo-sort";
 import type { TodoItem } from "@/lib/queries/todos";
-import TodoRow, { type MoveTarget } from "./TodoRow";
+import TodoRow, { type MoveTarget, type RowEditing } from "./TodoRow";
 
 type RowHandlers = {
   onToggle: (id: string) => void;
@@ -36,6 +36,10 @@ type RowHandlers = {
   onBacklog: (id: string) => void;
   onMoveTo: (id: string, target: MoveTarget) => void;
   pending: boolean;
+  /** Editing callbacks; `active` is derived per row from `editingId`. */
+  editing?: Omit<RowEditing, "active">;
+  editingId?: string | null;
+  showSlot?: boolean;
 };
 
 type Props = RowHandlers & {
@@ -63,7 +67,8 @@ function SortableRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: todo.id });
+  } = useSortable({ id: todo.id, disabled: handlers.editingId === todo.id });
+  const isEditing = handlers.editingId === todo.id;
 
   return (
     <TodoRow
@@ -73,6 +78,8 @@ function SortableRow({
       onDelete={handlers.onDelete}
       onBacklog={handlers.onBacklog}
       pending={handlers.pending}
+      showSlot={handlers.showSlot}
+      editing={handlers.editing && { ...handlers.editing, active: isEditing }}
       rowRef={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       isDragging={isDragging}
@@ -81,7 +88,7 @@ function SortableRow({
         isFirst: index === 0,
         isLast: index === count - 1,
         onMoveTo: handlers.onMoveTo,
-        handle: (
+        handle: isEditing ? null : (
           <button
             ref={setActivatorNodeRef}
             type="button"

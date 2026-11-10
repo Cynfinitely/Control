@@ -175,6 +175,7 @@ model Todo {
   priority    String    @default("medium") // low | medium | high
   dueDate     DateTime?
   position    Int       @default(0) // manual order within a day (custom sort)
+  timeSlot    String? // work | after | null = anytime
 
   @@index([userId, status])
   @@index([userId, dueDate])

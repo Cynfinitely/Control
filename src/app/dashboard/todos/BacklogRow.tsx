@@ -6,21 +6,49 @@ import ActionForm from "@/components/ActionForm";
 import SubmitButton from "@/components/SubmitButton";
 import IconButton from "@/components/IconButton";
 import { useToast } from "@/components/Toast";
-import { deleteTodo, pullFromBacklog, restoreTodo } from "./actions";
+import type { TodoItem } from "@/lib/queries/todos";
+import {
+  deleteTodo,
+  pullFromBacklog,
+  restoreTodo,
+  updateTodo,
+} from "./actions";
+import { TodoBadges } from "./TodoRow";
+import TodoEditForm, { patchFormData, type TodoPatch } from "./TodoEditForm";
 
 type Props = {
-  id: string;
-  title: string;
+  todo: TodoItem;
   dayValue: string;
   /** "today", "yesterday" or a formatted date — used in "Add to {day}". */
   dayName: string;
+  categories: string[];
 };
 
-export default function BacklogRow({ id, title, dayValue, dayName }: Props) {
+export default function BacklogRow({
+  todo,
+  dayValue,
+  dayName,
+  categories,
+}: Props) {
+  const { id, title } = todo;
   const [pending, startTransition] = useTransition();
   const [hidden, setHidden] = useState(false);
+  const [editing, setEditing] = useState(false);
   const router = useRouter();
   const { success, error } = useToast();
+
+  function handleSave(patch: TodoPatch) {
+    startTransition(async () => {
+      const res = await updateTodo(patchFormData(id, patch)).catch(() => null);
+      if (!res?.ok) {
+        error(res && !res.ok ? res.error : "Couldn't save — try again");
+        return;
+      }
+      setEditing(false);
+      router.refresh();
+      success("Todo updated");
+    });
+  }
 
   function handleDelete() {
     setHidden(true);
@@ -53,11 +81,32 @@ export default function BacklogRow({ id, title, dayValue, dayName }: Props) {
 
   if (hidden) return null;
 
+  if (editing) {
+    return (
+      <li className="py-3">
+        <TodoEditForm
+          todo={todo}
+          categories={categories}
+          saving={pending}
+          onSave={handleSave}
+          onCancel={() => setEditing(false)}
+        />
+      </li>
+    );
+  }
+
   return (
-    <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-3">
-      <span className="min-w-0 flex-1 break-words text-slate-800 dark:text-slate-100">
-        {title}
-      </span>
+    <li className="group flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-3">
+      <div className="min-w-0 flex-1">
+        <p
+          onDoubleClick={() => setEditing(true)}
+          title="Double-click to edit"
+          className="break-words text-slate-800 dark:text-slate-100"
+        >
+          {title}
+        </p>
+        <TodoBadges todo={todo} />
+      </div>
       <div className="flex shrink-0 items-center gap-1">
         <ActionForm action={pullFromBacklog}>
           <input type="hidden" name="id" value={id} />
@@ -69,6 +118,12 @@ export default function BacklogRow({ id, title, dayValue, dayName }: Props) {
             Add to {dayName}
           </SubmitButton>
         </ActionForm>
+        <IconButton
+          icon="pencil"
+          disabled={pending}
+          onClick={() => setEditing(true)}
+          aria-label={`Edit “${title}”`}
+        />
         <IconButton
           icon="trash"
           tone="danger"

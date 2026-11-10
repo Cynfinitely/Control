@@ -5,17 +5,17 @@ import {
   getBacklogTodos,
   getDayTodos,
   getStaleOpenTodoCount,
+  getTodoCategories,
 } from "@/lib/queries/todos";
+import { mergeCategories } from "@/lib/todo-meta";
 import PageHeader from "@/components/PageHeader";
 import DayNavigator from "@/components/DayNavigator";
-import SubmitButton from "@/components/SubmitButton";
-import FormAction from "@/components/FormAction";
 import FocusTarget from "@/components/FocusTarget";
 import StaleBacklogButton from "@/components/StaleBacklogButton";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import TodoList from "./TodoList";
 import BacklogRow from "./BacklogRow";
-import { createTodoForm } from "./actions";
+import TodoAddForm from "./TodoAddForm";
 
 export const metadata = { title: "Todos" };
 
@@ -32,18 +32,20 @@ export default async function TodosPage(props: {
       ? dayLabel.toLowerCase()
       : dayLabel;
 
-  const [dayTodos, backlog, staleCount] = await Promise.all([
+  const [dayTodos, backlog, staleCount, userCategories] = await Promise.all([
     getDayTodos(user.id, dayValue),
     getBacklogTodos(user.id),
     getStaleOpenTodoCount(user.id),
+    getTodoCategories(user.id),
   ]);
+  const categoryPills = mergeCategories(userCategories);
 
   return (
     <div>
       <PageHeader
         help="todos"
         title="Todos"
-        description="Simple daily checklist — add tasks, check them off."
+        description="Your daily checklist, split into work time and after work."
       />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -57,91 +59,19 @@ export default async function TodosPage(props: {
 
       <Suspense fallback={null}>
         <FocusTarget param="focus">
-          <FormAction
-            action={createTodoForm}
-            successMessage="Todo added"
-            resetOnSuccess
-            className="card mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5"
-          >
-            <input type="hidden" name="dayDate" value={dayValue} />
-            <div className="col-span-2 lg:col-span-5">
-              <label htmlFor="todo-title" className="label">
-                Todo
-              </label>
-              <input
-                id="todo-title"
-                name="title"
-                className="input w-full"
-                placeholder="Add a todo for this day…"
-                required
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="todo-priority" className="label">
-                Priority
-              </label>
-              <select
-                id="todo-priority"
-                name="priority"
-                className="input"
-                defaultValue="medium"
-              >
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="todo-category" className="label">
-                Category
-              </label>
-              <input
-                id="todo-category"
-                name="category"
-                className="input"
-                placeholder="e.g. work, health"
-              />
-            </div>
-            <div>
-              <label htmlFor="todo-due" className="label">
-                Due date
-              </label>
-              <input
-                id="todo-due"
-                name="dueDate"
-                type="date"
-                className="input"
-              />
-            </div>
-            <div>
-              <label htmlFor="todo-destination" className="label">
-                Add to
-              </label>
-              <select
-                id="todo-destination"
-                name="destination"
-                className="input"
-                defaultValue="day"
-              >
-                <option value="day">
-                  {dayLabel === "Today" ? "Today" : `This day (${dayLabel})`}
-                </option>
-                <option value="backlog">Backlog</option>
-              </select>
-            </div>
-            <div className="col-span-2 flex items-end lg:col-span-1">
-              <SubmitButton className="btn-primary touch-target w-full">
-                Add
-              </SubmitButton>
-            </div>
-          </FormAction>
+          <TodoAddForm
+            dayValue={dayValue}
+            dayLabel={dayLabel}
+            categories={categoryPills}
+          />
         </FocusTarget>
       </Suspense>
 
-      <TodoList initialTodos={dayTodos} />
+      <TodoList initialTodos={dayTodos} categories={categoryPills} />
 
+      {/* Keyed so it opens when the first item arrives instead of staying collapsed. */}
       <CollapsibleSection
+        key={backlog.length > 0 ? "backlog" : "backlog-empty"}
         title="Backlog"
         as="h2"
         count={backlog.length}
@@ -150,8 +80,8 @@ export default async function TodosPage(props: {
       >
         {backlog.length === 0 ? (
           <p className="text-sm text-muted">
-            Nothing saved for later. To park a todo here, choose “Backlog” under
-            “Add to” above.
+            Nothing saved for later. To park a todo here, open “More options”
+            above and choose “Backlog” under “Add to”.
           </p>
         ) : (
           <>
@@ -164,8 +94,8 @@ export default async function TodosPage(props: {
               {backlog.map(t => (
                 <BacklogRow
                   key={t.id}
-                  id={t.id}
-                  title={t.title}
+                  todo={t}
+                  categories={categoryPills}
                   dayValue={dayValue}
                   dayName={dayName}
                 />

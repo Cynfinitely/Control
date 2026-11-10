@@ -5,38 +5,52 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import EmptyState from "@/components/EmptyState";
 import PendingIndicator from "@/components/PendingIndicator";
+import CollapsibleSection from "@/components/CollapsibleSection";
 import { useToast } from "@/components/Toast";
 import { useLocalStorage } from "@/lib/use-client-store";
 import {
-  TODO_SORTS,
   applyOrder,
   moveIdTo,
   parseTodoSort,
   sortTodos,
   type TodoSort,
 } from "@/lib/todo-sort";
-import CollapsibleSection from "@/components/CollapsibleSection";
+import {
+  groupBySlot,
+  matchesFilter,
+  parseTimeSlot,
+  parseTodoFilter,
+  serializeTodoFilter,
+  type TodoFilter,
+} from "@/lib/todo-meta";
 import {
   toggleTodo,
   deleteTodo,
   moveToBacklog,
   restoreTodo,
   reorderTodos,
+  updateTodo,
 } from "./actions";
 import type { TodoItem } from "@/lib/queries/todos";
-import TodoRow, { type MoveTarget } from "./TodoRow";
+import TodoRow, { type MoveTarget, type RowEditing } from "./TodoRow";
 import SortableTodoList from "./SortableTodoList";
 import OrderSaveBar from "./OrderSaveBar";
+import DayProgress from "./DayProgress";
+import TodoToolbar, { filterOptions } from "./TodoToolbar";
+import { applyPatch, patchFormData, type TodoPatch } from "./TodoEditForm";
 
 type Props = {
   initialTodos: TodoItem[];
   compact?: boolean;
+  /** Category pills offered when editing. */
+  categories?: string[];
 };
 
 type OptimisticAction =
   | { type: "toggle"; id: string }
   | { type: "delete"; id: string }
-  | { type: "backlog"; id: string };
+  | { type: "backlog"; id: string }
+  | { type: "edit"; id: string; patch: TodoPatch };
 
 function applyOptimistic(
   todos: TodoItem[],
@@ -49,13 +63,26 @@ function applyOptimistic(
           ? { ...t, status: t.status === "done" ? "open" : "done" }
           : t
       );
+    case "edit":
+      return todos.map(t =>
+        t.id === action.id ? applyPatch(t, action.patch) : t
+      );
     case "delete":
     case "backlog":
       return todos.filter(t => t.id !== action.id);
   }
 }
 
-export default function TodoList({ initialTodos, compact = false }: Props) {
+/** Work, then After work, then Anytime; each keeps its incoming order. */
+function slotOrder(todos: TodoItem[]): TodoItem[] {
+  return groupBySlot(todos).flatMap(g => g.items);
+}
+
+export default function TodoList({
+  initialTodos,
+  compact = false,
+  categories = [],
+}: Props) {
   const [isPending, startTransition] = useTransition();
   const [optimisticTodos, updateOptimistic] = useOptimistic(
     initialTodos,
@@ -65,9 +92,11 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   const { success, error } = useToast();
   const [storedSort, setSort] = useLocalStorage("control-todo-sort");
   const sort = parseTodoSort(storedSort);
+  const [storedFilter, setFilter] = useLocalStorage("control-todo-filter");
   // Custom order being edited: open todo ids, local until saved.
   const [draft, setDraft] = useState<string[] | null>(null);
   const [isSaving, startSaving] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   function runAction(
     action: OptimisticAction,
@@ -96,49 +125,92 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
     });
   }
 
+  function idAction(fn: (fd: FormData) => Promise<{ ok: boolean }>) {
+    return (id: string) => {
+      const fd = new FormData();
+      fd.set("id", id);
+      return fn(fd);
+    };
+  }
+
   function handleToggle(id: string) {
-    const fd = new FormData();
-    fd.set("id", id);
-    runAction({ type: "toggle", id }, () => toggleTodo(fd));
+    runAction({ type: "toggle", id }, () => idAction(toggleTodo)(id));
   }
 
   function handleDelete(id: string) {
-    const fd = new FormData();
-    fd.set("id", id);
-    runAction({ type: "delete", id }, () => deleteTodo(fd), {
+    runAction({ type: "delete", id }, () => idAction(deleteTodo)(id), {
       message: "Todo deleted",
       undo: () => {
-        const restoreFd = new FormData();
-        restoreFd.set("id", id);
         startTransition(async () => {
-          const res = await restoreTodo(restoreFd);
+          const res = await idAction(restoreTodo)(id);
           router.refresh();
           if (res.ok) success("Todo restored");
-          else error(res.error);
+          else error("Couldn't restore — try again");
         });
       },
     });
   }
 
   function handleBacklog(id: string) {
-    const fd = new FormData();
-    fd.set("id", id);
-    runAction({ type: "backlog", id }, () => moveToBacklog(fd), {
+    runAction({ type: "backlog", id }, () => idAction(moveToBacklog)(id), {
       message: "Moved to backlog",
     });
   }
 
+  function handleSaveEdit(id: string, patch: TodoPatch) {
+    setEditingId(null);
+    runAction(
+      { type: "edit", id, patch },
+      () => updateTodo(patchFormData(id, patch)),
+      { message: "Todo updated" }
+    );
+  }
+
+  const editing: Omit<RowEditing, "active"> | undefined = compact
+    ? undefined
+    : {
+        categories,
+        onStart: setEditingId,
+        onSave: handleSaveEdit,
+        onCancel: () => setEditingId(null),
+      };
+
   const sorted = sortTodos(optimisticTodos, sort);
-  const savedOpen = sorted.filter(t => t.status === "open");
-  const open = sort === "custom" ? applyOrder(savedOpen, draft) : savedOpen;
+  const grouped = sorted.some(t => parseTimeSlot(t.timeSlot));
+  const byGroup = (items: TodoItem[]) => (grouped ? slotOrder(items) : items);
+  const savedOpen = byGroup(sorted.filter(t => t.status === "open"));
+  const open =
+    sort === "custom" ? byGroup(applyOrder(savedOpen, draft)) : savedOpen;
   const done = sorted.filter(t => t.status === "done");
   // After a save the refreshed server order matches the draft, so this turns
   // false on its own without flashing back to the old order.
   const isOrderDirty = open.some((t, i) => t.id !== savedOpen[i].id);
 
-  function handleMoveTo(id: string, target: MoveTarget) {
-    const ids = open.map(t => t.id);
-    setDraft(moveIdTo(ids, id, target === "top" ? 0 : ids.length - 1));
+  // A remembered filter that no longer applies (e.g. a category not used
+  // today) falls back to "All" instead of hiding everything.
+  const options = filterOptions(optimisticTodos);
+  const storedParsed = parseTodoFilter(storedFilter);
+  const filter: TodoFilter = options.some(
+    o => serializeTodoFilter(o.filter) === serializeTodoFilter(storedParsed)
+  )
+    ? storedParsed
+    : { kind: "all" };
+  const isFiltered = filter.kind !== "all";
+  const visibleOpen = open.filter(t => matchesFilter(t, filter));
+  const visibleDone = done.filter(t => matchesFilter(t, filter));
+
+  /** Replaces one group's ids inside the full open order. */
+  function reorderGroup(groupIds: string[], nextGroupIds: string[]) {
+    const queue = [...nextGroupIds];
+    const inGroup = new Set(groupIds);
+    setDraft(open.map(t => (inGroup.has(t.id) ? queue.shift()! : t.id)));
+  }
+
+  function moveWithin(groupIds: string[], id: string, target: MoveTarget) {
+    reorderGroup(
+      groupIds,
+      moveIdTo(groupIds, id, target === "top" ? 0 : groupIds.length - 1)
+    );
   }
 
   function handleSaveOrder() {
@@ -157,7 +229,9 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   }
 
   // Only open todos are reorderable; done ones keep their custom order.
-  const canReorder = sort === "custom" && !compact && open.length > 1;
+  // A filtered view hides rows, so its order must not be saved.
+  const canReorder =
+    sort === "custom" && !compact && !isFiltered && open.length > 1;
 
   const renderRows = (items: TodoItem[]) =>
     items.map(t => (
@@ -166,12 +240,36 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
         todo={t}
         showBacklog={!compact}
         compact={compact}
+        showSlot={!grouped || t.status === "done"}
+        editing={editing && { ...editing, active: editingId === t.id }}
         onToggle={handleToggle}
         onDelete={handleDelete}
         onBacklog={handleBacklog}
         pending={isPending}
       />
     ));
+
+  const renderOpen = (items: TodoItem[]) => {
+    const ids = items.map(t => t.id);
+    return canReorder && items.length > 1 ? (
+      <SortableTodoList
+        todos={items}
+        onReorder={next => reorderGroup(ids, next)}
+        onMoveTo={(id, target) => moveWithin(ids, id, target)}
+        onToggle={handleToggle}
+        onDelete={handleDelete}
+        onBacklog={handleBacklog}
+        editing={editing}
+        editingId={editingId}
+        showSlot={!grouped}
+        pending={isPending}
+      />
+    ) : (
+      <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
+        {renderRows(items)}
+      </ul>
+    );
+  };
 
   if (compact) {
     if (optimisticTodos.length === 0) return null;
@@ -188,34 +286,30 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
   return (
     <div className={clsx("relative", isPending && "opacity-80")}>
       <PendingIndicator pending={isPending} />
-      {optimisticTodos.length === 0 && (
+      {optimisticTodos.length === 0 ? (
         <EmptyState
           icon="check"
           title="Your day is clear"
           description="No todos for this day. Add one above to get started."
         />
+      ) : (
+        <DayProgress done={done.length} total={optimisticTodos.length} />
       )}
       {optimisticTodos.length > 1 && (
-        <div className="mb-3 flex items-center justify-end gap-2">
-          <label htmlFor="todo-sort" className="text-sm text-muted">
-            Sort by
-          </label>
-          <select
-            id="todo-sort"
-            className="input w-auto"
-            value={sort}
-            onChange={e => {
-              setDraft(null);
-              setSort(e.target.value as TodoSort);
-            }}
-          >
-            {Object.entries(TODO_SORTS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TodoToolbar
+          options={options}
+          filter={filter}
+          onFilter={f => {
+            setDraft(null);
+            setFilter(serializeTodoFilter(f));
+          }}
+          total={optimisticTodos.length}
+          sort={sort}
+          onSort={(next: TodoSort) => {
+            setDraft(null);
+            setSort(next);
+          }}
+        />
       )}
       {canReorder && isOrderDirty && (
         <OrderSaveBar
@@ -224,35 +318,39 @@ export default function TodoList({ initialTodos, compact = false }: Props) {
           onCancel={() => setDraft(null)}
         />
       )}
+      {isFiltered && visibleOpen.length === 0 && visibleDone.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted">
+          Nothing matches this filter.
+        </p>
+      )}
       <div className="space-y-4">
-        {open.length > 0 && (
-          <CollapsibleSection
-            title="Open"
-            count={open.length}
-            defaultOpen
-            as="h2"
-          >
-            {canReorder ? (
-              <SortableTodoList
-                todos={open}
-                onReorder={setDraft}
-                onMoveTo={handleMoveTo}
-                onToggle={handleToggle}
-                onDelete={handleDelete}
-                onBacklog={handleBacklog}
-                pending={isPending}
-              />
-            ) : (
-              <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
-                {renderRows(open)}
-              </ul>
-            )}
-          </CollapsibleSection>
-        )}
-        {done.length > 0 && (
-          <CollapsibleSection title="Done" count={done.length} as="h2">
+        {visibleOpen.length > 0 &&
+          (grouped ? (
+            groupBySlot(visibleOpen).map(g => (
+              <CollapsibleSection
+                key={g.key}
+                title={g.label}
+                count={g.items.length}
+                defaultOpen
+                as="h2"
+              >
+                {renderOpen(g.items)}
+              </CollapsibleSection>
+            ))
+          ) : (
+            <CollapsibleSection
+              title="Open"
+              count={visibleOpen.length}
+              defaultOpen
+              as="h2"
+            >
+              {renderOpen(visibleOpen)}
+            </CollapsibleSection>
+          ))}
+        {visibleDone.length > 0 && (
+          <CollapsibleSection title="Done" count={visibleDone.length} as="h2">
             <ul className="card-flush divide-y divide-slate-100 dark:divide-slate-700">
-              {renderRows(done)}
+              {renderRows(visibleDone)}
             </ul>
           </CollapsibleSection>
         )}
