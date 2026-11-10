@@ -7,6 +7,16 @@ import { getUserId, str, parseDate, parseOptionalDate } from "@/lib/actions";
 import { revalidateUserCache } from "@/lib/cache";
 import { startOfDay, endOfDay, formatDate } from "@/lib/date";
 import {
+  MAX_CATEGORY_LENGTH,
+  MAX_TITLE_LENGTH,
+  PRIORITIES,
+  TIME_SLOTS,
+  normalizeCategory,
+  parsePriority,
+  parseQuickAdd,
+  parseTimeSlot,
+} from "@/lib/todo-meta";
+import {
   success,
   failure,
   wrapFormAction,
@@ -36,11 +46,18 @@ async function nextPosition(userId: string, dayDate: Date) {
 
 export async function createTodo(formData: FormData): Promise<ActionResult> {
   const userId = await getUserId();
-  const title = str(formData.get("title"));
+  const quick = parseQuickAdd(str(formData.get("title")));
+  const title = quick.title.slice(0, MAX_TITLE_LENGTH);
   if (!title) return failure("Title is required");
   const dayDate = startOfDay(parseDate(formData.get("dayDate")));
-  const priority = str(formData.get("priority")) || "medium";
-  const category = str(formData.get("category")) || null;
+  // Tokens typed in the title (!high #health @after) beat the form fields.
+  const priority = quick.priority ?? parsePriority(formData.get("priority"));
+  const category =
+    quick.category ?? normalizeCategory(formData.get("category"));
+  const timeSlot =
+    quick.timeSlot !== undefined
+      ? quick.timeSlot
+      : parseTimeSlot(formData.get("timeSlot"));
   const dueDate = parseOptionalDate(formData.get("dueDate"));
   const inBacklog = str(formData.get("destination")) === "backlog";
   const position = inBacklog ? 0 : await nextPosition(userId, dayDate);
@@ -54,6 +71,7 @@ export async function createTodo(formData: FormData): Promise<ActionResult> {
       category,
       dueDate,
       position,
+      timeSlot,
     },
   });
   invalidate(userId);
@@ -78,6 +96,49 @@ export async function toggleTodo(formData: FormData): Promise<ActionResult> {
   }
   invalidate(userId);
   return success();
+}
+
+const slotSchema = z
+  .union([
+    z.enum(Object.keys(TIME_SLOTS) as [keyof typeof TIME_SLOTS]),
+    z.literal(""),
+  ])
+  .transform(v => v || null);
+
+const updateSchema = z.object({
+  id: z.string().min(1).max(64),
+  title: z.string().trim().min(1, "Title is required").max(MAX_TITLE_LENGTH),
+  priority: z.enum(Object.keys(PRIORITIES) as [keyof typeof PRIORITIES]),
+  category: z
+    .string()
+    .max(MAX_CATEGORY_LENGTH * 2)
+    .transform(v => normalizeCategory(v)),
+  timeSlot: slotSchema,
+  dueDate: z.string().max(32),
+});
+
+/** Saves edits to a todo's title, priority, category, slot and due date. */
+export async function updateTodo(formData: FormData): Promise<ActionResult> {
+  const userId = await getUserId();
+  const parsed = updateSchema.safeParse({
+    id: str(formData.get("id")),
+    title: str(formData.get("title")),
+    priority: str(formData.get("priority")) || "medium",
+    category: str(formData.get("category")),
+    timeSlot: str(formData.get("timeSlot")),
+    dueDate: str(formData.get("dueDate")),
+  });
+  if (!parsed.success) {
+    return failure(parsed.error.issues[0]?.message ?? "Invalid todo");
+  }
+  const { id, dueDate, ...data } = parsed.data;
+  const result = await prisma.todo.updateMany({
+    where: { id, userId, deletedAt: null },
+    data: { ...data, dueDate: parseOptionalDate(dueDate) },
+  });
+  if (result.count === 0) return failure("Todo not found");
+  invalidate(userId);
+  return success("Todo updated");
 }
 
 export async function moveToBacklog(formData: FormData): Promise<ActionResult> {

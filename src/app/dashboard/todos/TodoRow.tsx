@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import CheckButton from "@/components/CheckButton";
-import Icon from "@/components/Icon";
 import IconButton from "@/components/IconButton";
 import { formatDate, startOfDay } from "@/lib/date";
+import { parseTimeSlot, TIME_SLOTS } from "@/lib/todo-meta";
 import type { TodoItem } from "@/lib/queries/todos";
+import MoveMenu, { type RowReorder } from "./MoveMenu";
+import TodoEditForm, { type TodoPatch } from "./TodoEditForm";
+
+export type { MoveTarget } from "./MoveMenu";
 
 const PRIORITY: Record<string, { label: string; className: string }> = {
   high: { label: "High", className: "badge-danger" },
@@ -14,97 +17,63 @@ const PRIORITY: Record<string, { label: string; className: string }> = {
   low: { label: "Low", className: "badge-muted" },
 };
 
-export type MoveTarget = "top" | "bottom";
-
-/** Custom-order controls: the row's 1-based rank, drag handle and move menu. */
-type RowReorder = {
-  rank: number;
-  isFirst: boolean;
-  isLast: boolean;
-  onMoveTo: (id: string, target: MoveTarget) => void;
-  /** The dnd-kit drag handle, rendered at the start of the row. */
-  handle: React.ReactNode;
-};
-
-/** "⋮" menu with Move to top / Move to bottom. */
-function MoveMenu({ todo, reorder }: { todo: TodoItem; reorder: RowReorder }) {
-  const [open, setOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    menuRef.current
-      ?.querySelector<HTMLButtonElement>("button:enabled")
-      ?.focus();
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setOpen(false);
-        buttonRef.current?.focus();
-      }
-    }
-    function onPointer(e: PointerEvent) {
-      const target = e.target as Node;
-      if (
-        !menuRef.current?.contains(target) &&
-        !buttonRef.current?.contains(target)
-      )
-        setOpen(false);
-    }
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onPointer);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onPointer);
-    };
-  }, [open]);
-
-  function choose(target: MoveTarget) {
-    setOpen(false);
-    reorder.onMoveTo(todo.id, target);
-  }
-
-  const items: { target: MoveTarget; label: string; icon: string }[] = [
-    { target: "top", label: "Move to top", icon: "arrowUpToLine" },
-    { target: "bottom", label: "Move to bottom", icon: "arrowDownToLine" },
-  ];
+/** Badges shared by day rows and backlog rows. */
+export function TodoBadges({
+  todo,
+  showSlot = true,
+}: {
+  todo: TodoItem;
+  showSlot?: boolean;
+}) {
+  const isDone = todo.status === "done";
+  const isOverdue =
+    !isDone && todo.dueDate && new Date(todo.dueDate) < startOfDay(new Date());
+  const priority = PRIORITY[todo.priority] ?? PRIORITY.medium;
+  const slot = parseTimeSlot(todo.timeSlot);
 
   return (
-    <div className="relative">
-      <IconButton
-        ref={buttonRef}
-        icon="moreVertical"
-        aria-label={`Move options for “${todo.title}”`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen(v => !v)}
-      />
-      {open && (
-        <div
-          ref={menuRef}
-          role="menu"
-          className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800"
+    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+      {todo.priority !== "medium" && (
+        <span className={priority.className}>
+          <span className="sr-only">Priority: </span>
+          {priority.label}
+        </span>
+      )}
+      {showSlot && slot && (
+        <span className="badge-warning">
+          <span className="sr-only">When: </span>
+          {TIME_SLOTS[slot]}
+        </span>
+      )}
+      {todo.category && (
+        <span className="badge-brand">
+          <span className="sr-only">Category: </span>#{todo.category}
+        </span>
+      )}
+      {todo.dueDate && (
+        <span
+          className={clsx(
+            "text-xs",
+            isOverdue
+              ? "font-medium text-red-700 dark:text-red-400"
+              : "text-muted"
+          )}
         >
-          {items.map(item => (
-            <button
-              key={item.target}
-              type="button"
-              role="menuitem"
-              disabled={
-                item.target === "top" ? reorder.isFirst : reorder.isLast
-              }
-              onClick={() => choose(item.target)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-200 dark:hover:bg-slate-700 dark:focus-visible:bg-slate-700"
-            >
-              <Icon name={item.icon} className="h-4 w-4" />
-              {item.label}
-            </button>
-          ))}
-        </div>
+          Due {formatDate(todo.dueDate)}
+          {isOverdue ? " · overdue" : ""}
+        </span>
       )}
     </div>
   );
 }
+
+export type RowEditing = {
+  active: boolean;
+  categories: readonly string[];
+  onStart: (id: string) => void;
+  onSave: (id: string, patch: TodoPatch) => void;
+  onCancel: () => void;
+};
 
 export default function TodoRow({
   todo,
@@ -113,6 +82,8 @@ export default function TodoRow({
   onToggle,
   onDelete,
   onBacklog,
+  editing,
+  showSlot = true,
   reorder,
   rowRef,
   style,
@@ -125,6 +96,10 @@ export default function TodoRow({
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
   onBacklog: (id: string) => void;
+  /** Inline editing; omitted in compact mode. */
+  editing?: RowEditing;
+  /** Hide the slot badge when rows are already grouped by slot. */
+  showSlot?: boolean;
   /** Set in custom order. */
   reorder?: RowReorder;
   rowRef?: (element: HTMLLIElement | null) => void;
@@ -133,16 +108,33 @@ export default function TodoRow({
   pending: boolean;
 }) {
   const isDone = todo.status === "done";
-  const isOverdue =
-    !isDone && todo.dueDate && new Date(todo.dueDate) < startOfDay(new Date());
-  const priority = PRIORITY[todo.priority] ?? PRIORITY.medium;
+
+  if (editing?.active) {
+    return (
+      <li
+        ref={rowRef}
+        style={style}
+        className={clsx(
+          "bg-brand-50/40 px-4 py-3 dark:bg-brand-950/20",
+          reorder && "relative first:rounded-t-xl last:rounded-b-xl"
+        )}
+      >
+        <TodoEditForm
+          todo={todo}
+          categories={editing.categories}
+          onSave={patch => editing.onSave(todo.id, patch)}
+          onCancel={editing.onCancel}
+        />
+      </li>
+    );
+  }
 
   return (
     <li
       ref={rowRef}
       style={style}
       className={clsx(
-        "flex items-center gap-3",
+        "group flex items-center gap-3",
         compact ? "py-2" : "px-4 py-3",
         reorder &&
           "relative bg-white first:rounded-t-xl last:rounded-b-xl dark:bg-slate-800",
@@ -166,6 +158,8 @@ export default function TodoRow({
       )}
       <div className="min-w-0 flex-1">
         <p
+          onDoubleClick={editing ? () => editing.onStart(todo.id) : undefined}
+          title={editing ? "Double-click to edit" : undefined}
           className={clsx(
             "break-words",
             compact && "text-sm",
@@ -176,32 +170,18 @@ export default function TodoRow({
         >
           {todo.title}
         </p>
-        {!compact && (
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <span className={priority.className}>
-              <span className="sr-only">Priority: </span>
-              {priority.label}
-            </span>
-            {todo.category && (
-              <span className="badge-brand">{todo.category}</span>
-            )}
-            {todo.dueDate && (
-              <span
-                className={clsx(
-                  "text-xs",
-                  isOverdue
-                    ? "font-medium text-red-700 dark:text-red-400"
-                    : "text-muted"
-                )}
-              >
-                Due {formatDate(todo.dueDate)}
-                {isOverdue ? " · overdue" : ""}
-              </span>
-            )}
-          </div>
-        )}
+        {!compact && <TodoBadges todo={todo} showSlot={showSlot} />}
       </div>
       <div className="flex shrink-0 items-center gap-1">
+        {editing && (
+          <IconButton
+            icon="pencil"
+            disabled={pending}
+            onClick={() => editing.onStart(todo.id)}
+            aria-label={`Edit “${todo.title}”`}
+            className="sm:opacity-60 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+          />
+        )}
         {reorder && <MoveMenu todo={todo} reorder={reorder} />}
         {showBacklog && !isDone && (
           <button

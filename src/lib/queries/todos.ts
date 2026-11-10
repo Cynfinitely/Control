@@ -11,6 +11,7 @@ export type TodoItem = {
   dueDate: Date | null;
   createdAt: Date;
   position: number;
+  timeSlot: string | null;
 };
 
 /** cachedQuery JSON-serializes results, so revive dates after the await. */
@@ -52,6 +53,7 @@ export async function getDayTodos(
           dueDate: true,
           createdAt: true,
           position: true,
+          timeSlot: true,
         },
       })
   );
@@ -75,10 +77,29 @@ export async function getBacklogTodos(userId: string): Promise<TodoItem[]> {
           dueDate: true,
           createdAt: true,
           position: true,
+          timeSlot: true,
         },
       })
   );
   return reviveTodos(rows);
+}
+
+/** The user's categories, most used first, for the category pills. */
+export async function getTodoCategories(userId: string): Promise<string[]> {
+  return cachedQuery(
+    ["todos-categories", userId],
+    [cacheTag("todos", userId)],
+    async () => {
+      const rows = await prisma.todo.groupBy({
+        by: ["category"],
+        where: { userId, deletedAt: null, category: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { category: "desc" } },
+        take: 12,
+      });
+      return rows.flatMap(r => (r.category ? [r.category] : []));
+    }
+  );
 }
 
 function staleOpenWhere(userId: string) {
